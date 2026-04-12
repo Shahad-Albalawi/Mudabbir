@@ -39,11 +39,11 @@ class InstantBrowseBootstrap {
     await getIt<AuthTokenSecureStore>().clearToken();
     await hive.deleteValue(HiveConstants.savedUserInfo);
 
-    // Guest SQLite + a realistic display name for the app bar.
+    // Guest SQLite + neutral demo labels (no real person / PII).
     await hive.setValue(HiveConstants.savedUserInfo, {
       HiveConstants.userInfoLocalDbKey: 'guest_user',
-      'name': 'شهد البلوي',
-      'email': 'shahd@example.com',
+      'name': 'مستخدم تجريبي',
+      'email': 'guest@example.com',
     });
 
     await LocalDatabase.instance.initForUser('guest_user');
