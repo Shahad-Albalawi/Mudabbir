@@ -11,6 +11,7 @@ Thumbs.db
 .cursor/
 
 # --- Flutter (frontend/) ---
+frontend/*.zip
 frontend/lib/**/*.zip
 frontend/build/
 frontend/.dart_tool/
