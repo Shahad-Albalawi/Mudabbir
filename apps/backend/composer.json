@@ -1,9 +1,9 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "mudabbir/backend",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "description": "Mudabbir REST API: AI chatbot and challenges for the Flutter app.",
+    "keywords": ["laravel", "mudabbir", "api"],
     "license": "MIT",
     "require": {
         "php": "^8.3",
