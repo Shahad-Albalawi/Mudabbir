@@ -6,9 +6,9 @@ class NetworkUserMessages {
 
   static bool get _en => AppStrings.isEnglishLocale;
 
-  static String get network =>
-      _en ? 'Cannot reach the server. Check the internet and try again.'
-          : 'تعذر الاتصال بالخادم. تحقق من الإنترنت ثم أعد المحاولة.';
+  static String get network => _en
+      ? 'Cannot reach the server. Check the internet and try again.'
+      : 'تعذر الاتصال بالخادم. تحقق من الإنترنت ثم أعد المحاولة.';
 
   static String get timeout => _en
       ? 'The connection timed out. Check the network or try again shortly.'
@@ -18,21 +18,18 @@ class NetworkUserMessages {
       ? 'Unexpected response from the server. Update the app or try later.'
       : 'استجابة غير متوقعة من الخادم. حدّث التطبيق أو حاول لاحقاً.';
 
-  static String get unknown =>
-      _en ? 'Something went wrong. Please try again.'
-          : 'حدث خطأ غير متوقع. حاول مرة أخرى.';
+  static String get unknown => _en
+      ? 'Something went wrong. Please try again.'
+      : 'حدث خطأ غير متوقع. حاول مرة أخرى.';
 
   static String serverPolish(String raw, int statusCode) {
     final m = raw.trim();
-    if (m.isEmpty ||
-        m == 'Server error' ||
-        m.toLowerCase() == '<none>') {
+    if (m.isEmpty || m == 'Server error' || m.toLowerCase() == '<none>') {
       return shortStatus(statusCode);
     }
     if (_en) {
       const known = {
-        'The given data was invalid.':
-            'Please check your input and try again.',
+        'The given data was invalid.': 'Please check your input and try again.',
         'Unauthenticated.': 'Your session expired or you are not signed in.',
         'Unauthenticated': 'Your session expired or you are not signed in.',
         'These credentials do not match our records.':

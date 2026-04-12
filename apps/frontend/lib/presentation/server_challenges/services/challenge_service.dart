@@ -167,8 +167,7 @@ class ChallengeService {
         }
 
         throw ApiException(
-          message:
-              'Unexpected server response while sending the invitation.',
+          message: 'Unexpected server response while sending the invitation.',
           statusCode: response.statusCode,
         );
       } on DioException catch (e) {

@@ -10,6 +10,10 @@ class ApiExceptionLocalizations {
     'Request was cancelled.': 'تم إلغاء الطلب.',
     'No internet connection. Check your network and try again.':
         'لا يوجد اتصال بالإنترنت. تحقق من الشبكة والمحاولة مرة أخرى.',
+    'Unable to reach the finance server. Check internet or try again later.':
+        'تعذر الوصول لخادم التحديات. تحقق من الإنترنت أو أعد المحاولة لاحقاً.',
+    'The finance server is temporarily unavailable. Please try again later.':
+        'خادم التحديات غير متاح مؤقتاً. حاول مرة أخرى لاحقاً.',
     'Security certificate error. Please try again later.':
         'خطأ في شهادة الأمان. يرجى المحاولة لاحقاً.',
     'Something went wrong. Please try again.':
@@ -35,8 +39,7 @@ class ApiExceptionLocalizations {
     'Failed to load pending invitations': 'فشل تحميل الدعوات المعلقة',
     'Email is required to send an invitation.':
         'البريد الإلكتروني مطلوب لإرسال الدعوة.',
-    'Please enter a valid email address.':
-        'الرجاء إدخال بريد إلكتروني صحيح.',
+    'Please enter a valid email address.': 'الرجاء إدخال بريد إلكتروني صحيح.',
     'Unexpected server response while sending the invitation.':
         'استجابة الخادم غير متوقعة أثناء إرسال الدعوة.',
     'Connection timeout. Please check your internet connection.':

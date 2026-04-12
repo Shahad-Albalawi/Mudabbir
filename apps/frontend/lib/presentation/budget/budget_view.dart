@@ -53,13 +53,15 @@ class BudgetView extends ConsumerWidget {
                   final name = UserDisplayName.fromSavedUserInfo(
                     getIt<HiveService>().getValue(HiveConstants.savedUserInfo),
                   );
-                  return name.isEmpty ? AppStrings.title : '${AppStrings.title} - $name';
+                  return name.isEmpty
+                      ? AppStrings.title
+                      : '${AppStrings.title} - $name';
                 }(),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  color: scheme.onPrimary,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.headlineLarge?.copyWith(color: scheme.onPrimary),
               ),
             ),
           ],

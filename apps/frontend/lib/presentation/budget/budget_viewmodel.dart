@@ -32,7 +32,9 @@ class BudgetState {
     return BudgetState(
       isLoading: isLoading ?? this.isLoading,
       budgets: budgets ?? this.budgets,
-      error: identical(error, _unsetBudgetError) ? this.error : error as String?,
+      error: identical(error, _unsetBudgetError)
+          ? this.error
+          : error as String?,
       isDelete: isDelete ?? this.isDelete,
       isAdd: isAdd ?? this.isAdd,
     );

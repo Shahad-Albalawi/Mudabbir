@@ -102,7 +102,10 @@ class _AnimatedProgressBarState extends State<AnimatedProgressBar>
                 height: widget.height,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [progressColor, progressColor.withValues(alpha: 0.7)],
+                    colors: [
+                      progressColor,
+                      progressColor.withValues(alpha: 0.7),
+                    ],
                   ),
                   borderRadius: BorderRadius.circular(widget.height / 2),
                   boxShadow: [

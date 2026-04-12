@@ -16,6 +16,7 @@ import 'package:http/http.dart' as http;
 import 'chatbot_view.dart';
 
 enum ChatQuickAction { createGoal, adjustBudget, reduceCategory, exportReport }
+
 enum PendingCommandType { createGoal, createBudget }
 
 class ExecutedCommand {
@@ -54,10 +55,7 @@ class ChatbotViewModel extends BaseViewModel {
     setBusy(true);
     // Add a welcome message
     messages.add(
-      ChatMessage(
-        text: AppStrings.chatWelcomeMessage,
-        isUser: false,
-      ),
+      ChatMessage(text: AppStrings.chatWelcomeMessage, isUser: false),
     );
     setBusy(false);
     notifyListeners();
@@ -76,10 +74,7 @@ class ChatbotViewModel extends BaseViewModel {
         return;
       case ChatQuickAction.reduceCategory:
         messages.add(
-          ChatMessage(
-            text: ChatbotUi.reduceCategoryHint,
-            isUser: false,
-          ),
+          ChatMessage(text: ChatbotUi.reduceCategoryHint, isUser: false),
         );
         notifyListeners();
         _scrollToBottom();
@@ -95,9 +90,7 @@ class ChatbotViewModel extends BaseViewModel {
   Future<void> undoLastAction() async {
     final last = _lastExecutedCommand;
     if (last == null) {
-      messages.add(
-        ChatMessage(text: ChatbotUi.undoNone, isUser: false),
-      );
+      messages.add(ChatMessage(text: ChatbotUi.undoNone, isUser: false));
       notifyListeners();
       _scrollToBottom();
       return;
@@ -109,24 +102,21 @@ class ChatbotViewModel extends BaseViewModel {
         await _auditLog(
           action: 'undo',
           status: 'undone',
-          payload: {'table': last.table, 'row_id': last.rowId, 'summary': last.summary},
+          payload: {
+            'table': last.table,
+            'row_id': last.rowId,
+            'summary': last.summary,
+          },
         );
         messages.add(
           ChatMessage(text: ChatbotUi.undoDone(last.summary), isUser: false),
         );
         _lastExecutedCommand = null;
       } else {
-        messages.add(
-          ChatMessage(
-            text: ChatbotUi.undoMissing,
-            isUser: false,
-          ),
-        );
+        messages.add(ChatMessage(text: ChatbotUi.undoMissing, isUser: false));
       }
     } catch (_) {
-      messages.add(
-        ChatMessage(text: ChatbotUi.undoError, isUser: false),
-      );
+      messages.add(ChatMessage(text: ChatbotUi.undoError, isUser: false));
     }
     notifyListeners();
     _scrollToBottom();
@@ -180,12 +170,7 @@ class ChatbotViewModel extends BaseViewModel {
         final whatIfReply = _buildWhatIfReply(userMessage, contextData);
         messages.add(ChatMessage(text: whatIfReply, isUser: false));
       } catch (_) {
-        messages.add(
-          ChatMessage(
-            text: ChatbotUi.whatIfError,
-            isUser: false,
-          ),
-        );
+        messages.add(ChatMessage(text: ChatbotUi.whatIfError, isUser: false));
       } finally {
         isLoadingResponse = false;
         notifyListeners();
@@ -223,12 +208,7 @@ class ChatbotViewModel extends BaseViewModel {
         final subscriptionReply = _buildSubscriptionsReply(contextData);
         messages.add(ChatMessage(text: subscriptionReply, isUser: false));
       } catch (_) {
-        messages.add(
-          ChatMessage(
-            text: ChatbotUi.subsError,
-            isUser: false,
-          ),
-        );
+        messages.add(ChatMessage(text: ChatbotUi.subsError, isUser: false));
       } finally {
         isLoadingResponse = false;
         notifyListeners();
@@ -246,12 +226,7 @@ class ChatbotViewModel extends BaseViewModel {
         final insightReply = _buildInsightReply(contextData);
         messages.add(ChatMessage(text: insightReply, isUser: false));
       } catch (_) {
-        messages.add(
-          ChatMessage(
-            text: ChatbotUi.insightError,
-            isUser: false,
-          ),
-        );
+        messages.add(ChatMessage(text: ChatbotUi.insightError, isUser: false));
       } finally {
         isLoadingResponse = false;
         notifyListeners();
@@ -268,7 +243,9 @@ class ChatbotViewModel extends BaseViewModel {
       // Get all data from database
       final contextData = await _getAllDatabaseContext();
       contextData['financial_insights'] = _buildFinancialInsights(contextData);
-      contextData['subscription_insights'] = _buildSubscriptionInsights(contextData);
+      contextData['subscription_insights'] = _buildSubscriptionInsights(
+        contextData,
+      );
 
       // Build the complete prompt with system instructions and user message
       final completePrompt = _buildCompletePrompt(contextData, userMessage);
@@ -280,10 +257,7 @@ class ChatbotViewModel extends BaseViewModel {
       messages.add(ChatMessage(text: response, isUser: false));
     } catch (e) {
       messages.add(
-        ChatMessage(
-          text: ChatbotUi.genericProcessError,
-          isUser: false,
-        ),
+        ChatMessage(text: ChatbotUi.genericProcessError, isUser: false),
       );
     } finally {
       isLoadingResponse = false;
@@ -298,13 +272,15 @@ class ChatbotViewModel extends BaseViewModel {
     }
 
     final q = message.trim().toLowerCase();
-    final isConfirm = q == 'تأكيد' ||
+    final isConfirm =
+        q == 'تأكيد' ||
         q == 'confirm' ||
         q == 'yes' ||
         q == 'ok' ||
         q == 'نفذ' ||
         q == 'نفّذ';
-    final isCancel = q == 'إلغاء' ||
+    final isCancel =
+        q == 'إلغاء' ||
         q == 'الغاء' ||
         q == 'cancel' ||
         q == 'no' ||
@@ -318,7 +294,10 @@ class ChatbotViewModel extends BaseViewModel {
       await _auditLog(
         action: 'pending_command',
         status: 'cancelled',
-        payload: {'type': _pendingCommandType.toString(), 'payload': _pendingCommandPayload},
+        payload: {
+          'type': _pendingCommandType.toString(),
+          'payload': _pendingCommandPayload,
+        },
       );
       _pendingCommandType = null;
       _pendingCommandPayload = null;
@@ -370,9 +349,7 @@ class ChatbotViewModel extends BaseViewModel {
           status: 'executed',
           payload: {'id': rowId, ...payload},
         );
-        return ChatbotUi.budgetCreatedOk(
-          payload['amount'].toStringAsFixed(0),
-        );
+        return ChatbotUi.budgetCreatedOk(payload['amount'].toStringAsFixed(0));
     }
   }
 
@@ -408,11 +385,7 @@ class ChatbotViewModel extends BaseViewModel {
         payload: _pendingCommandPayload,
       );
 
-      return ChatbotUi.previewGoal(
-        goalName,
-        amount.toStringAsFixed(0),
-        months,
-      );
+      return ChatbotUi.previewGoal(goalName, amount.toStringAsFixed(0), months);
     }
 
     // Example:
@@ -552,14 +525,19 @@ class ChatbotViewModel extends BaseViewModel {
     return ChatbotUi.insightBody(score, status, alertText);
   }
 
-  String _buildWhatIfReply(String userMessage, Map<String, dynamic> contextData) {
+  String _buildWhatIfReply(
+    String userMessage,
+    Map<String, dynamic> contextData,
+  ) {
     final amount = _extractFirstNumber(userMessage);
     if (amount == null || amount <= 0) {
       return ChatbotUi.whatIfNeedAmount;
     }
 
     final goalsRaw = contextData['goals'];
-    final goals = goalsRaw is List ? goalsRaw.cast<dynamic>() : const <dynamic>[];
+    final goals = goalsRaw is List
+        ? goalsRaw.cast<dynamic>()
+        : const <dynamic>[];
     if (goals.isEmpty) {
       return ChatbotUi.whatIfNoGoals;
     }
@@ -570,7 +548,8 @@ class ChatbotViewModel extends BaseViewModel {
     for (final g in goals) {
       if (g is! Map) continue;
       final target = double.tryParse((g['target'] ?? '0').toString()) ?? 0;
-      final current = double.tryParse((g['current_amount'] ?? '0').toString()) ?? 0;
+      final current =
+          double.tryParse((g['current_amount'] ?? '0').toString()) ?? 0;
       final remaining = target - current;
       if (remaining > 0 && remaining < nearestRemaining) {
         nearestRemaining = remaining;
@@ -583,8 +562,10 @@ class ChatbotViewModel extends BaseViewModel {
     }
 
     final name = (nearestGoal['name'] ?? ChatbotUi.nextGoalFallback).toString();
-    final target = double.tryParse((nearestGoal['target'] ?? '0').toString()) ?? 0;
-    final current = double.tryParse((nearestGoal['current_amount'] ?? '0').toString()) ?? 0;
+    final target =
+        double.tryParse((nearestGoal['target'] ?? '0').toString()) ?? 0;
+    final current =
+        double.tryParse((nearestGoal['current_amount'] ?? '0').toString()) ?? 0;
     final remaining = (target - current).clamp(0, double.infinity);
     final months = remaining / amount;
     final roundedMonths = months.ceil();
@@ -603,13 +584,16 @@ class ChatbotViewModel extends BaseViewModel {
 
   String _buildGoalOptimizerReply(Map<String, dynamic> contextData) {
     final goalsRaw = contextData['goals'];
-    final goals = goalsRaw is List ? goalsRaw.cast<dynamic>() : const <dynamic>[];
+    final goals = goalsRaw is List
+        ? goalsRaw.cast<dynamic>()
+        : const <dynamic>[];
     if (goals.isEmpty) {
       return ChatbotUi.optimizerNoGoals;
     }
 
     final insights = _buildFinancialInsights(contextData);
-    final monthlyBalance = (insights['monthly_balance'] as num?)?.toDouble() ?? 0;
+    final monthlyBalance =
+        (insights['monthly_balance'] as num?)?.toDouble() ?? 0;
     final monthlySavings = monthlyBalance > 0 ? monthlyBalance : 0;
     if (monthlySavings <= 0) {
       return ChatbotUi.optimizerNoSurplus;
@@ -621,11 +605,14 @@ class ChatbotViewModel extends BaseViewModel {
       final rawName = (g['name'] ?? '').toString().trim();
       final name = rawName.isEmpty ? ChatbotUi.defaultGoalWord : rawName;
       final target = double.tryParse((g['target'] ?? '0').toString()) ?? 0;
-      final current = double.tryParse((g['current_amount'] ?? '0').toString()) ?? 0;
+      final current =
+          double.tryParse((g['current_amount'] ?? '0').toString()) ?? 0;
       final remaining = target - current;
       if (remaining <= 0) continue;
       final endDate = DateTime.tryParse((g['end_date'] ?? '').toString());
-      final daysLeft = endDate == null ? 365 : endDate.difference(DateTime.now()).inDays;
+      final daysLeft = endDate == null
+          ? 365
+          : endDate.difference(DateTime.now()).inDays;
       parsed.add({
         'name': name,
         'remaining': remaining,
@@ -637,7 +624,9 @@ class ChatbotViewModel extends BaseViewModel {
       return ChatbotUi.optimizerGoalsDone;
     }
 
-    parsed.sort((a, b) => (a['daysLeft'] as int).compareTo(b['daysLeft'] as int));
+    parsed.sort(
+      (a, b) => (a['daysLeft'] as int).compareTo(b['daysLeft'] as int),
+    );
     final weights = parsed.map((g) => 1 / (g['daysLeft'] as int)).toList();
     final totalWeight = weights.reduce((a, b) => a + b);
 
@@ -665,7 +654,9 @@ class ChatbotViewModel extends BaseViewModel {
     return double.tryParse(match.group(1)!);
   }
 
-  Map<String, dynamic> _buildFinancialInsights(Map<String, dynamic> contextData) {
+  Map<String, dynamic> _buildFinancialInsights(
+    Map<String, dynamic> contextData,
+  ) {
     final txRaw = contextData['transactions'];
     final tx = txRaw is List ? txRaw.cast<dynamic>() : const <dynamic>[];
     final now = DateTime.now();
@@ -695,7 +686,9 @@ class ChatbotViewModel extends BaseViewModel {
 
     final monthlyBalance = monthlyIncome - monthlyExpense;
     int score = 50;
-    final savingsRate = monthlyIncome <= 0 ? 0.0 : (monthlyBalance / monthlyIncome);
+    final savingsRate = monthlyIncome <= 0
+        ? 0.0
+        : (monthlyBalance / monthlyIncome);
     if (savingsRate >= 0.30) {
       score += 30;
     } else if (savingsRate >= 0.20) {
@@ -745,19 +738,25 @@ class ChatbotViewModel extends BaseViewModel {
       0,
       (sum, item) => sum + ((item['avg_amount'] as num?)?.toDouble() ?? 0),
     );
-    final lines = items.take(5).map((item) {
-      final name = item['label'].toString();
-      final amount = ((item['avg_amount'] as num?)?.toDouble() ?? 0).toStringAsFixed(0);
-      final count = item['count'] is int
-          ? item['count'] as int
-          : int.tryParse(item['count'].toString()) ?? 0;
-      return ChatbotUi.subsLine(name, amount, count);
-    }).join('\n');
+    final lines = items
+        .take(5)
+        .map((item) {
+          final name = item['label'].toString();
+          final amount = ((item['avg_amount'] as num?)?.toDouble() ?? 0)
+              .toStringAsFixed(0);
+          final count = item['count'] is int
+              ? item['count'] as int
+              : int.tryParse(item['count'].toString()) ?? 0;
+          return ChatbotUi.subsLine(name, amount, count);
+        })
+        .join('\n');
 
     return ChatbotUi.subsSummary(lines, total.toStringAsFixed(0));
   }
 
-  Map<String, dynamic> _buildSubscriptionInsights(Map<String, dynamic> contextData) {
+  Map<String, dynamic> _buildSubscriptionInsights(
+    Map<String, dynamic> contextData,
+  ) {
     final txRaw = contextData['transactions'];
     final tx = txRaw is List ? txRaw.cast<dynamic>() : const <dynamic>[];
     final bucket = <String, List<double>>{};
@@ -770,8 +769,9 @@ class ChatbotViewModel extends BaseViewModel {
       if (amount <= 0) continue;
 
       final rawNotes = (item['notes'] ?? '').toString().trim();
-      final label =
-          rawNotes.isEmpty ? ChatbotUi.unnamedRecurring : rawNotes.toLowerCase();
+      final label = rawNotes.isEmpty
+          ? ChatbotUi.unnamedRecurring
+          : rawNotes.toLowerCase();
       bucket.putIfAbsent(label, () => <double>[]).add(amount);
     }
 
@@ -779,7 +779,9 @@ class ChatbotViewModel extends BaseViewModel {
     bucket.forEach((label, amounts) {
       if (amounts.length < 2) return;
       final avg = amounts.reduce((a, b) => a + b) / amounts.length;
-      final varianceOk = amounts.every((a) => (a - avg).abs() <= (avg * 0.15 + 2));
+      final varianceOk = amounts.every(
+        (a) => (a - avg).abs() <= (avg * 0.15 + 2),
+      );
       if (!varianceOk) return;
       subscriptions.add({
         'label': label,
@@ -788,8 +790,11 @@ class ChatbotViewModel extends BaseViewModel {
       });
     });
 
-    subscriptions.sort((a, b) => ((b['avg_amount'] as num).toDouble())
-        .compareTo((a['avg_amount'] as num).toDouble()));
+    subscriptions.sort(
+      (a, b) => ((b['avg_amount'] as num).toDouble()).compareTo(
+        (a['avg_amount'] as num).toDouble(),
+      ),
+    );
 
     return {'subscriptions': subscriptions};
   }
@@ -806,22 +811,14 @@ class ChatbotViewModel extends BaseViewModel {
         expense: (insights['monthly_expense'] as num?)?.toDouble() ?? 0,
         balance: (insights['monthly_balance'] as num?)?.toDouble() ?? 0,
         healthScore: (insights['score'] as int?) ?? 0,
-        alerts: (insights['alerts'] as List<dynamic>).map((e) => e.toString()).toList(),
+        alerts: (insights['alerts'] as List<dynamic>)
+            .map((e) => e.toString())
+            .toList(),
         categoryBreakdown: categoryBreakdown,
       );
-      messages.add(
-        ChatMessage(
-          text: ChatbotUi.pdfOk,
-          isUser: false,
-        ),
-      );
+      messages.add(ChatMessage(text: ChatbotUi.pdfOk, isUser: false));
     } catch (_) {
-      messages.add(
-        ChatMessage(
-          text: ChatbotUi.pdfFail,
-          isUser: false,
-        ),
-      );
+      messages.add(ChatMessage(text: ChatbotUi.pdfFail, isUser: false));
     } finally {
       isLoadingResponse = false;
       notifyListeners();
@@ -852,8 +849,9 @@ class ChatbotViewModel extends BaseViewModel {
     final txRaw = contextData['transactions'];
     final tx = txRaw is List ? txRaw.cast<dynamic>() : const <dynamic>[];
     final categoriesRaw = contextData['categories'];
-    final categories =
-        categoriesRaw is List ? categoriesRaw.cast<dynamic>() : const <dynamic>[];
+    final categories = categoriesRaw is List
+        ? categoriesRaw.cast<dynamic>()
+        : const <dynamic>[];
 
     final catMap = <int, String>{};
     for (final c in categories) {
@@ -900,15 +898,22 @@ class ChatbotViewModel extends BaseViewModel {
               children: [
                 TextFormField(
                   controller: nameCtrl,
-                  decoration: InputDecoration(labelText: ChatbotUi.dlgGoalNameLabel),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? ChatbotUi.requiredField : null,
+                  decoration: InputDecoration(
+                    labelText: ChatbotUi.dlgGoalNameLabel,
+                  ),
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? ChatbotUi.requiredField
+                      : null,
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: amountCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(labelText: ChatbotUi.dlgGoalTargetLabel),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: ChatbotUi.dlgGoalTargetLabel,
+                  ),
                   validator: (v) {
                     final n = double.tryParse(v ?? '');
                     if (n == null || n <= 0) return ChatbotUi.invalidNumber;
@@ -967,8 +972,12 @@ class ChatbotViewModel extends BaseViewModel {
             key: formKey,
             child: TextFormField(
               controller: amountCtrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(labelText: ChatbotUi.dlgMonthlyBudgetLabel),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                labelText: ChatbotUi.dlgMonthlyBudgetLabel,
+              ),
               validator: (v) {
                 final n = double.tryParse(v ?? '');
                 if (n == null || n <= 0) return ChatbotUi.invalidNumber;
@@ -1182,9 +1191,7 @@ class ChatbotViewModel extends BaseViewModel {
     Object? lastError;
 
     for (final url in _apiUrls) {
-      devLog(
-        '[Chatbot API] Trying $url (timeout: ${_apiTimeout.inSeconds}s)',
-      );
+      devLog('[Chatbot API] Trying $url (timeout: ${_apiTimeout.inSeconds}s)');
 
       for (final body in _candidatePayloads(content)) {
         try {
@@ -1195,6 +1202,7 @@ class ChatbotViewModel extends BaseViewModel {
                 headers: {
                   'Content-Type': 'application/json',
                   'Accept': 'application/json',
+                  'User-Agent': 'MudabbirFlutter/1.0',
                 },
                 body: jsonEncode(body),
               )
@@ -1330,12 +1338,7 @@ class ChatbotViewModel extends BaseViewModel {
 
   void clearMessages() {
     messages.clear();
-    messages.add(
-      ChatMessage(
-        text: ChatbotUi.chatCleared,
-        isUser: false,
-      ),
-    );
+    messages.add(ChatMessage(text: ChatbotUi.chatCleared, isUser: false));
     notifyListeners();
   }
 

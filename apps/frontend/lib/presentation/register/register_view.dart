@@ -87,211 +87,221 @@ class RegisterView extends ConsumerWidget {
             _buildModernBackground(context),
             Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 20,
+                ),
                 child: Column(
                   children: [
-                // App Logo/Icon & Header
-                Container(
-                  margin: const EdgeInsets.only(bottom: 30),
-                  child: Column(
-                    children: [
-                      // Container(
-                      //   width: 90,
-                      //   height: 90,
-                      //   decoration: BoxDecoration(
-                      //     gradient: LinearGradient(
-                      //       colors: [
-                      //         ColorManager.primary,
-                      //         ColorManager.darkPrimary,
-                      //       ],
-                      //     ),
-                      //     borderRadius: BorderRadius.circular(22),
-                      //     boxShadow: [
-                      //       BoxShadow(
-                      //         color: ColorManager.primary.withValues(alpha: 0.3),
-                      //         blurRadius: 20,
-                      //         offset: const Offset(0, 10),
-                      //       ),
-                      //     ],
-                      //   ),
-                      //   child: SvgPicture.asset(
-                      //     ImageAssets.onBoardingLogo2,
-                      //     fit: BoxFit.contain,
-                      //     width: 50,
-                      //     height: 50,
-                      //   ),
-                      // ),
-                      const SizedBox(height: 20),
-                      Text(
-                        AppStrings.createAccount,
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: scheme.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        AppStrings.registerSubtitle,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Register Form Card
-                Container(
-                  padding: const EdgeInsets.all(28),
-                  decoration: BoxDecoration(
-                    color: scheme.surface,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: scheme.outline.withValues(alpha: 0.25)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.06),
-                        blurRadius: 24,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // First Name Field
-                        _buildInputField(
-                          context: context,
-                          label: AppStrings.firstNameLabel,
-                          hint: AppStrings.firstNameHint,
-                          controller: _firstNameController,
-                          icon: Icons.person_outline,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'الاسم الأول مطلوب';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Email Field
-                        _buildInputField(
-                          context: context,
-                          label: AppStrings.emailLabel,
-                          hint: AppStrings.emailHint,
-                          controller: _emailController,
-                          icon: Icons.email_outlined,
-                          keyboardType: TextInputType.emailAddress,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'البريد الإلكتروني مطلوب';
-                            }
-                            if (!RegExp(
-                              r'^[^@]+@[^@]+\.[^@]+',
-                            ).hasMatch(value)) {
-                              return 'أدخل بريد إلكتروني صحيح';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Password Field
-                        _buildInputField(
-                          context: context,
-                          label: AppStrings.passwordLabel,
-                          hint: AppStrings.passwordHint,
-                          controller: _passwordController,
-                          icon: Icons.lock_outline,
-                          obscureText: true,
-                          validator: (value) {
-                            if (value == null || value.length < 6) {
-                              return 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Confirm Password Field
-                        _buildInputField(
-                          context: context,
-                          label: AppStrings.confirmPasswordLabel,
-                          hint: AppStrings.confirmPasswordHint,
-                          controller: _confirmPasswordController,
-                          icon: Icons.lock_outline,
-                          obscureText: true,
-                          validator: (value) {
-                            if (value != _passwordController.text) {
-                              return 'كلمتا المرور غير متطابقتين';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 32),
-
-                        // Register Button
-                        Container(
-                          height: 56,
-                          decoration: BoxDecoration(
-                            color: scheme.primary,
-                            borderRadius: BorderRadius.circular(18),
-                            boxShadow: [
-                              BoxShadow(
-                                color: scheme.primary.withValues(alpha: 0.24),
-                                blurRadius: 14,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
+                    // App Logo/Icon & Header
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 30),
+                      child: Column(
+                        children: [
+                          // Container(
+                          //   width: 90,
+                          //   height: 90,
+                          //   decoration: BoxDecoration(
+                          //     gradient: LinearGradient(
+                          //       colors: [
+                          //         ColorManager.primary,
+                          //         ColorManager.darkPrimary,
+                          //       ],
+                          //     ),
+                          //     borderRadius: BorderRadius.circular(22),
+                          //     boxShadow: [
+                          //       BoxShadow(
+                          //         color: ColorManager.primary.withValues(alpha: 0.3),
+                          //         blurRadius: 20,
+                          //         offset: const Offset(0, 10),
+                          //       ),
+                          //     ],
+                          //   ),
+                          //   child: SvgPicture.asset(
+                          //     ImageAssets.onBoardingLogo2,
+                          //     fit: BoxFit.contain,
+                          //     width: 50,
+                          //     height: 50,
+                          //   ),
+                          // ),
+                          const SizedBox(height: 20),
+                          Text(
+                            AppStrings.createAccount,
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: scheme.onSurface,
+                            ),
                           ),
-                          child: registerState.isLoading
-                              ? const Center(
-                                  child: CircularProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      ColorManager.white,
-                                    ),
-                                  ),
-                                )
-                              : ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.transparent,
-                                    shadowColor: Colors.transparent,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(18),
-                                    ),
-                                  ),
-                                  onPressed: () {
-                                    if (_formKey.currentState!.validate()) {
-                                      registerViewModel.register(
-                                        _firstNameController.text,
-                                        _emailController.text,
-                                        _passwordController.text,
-                                        _confirmPasswordController.text,
-                                      );
-                                    }
-                                  },
-                                  child: Text(
-                                    AppStrings.createAccountButton,
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: ColorManager.white,
-                                    ),
-                                  ),
-                                ),
-                        ),
-                      ],
+                          const SizedBox(height: 8),
+                          Text(
+                            AppStrings.registerSubtitle,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ),
 
-                const SizedBox(height: 24),
+                    // Register Form Card
+                    Container(
+                      padding: const EdgeInsets.all(28),
+                      decoration: BoxDecoration(
+                        color: scheme.surface,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: scheme.outline.withValues(alpha: 0.25),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 24,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // First Name Field
+                            _buildInputField(
+                              context: context,
+                              label: AppStrings.firstNameLabel,
+                              hint: AppStrings.firstNameHint,
+                              controller: _firstNameController,
+                              icon: Icons.person_outline,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'الاسم الأول مطلوب';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 24),
 
-                // Login Link
+                            // Email Field
+                            _buildInputField(
+                              context: context,
+                              label: AppStrings.emailLabel,
+                              hint: AppStrings.emailHint,
+                              controller: _emailController,
+                              icon: Icons.email_outlined,
+                              keyboardType: TextInputType.emailAddress,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'البريد الإلكتروني مطلوب';
+                                }
+                                if (!RegExp(
+                                  r'^[^@]+@[^@]+\.[^@]+',
+                                ).hasMatch(value)) {
+                                  return 'أدخل بريد إلكتروني صحيح';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 24),
+
+                            // Password Field
+                            _buildInputField(
+                              context: context,
+                              label: AppStrings.passwordLabel,
+                              hint: AppStrings.passwordHint,
+                              controller: _passwordController,
+                              icon: Icons.lock_outline,
+                              obscureText: true,
+                              validator: (value) {
+                                if (value == null || value.length < 6) {
+                                  return 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 24),
+
+                            // Confirm Password Field
+                            _buildInputField(
+                              context: context,
+                              label: AppStrings.confirmPasswordLabel,
+                              hint: AppStrings.confirmPasswordHint,
+                              controller: _confirmPasswordController,
+                              icon: Icons.lock_outline,
+                              obscureText: true,
+                              validator: (value) {
+                                if (value != _passwordController.text) {
+                                  return 'كلمتا المرور غير متطابقتين';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 32),
+
+                            // Register Button
+                            Container(
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: scheme.primary,
+                                borderRadius: BorderRadius.circular(18),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: scheme.primary.withValues(
+                                      alpha: 0.24,
+                                    ),
+                                    blurRadius: 14,
+                                    offset: const Offset(0, 8),
+                                  ),
+                                ],
+                              ),
+                              child: registerState.isLoading
+                                  ? const Center(
+                                      child: CircularProgressIndicator(
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              ColorManager.white,
+                                            ),
+                                      ),
+                                    )
+                                  : ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.transparent,
+                                        shadowColor: Colors.transparent,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            18,
+                                          ),
+                                        ),
+                                      ),
+                                      onPressed: () {
+                                        if (_formKey.currentState!.validate()) {
+                                          registerViewModel.register(
+                                            _firstNameController.text,
+                                            _emailController.text,
+                                            _passwordController.text,
+                                            _confirmPasswordController.text,
+                                          );
+                                        }
+                                      },
+                                      child: Text(
+                                        AppStrings.createAccountButton,
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: ColorManager.white,
+                                        ),
+                                      ),
+                                    ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Login Link
                     Container(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       child: Row(
@@ -324,9 +334,9 @@ class RegisterView extends ConsumerWidget {
                 ),
               ),
             ),
-        ],
+          ],
+        ),
       ),
-    ),
     );
   }
 

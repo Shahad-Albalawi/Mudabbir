@@ -4,7 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 // Hive keeps a copy for fast Dio reads; this is the durable encrypted backup.
 class AuthTokenSecureStore {
   AuthTokenSecureStore({FlutterSecureStorage? storage})
-      : _storage = storage ?? const FlutterSecureStorage();
+    : _storage = storage ?? const FlutterSecureStorage();
 
   static const _key = 'mudabbir.auth.bearer_token';
 

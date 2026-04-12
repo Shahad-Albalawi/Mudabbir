@@ -216,10 +216,7 @@ class _MilestoneDialogState extends State<MilestoneDialog>
               // Message
               Text(
                 info.message,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: scheme.onSurfaceVariant,
-                ),
+                style: TextStyle(fontSize: 16, color: scheme.onSurfaceVariant),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),

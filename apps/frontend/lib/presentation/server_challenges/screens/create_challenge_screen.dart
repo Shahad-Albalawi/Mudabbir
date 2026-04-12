@@ -89,13 +89,17 @@ class _CreateChallengeScreenState extends ConsumerState<CreateChallengeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildSectionTitle(ServerChallengeStrings.sectionDetails),
+                          _buildSectionTitle(
+                            ServerChallengeStrings.sectionDetails,
+                          ),
                           const SizedBox(height: 16),
                           _buildNameField(),
                           const SizedBox(height: 16),
                           _buildAmountField(),
                           const SizedBox(height: 24),
-                          _buildSectionTitle(ServerChallengeStrings.sectionSchedule),
+                          _buildSectionTitle(
+                            ServerChallengeStrings.sectionSchedule,
+                          ),
                           const SizedBox(height: 16),
                           _buildDateFields(context),
                           const SizedBox(height: 40),

@@ -94,9 +94,10 @@ class ChallengePopup {
                               ServerChallengeStrings.localPopupSubtitle,
                               style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onPrimary.withValues(alpha: 0.8),
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimary
+                                        .withValues(alpha: 0.8),
                                   ),
                             ),
                           ],
@@ -122,10 +123,9 @@ class ChallengePopup {
                           controller: nameCtrl,
                           label: ServerChallengeStrings.localNameHint,
                           icon: Icons.text_fields,
-                          validator: (val) =>
-                              val == null || val.isEmpty
-                                  ? ServerChallengeStrings.localNameRequired
-                                  : null,
+                          validator: (val) => val == null || val.isEmpty
+                              ? ServerChallengeStrings.localNameRequired
+                              : null,
                         ),
                         const SizedBox(height: 20),
 
@@ -140,10 +140,9 @@ class ChallengePopup {
                           items: statuses,
                           itemLabel: ServerChallengeStrings.localStatusLabel,
                           onChanged: (val) => selectedStatus = val,
-                          validator: (val) =>
-                              val == null
-                                  ? ServerChallengeStrings.localStatusRequired
-                                  : null,
+                          validator: (val) => val == null
+                              ? ServerChallengeStrings.localStatusRequired
+                              : null,
                         ),
                         const SizedBox(height: 20),
 

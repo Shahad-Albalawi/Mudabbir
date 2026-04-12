@@ -435,9 +435,7 @@ ThemeData getApplicationDarkTheme() {
       ),
     ),
     textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(
-        foregroundColor: scheme.primary,
-      ),
+      style: TextButton.styleFrom(foregroundColor: scheme.primary),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
@@ -526,10 +524,7 @@ ThemeData getApplicationDarkTheme() {
         color: scheme.onSurface,
         fontSize: FontSize.s16,
       ),
-      titleSmall: getMediumStyle(
-        color: scheme.primary,
-        fontSize: FontSize.s14,
-      ),
+      titleSmall: getMediumStyle(color: scheme.primary, fontSize: FontSize.s14),
       bodyLarge: getRegularStyle(
         color: scheme.onSurface,
         fontSize: FontSize.s16,

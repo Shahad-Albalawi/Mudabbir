@@ -39,9 +39,10 @@ class _IOSEmptyStateState extends State<IOSEmptyState>
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
     _controller.forward();
   }
 
@@ -72,11 +73,7 @@ class _IOSEmptyStateState extends State<IOSEmptyState>
                   IOSStyleConstants.radiusXLarge,
                 ),
               ),
-              child: Icon(
-                widget.icon,
-                size: 48,
-                color: color,
-              ),
+              child: Icon(widget.icon, size: 48, color: color),
             ),
             const SizedBox(height: 24),
             Text(
@@ -91,10 +88,7 @@ class _IOSEmptyStateState extends State<IOSEmptyState>
             const SizedBox(height: 8),
             Text(
               widget.subtitle,
-              style: TextStyle(
-                fontSize: 15,
-                color: scheme.onSurfaceVariant,
-              ),
+              style: TextStyle(fontSize: 15, color: scheme.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),
             if (widget.buttonLabel != null && widget.onPressed != null) ...[

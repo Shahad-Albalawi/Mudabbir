@@ -56,9 +56,7 @@ class _IOSPressableState extends State<IOSPressable> {
       behavior: HitTestBehavior.opaque,
       child: AnimatedScale(
         scale: _isPressed ? widget.scaleDown : 1.0,
-        duration: const Duration(
-          milliseconds: IOSStyleConstants.durationFast,
-        ),
+        duration: const Duration(milliseconds: IOSStyleConstants.durationFast),
         curve: Curves.easeOutCubic,
         child: widget.child,
       ),

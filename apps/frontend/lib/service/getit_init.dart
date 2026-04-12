@@ -27,7 +27,9 @@ GetIt getIt = GetIt.instance;
 
 void setupLocator() {
   getIt.registerLazySingleton<NavigationService>(() => NavigationService());
-  getIt.registerLazySingleton<AuthTokenSecureStore>(() => AuthTokenSecureStore());
+  getIt.registerLazySingleton<AuthTokenSecureStore>(
+    () => AuthTokenSecureStore(),
+  );
   getIt.registerLazySingleton<AppThemeController>(() => AppThemeController());
   getIt.registerLazySingleton<AppLanguageController>(
     () => AppLanguageController(),

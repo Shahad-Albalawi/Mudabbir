@@ -14,7 +14,7 @@ class AnalysisState {
   final double savingsRate;
   final bool isLoading;
 
-  AnalysisState({
+  const AnalysisState({
     this.financialHealthRating = '',
     this.healthScore = 0,
     this.savingsAnalysis = '',
@@ -52,36 +52,35 @@ class AnalysisState {
   }
 }
 
-final analysisProvider =
-    StateNotifierProvider<AnalysisViewModel, AnalysisState>((ref) {
-      final stats = ref.watch(statisticsProvider);
-      return AnalysisViewModel(stats);
-    });
-
-class AnalysisViewModel extends StateNotifier<AnalysisState> {
-  final StatisticsState statistics;
-
-  AnalysisViewModel(this.statistics) : super(AnalysisState()) {
-    analyzeFinancialBehavior();
+/// Derived from [statisticsProvider] whenever stats finish loading (no stale StateNotifier).
+final analysisProvider = Provider<AnalysisState>((ref) {
+  final stats = ref.watch(statisticsProvider);
+  if (stats.isLoading) {
+    return const AnalysisState(isLoading: true);
   }
+  return AnalysisLogic.fromStatistics(stats);
+});
 
-  void analyzeFinancialBehavior() {
-    state = state.copyWith(isLoading: true);
+/// Pure analysis from SQLite aggregates (see [StatisticsViewModel]).
+class AnalysisLogic {
+  AnalysisLogic._();
 
+  static AnalysisState fromStatistics(StatisticsState statistics) {
     try {
-      final savingsRate = _calculateSavingsRate();
-      final balanceStatus = _analyzeBalance();
-      final spendingAnalysis = _analyzeSpending();
+      final savingsRate = _calculateSavingsRate(statistics);
+      final balanceStatus = _analyzeBalance(statistics);
+      final spendingAnalysis = _analyzeSpending(statistics);
       final savingsAnalysis = _analyzeSavings(savingsRate);
-      final categoryInsights = _analyzeCategorySpending();
-      final healthScore = _calculateHealthScore(savingsRate);
+      final categoryInsights = _analyzeCategorySpending(statistics);
+      final healthScore = _calculateHealthScore(statistics, savingsRate);
       final healthRating = _getHealthRating(healthScore);
       final recommendations = _generateRecommendations(
+        statistics,
         savingsRate,
         healthScore,
       );
 
-      state = state.copyWith(
+      return AnalysisState(
         financialHealthRating: healthRating,
         healthScore: healthScore,
         savingsAnalysis: savingsAnalysis,
@@ -92,36 +91,38 @@ class AnalysisViewModel extends StateNotifier<AnalysisState> {
         savingsRate: savingsRate,
         isLoading: false,
       );
-    } catch (e) {
-      state = state.copyWith(isLoading: false);
+    } catch (_) {
+      return const AnalysisState(isLoading: false);
     }
   }
 
-  double _calculateSavingsRate() {
+  static double _calculateSavingsRate(StatisticsState statistics) {
     if (statistics.totalIncome == 0) return 0;
     final saved = statistics.totalIncome - statistics.totalExpense;
     return (saved / statistics.totalIncome) * 100;
   }
 
-  String _analyzeBalance() {
+  static String _analyzeBalance(StatisticsState statistics) {
     return AnalysisCopy.balanceAnalysis(
       statistics.currentBalance,
       statistics.totalIncome,
     );
   }
 
-  String _analyzeSpending() {
+  static String _analyzeSpending(StatisticsState statistics) {
     final expenseRatio = statistics.totalIncome == 0
         ? 100.0
         : (statistics.totalExpense / statistics.totalIncome) * 100;
     return AnalysisCopy.spendingAnalysis(expenseRatio);
   }
 
-  String _analyzeSavings(double savingsRate) {
+  static String _analyzeSavings(double savingsRate) {
     return AnalysisCopy.savingsAnalysis(savingsRate);
   }
 
-  Map<String, String> _analyzeCategorySpending() {
+  static Map<String, String> _analyzeCategorySpending(
+    StatisticsState statistics,
+  ) {
     final insights = <String, String>{};
     if (statistics.totalExpense == 0) return insights;
 
@@ -133,7 +134,10 @@ class AnalysisViewModel extends StateNotifier<AnalysisState> {
     return insights;
   }
 
-  double _calculateHealthScore(double savingsRate) {
+  static double _calculateHealthScore(
+    StatisticsState statistics,
+    double savingsRate,
+  ) {
     double score = 0;
 
     if (savingsRate >= 30) {
@@ -187,11 +191,12 @@ class AnalysisViewModel extends StateNotifier<AnalysisState> {
     return score.clamp(0, 100);
   }
 
-  String _getHealthRating(double score) {
+  static String _getHealthRating(double score) {
     return AnalysisCopy.healthRating(score);
   }
 
-  List<String> _generateRecommendations(
+  static List<String> _generateRecommendations(
+    StatisticsState statistics,
     double savingsRate,
     double healthScore,
   ) {

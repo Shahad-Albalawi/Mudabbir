@@ -40,10 +40,7 @@ class ApiService {
         final userJson = json['user'];
         final user = UserModel.fromJson(userJson);
 
-        storeTokenAndUser(
-          user,
-          _plainTokenFromAuthJson(json['token']),
-        );
+        storeTokenAndUser(user, _plainTokenFromAuthJson(json['token']));
         return user;
       },
     );
@@ -68,10 +65,7 @@ class ApiService {
         final userJson = json['user'];
         final user = UserModel.fromJson(userJson);
 
-        storeTokenAndUser(
-          user,
-          _plainTokenFromAuthJson(json['token']),
-        );
+        storeTokenAndUser(user, _plainTokenFromAuthJson(json['token']));
         return user;
       },
     );

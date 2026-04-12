@@ -292,7 +292,8 @@ class _ChallengesListScreenState extends ConsumerState<ChallengesListScreen>
 
   Widget _buildError(String message) {
     final lower = message.toLowerCase();
-    final isServerError = lower.contains('server') ||
+    final isServerError =
+        lower.contains('server') ||
         lower.contains('500') ||
         lower.contains('خادم') ||
         lower.contains('unavailable');
@@ -309,7 +310,9 @@ class _ChallengesListScreenState extends ConsumerState<ChallengesListScreen>
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                isServerError ? Icons.cloud_off_rounded : Icons.error_outline_rounded,
+                isServerError
+                    ? Icons.cloud_off_rounded
+                    : Icons.error_outline_rounded,
                 size: 64,
                 color: ColorManager.error.withValues(alpha: 0.8),
               ),
@@ -347,7 +350,10 @@ class _ChallengesListScreenState extends ConsumerState<ChallengesListScreen>
               icon: const Icon(Icons.refresh_rounded, size: 20),
               label: Text(ServerChallengeStrings.retry),
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 14,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),

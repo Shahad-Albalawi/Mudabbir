@@ -1,6 +1,6 @@
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 
-/// Localized copy for [AnalysisViewModel] outputs.
+/// Localized copy for [AnalysisLogic] / analysis screen outputs.
 class AnalysisCopy {
   AnalysisCopy._();
 
@@ -171,16 +171,22 @@ class AnalysisCopy {
     final r = <String>[];
     if (_en) {
       if (savingsRate < 0) {
-        r.add('🚨 Urgent: Build an emergency budget. Cut all non-essential spending now.');
+        r.add(
+          '🚨 Urgent: Build an emergency budget. Cut all non-essential spending now.',
+        );
         r.add('💡 Consider extra income sources to cover the gap.');
       } else if (savingsRate < 10) {
         r.add('📊 Increase savings by trimming discretionary spending.');
         r.add('💰 Aim to save at least 10–20% of income.');
       } else if (savingsRate < 20) {
-        r.add('✨ You save well! Try pushing toward 20% for optimal financial health.');
+        r.add(
+          '✨ You save well! Try pushing toward 20% for optimal financial health.',
+        );
       }
       if (negativeBalance) {
-        r.add('⚠️ Make a debt payoff plan. Clear debt before other money goals.');
+        r.add(
+          '⚠️ Make a debt payoff plan. Clear debt before other money goals.',
+        );
       } else if (lowBalanceVsIncome) {
         r.add('🎯 Build an emergency fund covering 3–6 months of expenses.');
       }
@@ -195,7 +201,9 @@ class AnalysisCopy {
       if (noGoals) {
         r.add('🎯 Set financial goals to stay motivated and track progress.');
       } else if (lowProgressGoalLabels.isNotEmpty) {
-        r.add('📈 Increase contributions toward: ${lowProgressGoalLabels.join(', ')}.');
+        r.add(
+          '📈 Increase contributions toward: ${lowProgressGoalLabels.join(', ')}.',
+        );
       }
       if (noBudgets) {
         r.add('📝 Create budgets per category to control spending better.');
@@ -210,16 +218,22 @@ class AnalysisCopy {
       return r;
     }
     if (savingsRate < 0) {
-      r.add('🚨 عاجل: أنشئ خطة ميزانية طوارئ. قلل جميع النفقات غير الأساسية فوراً.');
+      r.add(
+        '🚨 عاجل: أنشئ خطة ميزانية طوارئ. قلل جميع النفقات غير الأساسية فوراً.',
+      );
       r.add('💡 فكر في مصادر دخل إضافية أو عمل بدوام جزئي لتغطية العجز.');
     } else if (savingsRate < 10) {
       r.add('📊 زد معدل ادخارك من خلال تقليل الإنفاق التقديري.');
       r.add('💰 اهدف لادخار 10-20% على الأقل من دخلك للأمان المالي.');
     } else if (savingsRate < 20) {
-      r.add('✨ أنت تدخر بشكل جيد! حاول دفع معدل ادخارك إلى 20% للصحة المالية المثلى.');
+      r.add(
+        '✨ أنت تدخر بشكل جيد! حاول دفع معدل ادخارك إلى 20% للصحة المالية المثلى.',
+      );
     }
     if (negativeBalance) {
-      r.add('⚠️ أنشئ خطة لسداد الديون. ركز على إلغاء الديون قبل الأهداف المالية الأخرى.');
+      r.add(
+        '⚠️ أنشئ خطة لسداد الديون. ركز على إلغاء الديون قبل الأهداف المالية الأخرى.',
+      );
     } else if (lowBalanceVsIncome) {
       r.add('🎯 ابنِ صندوق طوارئ يغطي 3-6 أشهر من النفقات.');
     }

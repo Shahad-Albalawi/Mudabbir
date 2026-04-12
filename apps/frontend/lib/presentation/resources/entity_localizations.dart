@@ -17,10 +17,7 @@ class EntityLocalizations {
     'ترفيه': 'Entertainment',
   };
 
-  static const _accounts = <String, String>{
-    'النقدية': 'Cash',
-    'البنك': 'Bank',
-  };
+  static const _accounts = <String, String>{'النقدية': 'Cash', 'البنك': 'Bank'};
 
   static const _challengeStatus = <String, String>{
     'نشط': 'Active',

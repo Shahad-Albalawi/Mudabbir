@@ -6,14 +6,14 @@ extension AppThemeContext on BuildContext {
 
   /// Elevated card shadow — softer in light mode, subtle depth in dark.
   List<BoxShadow> get appCardShadow => [
-        BoxShadow(
-          color: appColors.brightness == Brightness.dark
-              ? Colors.black.withValues(alpha: 0.42)
-              : const Color(0x08000000),
-          blurRadius: 16,
-          offset: const Offset(0, 4),
-        ),
-      ];
+    BoxShadow(
+      color: appColors.brightness == Brightness.dark
+          ? Colors.black.withValues(alpha: 0.42)
+          : const Color(0x08000000),
+      blurRadius: 16,
+      offset: const Offset(0, 4),
+    ),
+  ];
 
   Color primarySoft(double opacity) =>
       appColors.primary.withValues(alpha: opacity);

@@ -43,7 +43,9 @@ class FinancialReportService {
               ),
               pw.SizedBox(height: 8),
               pw.Bullet(text: 'Total income: ${income.toStringAsFixed(2)} SAR'),
-              pw.Bullet(text: 'Total expense: ${expense.toStringAsFixed(2)} SAR'),
+              pw.Bullet(
+                text: 'Total expense: ${expense.toStringAsFixed(2)} SAR',
+              ),
               pw.Bullet(text: 'Net balance: ${balance.toStringAsFixed(2)} SAR'),
               pw.Bullet(text: 'Financial health score: $healthScore/100'),
               pw.SizedBox(height: 16),

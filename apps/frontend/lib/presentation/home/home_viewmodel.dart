@@ -72,11 +72,7 @@ class HomeViewModel extends StateNotifier<HomeState> {
     loadFinancialSummary();
   }
 
-  List<Widget> pages = [
-    ExploreView(),
-    StatisticsView(),
-    GoalView(),
-  ];
+  List<Widget> pages = [ExploreView(), StatisticsView(), GoalView()];
 
   final HomeRepository homeRepository = getIt<HomeRepository>();
 
@@ -84,13 +80,14 @@ class HomeViewModel extends StateNotifier<HomeState> {
     final user = await getIt<HiveService>().getValue(
       HiveConstants.savedUserInfo,
     );
-    final userName = (user is Map &&
+    final userName =
+        (user is Map &&
             user[HiveConstants.userInfoLocalDbKey] != null &&
             user[HiveConstants.userInfoLocalDbKey].toString().trim().isNotEmpty)
         ? user[HiveConstants.userInfoLocalDbKey].toString().trim()
         : (user is Map && user['name'] != null)
-            ? user['name'].toString()
-            : 'guest_user';
+        ? user['name'].toString()
+        : 'guest_user';
     await LocalDatabase.instance.initForUser(userName);
 
     // All-time
@@ -126,7 +123,9 @@ class HomeViewModel extends StateNotifier<HomeState> {
       monthlyExpense: monthlyExpense,
       previousMonthExpense: previousMonthExpense,
     );
-    final nextMonthBudgetSuggestion = await _buildNextMonthBudgetSuggestion(now);
+    final nextMonthBudgetSuggestion = await _buildNextMonthBudgetSuggestion(
+      now,
+    );
 
     state = state.copyWith(
       totalIncome: income,
@@ -175,7 +174,9 @@ class HomeViewModel extends StateNotifier<HomeState> {
     }
 
     int score = 50;
-    final savingsRate = monthlyIncome <= 0 ? 0.0 : (monthlyBalance / monthlyIncome);
+    final savingsRate = monthlyIncome <= 0
+        ? 0.0
+        : (monthlyBalance / monthlyIncome);
 
     if (savingsRate >= 0.30) {
       score += 30;
@@ -214,7 +215,8 @@ class HomeViewModel extends StateNotifier<HomeState> {
     }
 
     if (previousMonthExpense > 0) {
-      final growth = (monthlyExpense - previousMonthExpense) / previousMonthExpense;
+      final growth =
+          (monthlyExpense - previousMonthExpense) / previousMonthExpense;
       if (growth >= 0.25) {
         final pct = (growth * 100).toStringAsFixed(0);
         alerts.add(

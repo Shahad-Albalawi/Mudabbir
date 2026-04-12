@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:mudabbir/presentation/resources/network_messages.dart';
 import 'package:mudabbir/presentation/server_challenges/services/api_exception_localizations.dart';
@@ -17,8 +19,7 @@ class ApiException implements Exception {
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
         return ApiException(
-          message:
-              'Connection timed out. Check your internet and try again.',
+          message: 'Connection timed out. Check your internet and try again.',
           statusCode: null,
         );
 
@@ -34,7 +35,7 @@ class ApiException implements Exception {
       case DioExceptionType.connectionError:
         return ApiException(
           message:
-              'No internet connection. Check your network and try again.',
+              'Unable to reach the finance server. Check internet or try again later.',
           statusCode: null,
         );
 
@@ -45,6 +46,14 @@ class ApiException implements Exception {
         );
 
       case DioExceptionType.unknown:
+        final err = error.error;
+        if (err is SocketException) {
+          return ApiException(
+            message:
+                'Unable to reach the finance server. Check internet or try again later.',
+            statusCode: null,
+          );
+        }
         return ApiException(
           message: 'Something went wrong. Please try again.',
           statusCode: null,
@@ -92,10 +101,7 @@ class ApiException implements Exception {
           statusCode: statusCode,
         );
       case 403:
-        return ApiException(
-          message: 'Access denied.',
-          statusCode: statusCode,
-        );
+        return ApiException(message: 'Access denied.', statusCode: statusCode);
       case 404:
         return ApiException(
           message: 'Resource not found.',
@@ -109,6 +115,13 @@ class ApiException implements Exception {
       case 500:
         return ApiException(
           message: 'The server had an error. Please try again later.',
+          statusCode: statusCode,
+        );
+      case 503:
+      case 530:
+        return ApiException(
+          message:
+              'The finance server is temporarily unavailable. Please try again later.',
           statusCode: statusCode,
         );
       default:

@@ -12,7 +12,7 @@ class OnBoardingViewModel extends StateNotifier<SliderViewObject> {
   int _currentIndex = 0;
 
   OnBoardingViewModel()
-      : super(
+    : super(
         SliderViewObject(
           SliderObject(
             AppStrings.onBoardingTitle1,

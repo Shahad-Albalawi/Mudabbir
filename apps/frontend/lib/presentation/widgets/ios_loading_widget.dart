@@ -9,11 +9,7 @@ class IOSLoadingWidget extends StatelessWidget {
   final double size;
   final bool useLottie;
 
-  const IOSLoadingWidget({
-    super.key,
-    this.size = 48,
-    this.useLottie = true,
-  });
+  const IOSLoadingWidget({super.key, this.size = 48, this.useLottie = true});
 
   @override
   Widget build(BuildContext context) {
@@ -21,10 +17,7 @@ class IOSLoadingWidget extends StatelessWidget {
       return SizedBox(
         width: size,
         height: size,
-        child: Lottie.asset(
-          'assets/lottie/loading.json',
-          fit: BoxFit.contain,
-        ),
+        child: Lottie.asset('assets/lottie/loading.json', fit: BoxFit.contain),
       );
     }
     return CupertinoActivityIndicator(
@@ -52,10 +45,7 @@ class IOSLoadingScreen extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               message!,
-              style: TextStyle(
-                color: scheme.onSurfaceVariant,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 14),
             ),
           ],
         ],

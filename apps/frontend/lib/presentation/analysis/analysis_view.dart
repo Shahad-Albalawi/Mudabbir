@@ -274,10 +274,7 @@ class AnalysisView extends ConsumerWidget {
       children: [
         Text(
           AppStrings.analysisCategoryInsightsTitle,
-          style: getBoldStyle(
-            fontSize: FontSize.s20,
-            color: scheme.onSurface,
-          ),
+          style: getBoldStyle(fontSize: FontSize.s20, color: scheme.onSurface),
         ),
         const SizedBox(height: 12),
         ...state.categoryInsights.entries.map((entry) {
@@ -348,10 +345,7 @@ class AnalysisView extends ConsumerWidget {
       children: [
         Text(
           AppStrings.analysisRecommendationsTitle,
-          style: getBoldStyle(
-            fontSize: FontSize.s20,
-            color: scheme.onSurface,
-          ),
+          style: getBoldStyle(fontSize: FontSize.s20, color: scheme.onSurface),
         ),
         const SizedBox(height: 12),
         ...state.recommendations.asMap().entries.map((entry) {
@@ -452,9 +446,7 @@ class AnalysisView extends ConsumerWidget {
 
   Color _getStatusColor(String description) {
     final d = description.toLowerCase();
-    if (d.startsWith('حرج') ||
-        d.startsWith('critical') ||
-        d.startsWith('🚨')) {
+    if (d.startsWith('حرج') || d.startsWith('critical') || d.startsWith('🚨')) {
       return ColorManager.error;
     }
     if (d.startsWith('تحذير') ||

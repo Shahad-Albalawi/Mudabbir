@@ -108,9 +108,7 @@ class ChallengeDetailNotifier extends StateNotifier<ChallengeDetailState> {
     } on ApiException catch (e) {
       state = ChallengeDetailError(e.getValidationMessage());
     } catch (e) {
-      state = ChallengeDetailError(
-        ServerChallengeStrings.unexpectedErrorLater,
-      );
+      state = ChallengeDetailError(ServerChallengeStrings.unexpectedErrorLater);
     }
   }
 
@@ -206,9 +204,7 @@ class ChallengeOperationNotifier
     } on ApiException catch (e) {
       state = ChallengeOperationError(e.getValidationMessage());
     } catch (e) {
-      state = ChallengeOperationError(
-        ServerChallengeStrings.unexpectedError,
-      );
+      state = ChallengeOperationError(ServerChallengeStrings.unexpectedError);
     }
   }
 
@@ -254,9 +250,7 @@ class ChallengeOperationNotifier
     } on ApiException catch (e) {
       state = ChallengeOperationError(e.getValidationMessage());
     } catch (e) {
-      state = ChallengeOperationError(
-        ServerChallengeStrings.unexpectedError,
-      );
+      state = ChallengeOperationError(ServerChallengeStrings.unexpectedError);
     }
   }
 
@@ -274,9 +268,7 @@ class ChallengeOperationNotifier
     } on ApiException catch (e) {
       state = ChallengeOperationError(e.getValidationMessage());
     } catch (e) {
-      state = ChallengeOperationError(
-        ServerChallengeStrings.unexpectedError,
-      );
+      state = ChallengeOperationError(ServerChallengeStrings.unexpectedError);
     }
   }
 
@@ -301,9 +293,7 @@ class ChallengeOperationNotifier
     } on ApiException catch (e) {
       state = ChallengeOperationError(e.getValidationMessage());
     } catch (e) {
-      state = ChallengeOperationError(
-        ServerChallengeStrings.unexpectedError,
-      );
+      state = ChallengeOperationError(ServerChallengeStrings.unexpectedError);
     }
   }
 
@@ -332,9 +322,7 @@ class PendingInvitationsNotifier extends StateNotifier<ChallengeState> {
     } on ApiException catch (e) {
       state = ChallengeError(e.getValidationMessage());
     } catch (e) {
-      state = ChallengeError(
-        ServerChallengeStrings.unexpectedError,
-      );
+      state = ChallengeError(ServerChallengeStrings.unexpectedError);
     }
   }
 

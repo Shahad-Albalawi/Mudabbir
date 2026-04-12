@@ -110,8 +110,9 @@ class _SummaryWidgetState extends ConsumerState<SummaryWidget>
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
-                      border:
-                          Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Material(
                       color: Colors.transparent,
@@ -177,9 +178,11 @@ class _SummaryWidgetState extends ConsumerState<SummaryWidget>
                       icon: Icons.trending_up_rounded,
                       iconColor: ColorManager.success,
                       label: AppStrings.totalIncome,
-                      amount: _formatAmount(showTotal
-                          ? homeState.totalIncome
-                          : homeState.monthlyIncome),
+                      amount: _formatAmount(
+                        showTotal
+                            ? homeState.totalIncome
+                            : homeState.monthlyIncome,
+                      ),
                       isPositive: true,
                     ),
                     const SizedBox(height: 12),
@@ -190,9 +193,11 @@ class _SummaryWidgetState extends ConsumerState<SummaryWidget>
                       icon: Icons.account_balance_wallet_rounded,
                       iconColor: scheme.primary,
                       label: AppStrings.currentBalance,
-                      amount: _formatAmount(showTotal
-                          ? homeState.currentBalance
-                          : homeState.monthlyBalance),
+                      amount: _formatAmount(
+                        showTotal
+                            ? homeState.currentBalance
+                            : homeState.monthlyBalance,
+                      ),
                       isBalance: true,
                     ),
                     const SizedBox(height: 12),
@@ -203,9 +208,11 @@ class _SummaryWidgetState extends ConsumerState<SummaryWidget>
                       icon: Icons.trending_down_rounded,
                       iconColor: ColorManager.error,
                       label: AppStrings.totalExpense,
-                      amount: _formatAmount(showTotal
-                          ? homeState.totalExpense
-                          : homeState.monthlyExpense),
+                      amount: _formatAmount(
+                        showTotal
+                            ? homeState.totalExpense
+                            : homeState.monthlyExpense,
+                      ),
                       isPositive: false,
                     ),
                   ],
@@ -321,7 +328,11 @@ class _SummaryWidgetState extends ConsumerState<SummaryWidget>
           ),
           child: Row(
             children: [
-              Icon(Icons.health_and_safety_rounded, color: scoreColor, size: 18),
+              Icon(
+                Icons.health_and_safety_rounded,
+                color: scoreColor,
+                size: 18,
+              ),
               const SizedBox(width: 8),
               Text(
                 '${AppStrings.financialHealth}: $score/100',
@@ -343,7 +354,11 @@ class _SummaryWidgetState extends ConsumerState<SummaryWidget>
                 children: [
                   const Padding(
                     padding: EdgeInsets.only(top: 2),
-                    child: Icon(Icons.warning_amber_rounded, color: Colors.white, size: 16),
+                    child: Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.white,
+                      size: 16,
+                    ),
                   ),
                   const SizedBox(width: 6),
                   Expanded(

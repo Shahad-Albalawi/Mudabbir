@@ -119,7 +119,9 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
                     center: Alignment.topRight,
                     radius: 1.5,
                     colors: [
-                      ColorManager.primary.withValues(alpha: 0.06 * _backgroundController.value),
+                      ColorManager.primary.withValues(
+                        alpha: 0.06 * _backgroundController.value,
+                      ),
                       Colors.transparent,
                     ],
                   ),
@@ -185,7 +187,9 @@ class ParticlePainter extends CustomPainter {
       final animatedY =
           (particle.y + animation.value * particle.speed * 100) % size.height;
 
-      paint.color = ColorManager.primary.withValues(alpha: particle.opacity * 0.3);
+      paint.color = ColorManager.primary.withValues(
+        alpha: particle.opacity * 0.3,
+      );
 
       canvas.drawCircle(Offset(particle.x, animatedY), particle.size, paint);
     }

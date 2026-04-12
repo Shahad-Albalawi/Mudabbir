@@ -142,10 +142,7 @@ class ExploreView extends ConsumerWidget {
               HapticService.light();
               await _showLanguagePicker(context);
             },
-            icon: Icon(
-              CupertinoIcons.globe,
-              color: ColorManager.primary,
-            ),
+            icon: Icon(CupertinoIcons.globe, color: ColorManager.primary),
           ),
         ],
       ),

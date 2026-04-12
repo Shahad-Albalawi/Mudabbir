@@ -1,12 +1,13 @@
 /// Remote API configuration.
 ///
-/// **Default:** hosted Laravel (`_prodBaseUrl`) so Debug builds on emulator,
-/// device, or desktop reach challenges + chatbot without a local server.
+/// **Default:** hosted Laravel (`_prodBaseUrl`) for challenges + chatbot.
+/// If that host returns errors (e.g. 530), set `API_BASE_URL` to your own API
+/// or run a local backend with `USE_LOCAL_API=true`.
 ///
-/// **Local backend** (Android emulator → host port 8000):  
+/// **Local backend** (Android emulator → host port 8000):
 /// `flutter run --dart-define=USE_LOCAL_API=true`
 ///
-/// **Custom host:**  
+/// **Custom host:**
 /// `flutter run --dart-define=API_BASE_URL=https://api.example.com`
 class ApiConstants {
   static const String _prodBaseUrl =
@@ -16,7 +17,10 @@ class ApiConstants {
   static String get baseUrl {
     const fromEnv = String.fromEnvironment('API_BASE_URL');
     if (fromEnv.isNotEmpty) return fromEnv;
-    const useLocalApi = bool.fromEnvironment('USE_LOCAL_API', defaultValue: false);
+    const useLocalApi = bool.fromEnvironment(
+      'USE_LOCAL_API',
+      defaultValue: false,
+    );
     if (useLocalApi) return _androidEmulatorLocalBaseUrl;
     return _prodBaseUrl;
   }

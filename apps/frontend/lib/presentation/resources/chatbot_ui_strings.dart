@@ -13,18 +13,20 @@ class ChatbotUi {
   static String get undoNone =>
       _e ? 'Nothing recent to undo.' : 'لا توجد عملية حديثة يمكن التراجع عنها.';
 
-  static String undoDone(String summary) => _e
-      ? 'Undone: $summary ↩️'
-      : 'تم التراجع عن العملية: $summary ↩️';
+  static String undoDone(String summary) =>
+      _e ? 'Undone: $summary ↩️' : 'تم التراجع عن العملية: $summary ↩️';
 
-  static String get undoMissing =>
-      _e ? 'Could not undo — record not found.' : 'تعذر التراجع لأن السجل غير موجود حالياً.';
+  static String get undoMissing => _e
+      ? 'Could not undo — record not found.'
+      : 'تعذر التراجع لأن السجل غير موجود حالياً.';
 
-  static String get undoError =>
-      _e ? 'Something went wrong while undoing.' : 'حدث خطأ أثناء محاولة التراجع.';
+  static String get undoError => _e
+      ? 'Something went wrong while undoing.'
+      : 'حدث خطأ أثناء محاولة التراجع.';
 
-  static String get whatIfError =>
-      _e ? 'Could not run the what-if scenario. Try again.' : 'تعذر حساب سيناريو "ماذا لو" الآن. حاول مرة أخرى.';
+  static String get whatIfError => _e
+      ? 'Could not run the what-if scenario. Try again.'
+      : 'تعذر حساب سيناريو "ماذا لو" الآن. حاول مرة أخرى.';
 
   static String get subsError => _e
       ? 'Could not analyze subscriptions right now. Try later.'
@@ -65,39 +67,39 @@ class ChatbotUi {
 
   static String previewGoal(String name, String amount, int months) => _e
       ? 'Review 🧾\n'
-          '- Action: Create goal\n'
-          '- Name: $name\n'
-          '- Target: $amount ﷼\n'
-          '- Duration: $months months\n\n'
-          'Type "confirm" to apply or "cancel" to abort.'
+            '- Action: Create goal\n'
+            '- Name: $name\n'
+            '- Target: $amount ﷼\n'
+            '- Duration: $months months\n\n'
+            'Type "confirm" to apply or "cancel" to abort.'
       : 'مراجعة قبل التنفيذ 🧾\n'
-          '- نوع العملية: إنشاء هدف\n'
-          '- الاسم: $name\n'
-          '- المبلغ: $amount ﷼\n'
-          '- المدة: $months شهر\n\n'
-          'اكتب "تأكيد" للتنفيذ أو "إلغاء" للإلغاء.';
+            '- نوع العملية: إنشاء هدف\n'
+            '- الاسم: $name\n'
+            '- المبلغ: $amount ﷼\n'
+            '- المدة: $months شهر\n\n'
+            'اكتب "تأكيد" للتنفيذ أو "إلغاء" للإلغاء.';
 
   static String get needBudgetAmount => _e
       ? 'I need a budget amount. Example: create budget 3000 next month.'
       : 'لفهم أمر الميزانية، أحتاج قيمة الميزانية. مثال: أنشئ ميزانية 3000 الشهر القادم.';
 
-  static String get noAccountForBudget =>
-      _e ? 'No account available to attach this budget.' : 'لا يوجد حساب متاح لإنشاء الميزانية.';
+  static String get noAccountForBudget => _e
+      ? 'No account available to attach this budget.'
+      : 'لا يوجد حساب متاح لإنشاء الميزانية.';
 
   static String previewBudget(String amount, String start, String end) => _e
       ? 'Review 🧾\n'
-          '- Action: Create budget\n'
-          '- Amount: $amount ﷼\n'
-          '- Period: $start to $end\n\n'
-          'Type "confirm" to apply or "cancel" to abort.'
+            '- Action: Create budget\n'
+            '- Amount: $amount ﷼\n'
+            '- Period: $start to $end\n\n'
+            'Type "confirm" to apply or "cancel" to abort.'
       : 'مراجعة قبل التنفيذ 🧾\n'
-          '- نوع العملية: إنشاء ميزانية\n'
-          '- القيمة: $amount ﷼\n'
-          '- الفترة: $start إلى $end\n\n'
-          'اكتب "تأكيد" للتنفيذ أو "إلغاء" للإلغاء.';
+            '- نوع العملية: إنشاء ميزانية\n'
+            '- القيمة: $amount ﷼\n'
+            '- الفترة: $start إلى $end\n\n'
+            'اكتب "تأكيد" للتنفيذ أو "إلغاء" للإلغاء.';
 
-  static String get defaultNewGoalName =>
-      _e ? 'My new goal' : 'هدفي الجديد';
+  static String get defaultNewGoalName => _e ? 'My new goal' : 'هدفي الجديد';
 
   static String insightStatus(int score) {
     if (_e) {
@@ -130,8 +132,7 @@ class ChatbotUi {
       ? 'Great — it looks like you\'ve completed your current goals.'
       : 'ممتاز، يبدو أنك حققت جميع أهدافك الحالية.';
 
-  static String get nextGoalFallback =>
-      _e ? 'Your next goal' : 'هدفك القادم';
+  static String get nextGoalFallback => _e ? 'Your next goal' : 'هدفك القادم';
 
   static String whatIfScenario(
     String amount,
@@ -139,20 +140,19 @@ class ChatbotUi {
     String remaining,
     int months,
     String eta,
-  ) =>
-      _e
-          ? 'What-if scenario 💡\n'
-              '- If you save $amount ﷼ / month\n'
-              '- Goal: $name\n'
-              '- Remaining: $remaining ﷼\n'
-              '- Estimated time: ~$months months\n'
-              '- Estimated finish date: $eta'
-          : 'سيناريو ماذا لو 💡\n'
-              '- إذا ادخرت $amount ﷼ شهريًا\n'
-              '- الهدف: $name\n'
-              '- المتبقي: $remaining ﷼\n'
-              '- المدة المتوقعة: حوالي $months شهر\n'
-              '- التاريخ المتوقع للإنجاز: $eta';
+  ) => _e
+      ? 'What-if scenario 💡\n'
+            '- If you save $amount ﷼ / month\n'
+            '- Goal: $name\n'
+            '- Remaining: $remaining ﷼\n'
+            '- Estimated time: ~$months months\n'
+            '- Estimated finish date: $eta'
+      : 'سيناريو ماذا لو 💡\n'
+            '- إذا ادخرت $amount ﷼ شهريًا\n'
+            '- الهدف: $name\n'
+            '- المتبقي: $remaining ﷼\n'
+            '- المدة المتوقعة: حوالي $months شهر\n'
+            '- التاريخ المتوقع للإنجاز: $eta';
 
   static String get optimizerNoGoals => _e
       ? 'No goals yet. Add goals first so I can suggest a savings split.'
@@ -168,14 +168,10 @@ class ChatbotUi {
       ? 'Great — your current goals are nearly complete.'
       : 'ممتاز، أهدافك الحالية مكتملة تقريباً.';
 
-  static String optimizerLine(
-    String name,
-    String perMonth,
-    String remaining,
-  ) =>
+  static String optimizerLine(String name, String perMonth, String remaining) =>
       _e
-          ? '- $name: $perMonth ﷼/month (remaining $remaining ﷼)'
-          : '- $name: $perMonth ﷼/شهر (متبقي $remaining ﷼)';
+      ? '- $name: $perMonth ﷼/month (remaining $remaining ﷼)'
+      : '- $name: $perMonth ﷼/شهر (متبقي $remaining ﷼)';
 
   static String optimizerIntro(String monthly) => _e
       ? 'Goal optimizer\nBased on your monthly surplus ($monthly ﷼), suggested split:\n'
@@ -215,8 +211,7 @@ class ChatbotUi {
   static String get dlgCreateGoalTitle =>
       _e ? 'Quick create goal' : 'إنشاء هدف سريع';
 
-  static String get dlgGoalNameLabel =>
-      _e ? 'Goal name' : 'اسم الهدف';
+  static String get dlgGoalNameLabel => _e ? 'Goal name' : 'اسم الهدف';
 
   static String get dlgGoalTargetLabel =>
       _e ? 'Target amount' : 'المبلغ المستهدف';
@@ -257,9 +252,8 @@ class ChatbotUi {
       ? 'The time is $displayHour:$mm ${isPm ? 'PM' : 'AM'}.'
       : 'الساعة الآن $displayHour:$mm ${isPm ? 'مساءً' : 'صباحاً'}.';
 
-  static String dateToday(String day, int d, String month, int y) => _e
-      ? 'Today is $day, $d $month $y.'
-      : 'اليوم هو $day، $d $month $y.';
+  static String dateToday(String day, int d, String month, int y) =>
+      _e ? 'Today is $day, $d $month $y.' : 'اليوم هو $day، $d $month $y.';
 
   static List<String> get weekdays => _e
       ? [
@@ -311,15 +305,15 @@ class ChatbotUi {
           'ديسمبر',
         ];
 
-  static String get thanksReply =>
-      _e ? 'You\'re welcome — happy to help anytime.' : 'العفو، سعيد بمساعدتك دائماً.';
+  static String get thanksReply => _e
+      ? 'You\'re welcome — happy to help anytime.'
+      : 'العفو، سعيد بمساعدتك دائماً.';
 
   static String get howAreYouReply => _e
       ? 'I\'m doing well, thanks for asking. How can I help with your finances?'
       : 'بخير والحمد لله. شكراً لسؤالك. كيف يمكنني مساعدتك في إدارة أموالك؟';
 
-  static String get jsonNoData =>
-      _e ? 'No data' : 'لا توجد بيانات';
+  static String get jsonNoData => _e ? 'No data' : 'لا توجد بيانات';
 
   static String get rateLimited => _e
       ? 'Sorry, rate limit reached. Try again later.'
@@ -349,26 +343,24 @@ class ChatbotUi {
       ? 'Sorry, I couldn\'t parse the response.'
       : 'عذراً، لم أتمكن من فهم السؤال.';
 
-  static String get parseError =>
-      _e ? 'Sorry, an error occurred while reading the response.' : 'عذراً، حدث خطأ في معالجة الاستجابة.';
+  static String get parseError => _e
+      ? 'Sorry, an error occurred while reading the response.'
+      : 'عذراً، حدث خطأ في معالجة الاستجابة.';
 
   static String get chatCleared => _e
       ? 'Chat cleared. How can I help?'
       : 'تم مسح المحادثة. كيف يمكنني مساعدتك؟';
 
-  static String get quickCreateGoal =>
-      _e ? 'Create goal' : 'أنشئ هدف';
+  static String get quickCreateGoal => _e ? 'Create goal' : 'أنشئ هدف';
 
-  static String get quickAdjustBudget =>
-      _e ? 'Adjust budget' : 'عدّل ميزانيتي';
+  static String get quickAdjustBudget => _e ? 'Adjust budget' : 'عدّل ميزانيتي';
 
   static String get quickReduceCategory =>
       _e ? 'Cut category spend' : 'خفّض فئة إنفاق';
 
   static String get quickPdf => _e ? 'PDF report' : 'تقرير PDF';
 
-  static String get quickUndo =>
-      _e ? 'Undo last action' : 'تراجع آخر عملية';
+  static String get quickUndo => _e ? 'Undo last action' : 'تراجع آخر عملية';
 
   static String get suggestBalanceTitle =>
       _e ? 'Ask about your balance' : 'اسأل عن رصيدك';
@@ -382,14 +374,12 @@ class ChatbotUi {
   static String get suggestExpenseSubtitle =>
       _e ? 'Review transactions and budgets' : 'راجع معاملاتك وميزانياتك';
 
-  static String get suggestGoalsTitle =>
-      _e ? 'Track goals' : 'تتبع الأهداف';
+  static String get suggestGoalsTitle => _e ? 'Track goals' : 'تتبع الأهداف';
 
   static String get suggestGoalsSubtitle =>
       _e ? 'See progress toward your goals' : 'اعرف تقدمك نحو أهدافك';
 
-  static String get clearDialogTitle =>
-      _e ? 'Clear chat' : 'مسح المحادثة';
+  static String get clearDialogTitle => _e ? 'Clear chat' : 'مسح المحادثة';
 
   static String get clearDialogBody => _e
       ? 'Start a new chat? All current messages will be removed.'

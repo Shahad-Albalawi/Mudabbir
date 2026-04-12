@@ -22,14 +22,11 @@ class AppThemeController extends ChangeNotifier {
     _mode = mode;
     notifyListeners();
     final p = await SharedPreferences.getInstance();
-    await p.setString(
-      _prefsKey,
-      switch (mode) {
-        ThemeMode.light => 'light',
-        ThemeMode.dark => 'dark',
-        _ => 'system',
-      },
-    );
+    await p.setString(_prefsKey, switch (mode) {
+      ThemeMode.light => 'light',
+      ThemeMode.dark => 'dark',
+      _ => 'system',
+    });
   }
 
   /// System → Light → Dark → System

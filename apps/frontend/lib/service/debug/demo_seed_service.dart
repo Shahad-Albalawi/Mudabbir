@@ -68,7 +68,8 @@ class DemoSeedService {
       for (int y = now.year - historyYearsBack; y <= now.year; y++) {
         final lastMonth = y == now.year ? now.month : 12;
         for (int month = 1; month <= lastMonth; month++) {
-          final baseSalary = 10000.0 + (y - (now.year - historyYearsBack)) * 350.0;
+          final baseSalary =
+              10000.0 + (y - (now.year - historyYearsBack)) * 350.0;
           await txn.insert('transactions', {
             'amount': baseSalary,
             'date': DateTime(y, month, 5).toIso8601String(),

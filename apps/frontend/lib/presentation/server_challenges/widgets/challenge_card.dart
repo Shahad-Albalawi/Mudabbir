@@ -95,9 +95,17 @@ class ChallengeCard extends StatelessWidget {
         ServerChallengeStrings.cardCompleted,
       );
     } else if (challenge.isExpired) {
-      return (ColorManager.error, Icons.cancel, ServerChallengeStrings.cardExpired);
+      return (
+        ColorManager.error,
+        Icons.cancel,
+        ServerChallengeStrings.cardExpired,
+      );
     } else if (challenge.isActive) {
-      return (ColorManager.primary, Icons.trending_up, ServerChallengeStrings.cardActive);
+      return (
+        ColorManager.primary,
+        Icons.trending_up,
+        ServerChallengeStrings.cardActive,
+      );
     } else {
       return (
         const Color(0xFFFF9800),

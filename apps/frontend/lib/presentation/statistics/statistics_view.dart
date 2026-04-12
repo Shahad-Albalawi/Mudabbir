@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:mudabbir/presentation/analysis/analysis_view.dart';
 import 'package:mudabbir/presentation/budget/budget_view.dart';
-import 'package:mudabbir/presentation/home/home_viewmodel.dart';
 import 'package:mudabbir/presentation/resources/app_theme_extensions.dart';
 import 'package:mudabbir/presentation/resources/color_manager.dart';
 import 'package:mudabbir/presentation/resources/entity_localizations.dart';
@@ -36,8 +35,6 @@ class StatisticsView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(statisticsProvider);
-    final homeViewModel = ref.read(homeProvider.notifier);
-    homeViewModel.reload();
 
     if (state.isLoading) {
       return const Center(child: IOSLoadingWidget(size: 56));

@@ -140,77 +140,77 @@ class _GoalViewState extends ConsumerState<GoalView> {
               ),
             ),
             ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: ColorManager.primary,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                onPressed: () async {
-                  final amountText = amountController.text.trim();
-                  if (amountText.isNotEmpty) {
-                    final amount = double.tryParse(amountText);
-                    if (amount != null && amount > 0) {
-                      // Get previous amount for milestone detection
-                      final previousAmount = (goal['current_amount'] ?? 0.0)
-                          .toDouble();
-                      final target = (goal['target'] ?? 1.0).toDouble();
-
-                      // Update goal
-                      await goalViewmodel.updateGoalAmount(goal['id'], amount);
-                      if (!context.mounted) return;
-                      Navigator.of(context).pop();
-
-                      // Calculate new amount
-                      final newAmount = previousAmount + amount;
-
-                      // Detect milestone
-                      final milestone = CelebrationService.detectMilestone(
-                        previousAmount,
-                        newAmount,
-                        target,
-                      );
-
-                      // Show success message
-                      // getIt<NavigationService>().showSuccessSnackbar(
-                      //   title: 'نجح',
-                      //   body: 'تم تحديث الهدف بنجاح',
-                      // );
-
-                      // Haptic + confetti
-                      HapticService.success();
-                      if (!context.mounted) return;
-                      setState(() => _showConfetti = true);
-
-                      // Show milestone dialog if achieved
-                      if (milestone != null) {
-                        Future.delayed(const Duration(milliseconds: 500), () {
-                          if (!context.mounted) return;
-                          CelebrationService.showMilestoneDialog(
-                            context,
-                            milestone,
-                            goal['name'],
-                          );
-                        });
-                      }
-                    } else {
-                      getIt<NavigationService>().showErrorSnackbar(
-                        title: AppStrings.snackErrorTitle,
-                        body: AppStrings.goalsInvalidAmount,
-                      );
-                    }
-                  }
-                },
-                child: Text(
-                  AppStrings.goalsAddButton,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: ColorManager.primary,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
+              onPressed: () async {
+                final amountText = amountController.text.trim();
+                if (amountText.isNotEmpty) {
+                  final amount = double.tryParse(amountText);
+                  if (amount != null && amount > 0) {
+                    // Get previous amount for milestone detection
+                    final previousAmount = (goal['current_amount'] ?? 0.0)
+                        .toDouble();
+                    final target = (goal['target'] ?? 1.0).toDouble();
+
+                    // Update goal
+                    await goalViewmodel.updateGoalAmount(goal['id'], amount);
+                    if (!context.mounted) return;
+                    Navigator.of(context).pop();
+
+                    // Calculate new amount
+                    final newAmount = previousAmount + amount;
+
+                    // Detect milestone
+                    final milestone = CelebrationService.detectMilestone(
+                      previousAmount,
+                      newAmount,
+                      target,
+                    );
+
+                    // Show success message
+                    // getIt<NavigationService>().showSuccessSnackbar(
+                    //   title: 'نجح',
+                    //   body: 'تم تحديث الهدف بنجاح',
+                    // );
+
+                    // Haptic + confetti
+                    HapticService.success();
+                    if (!context.mounted) return;
+                    setState(() => _showConfetti = true);
+
+                    // Show milestone dialog if achieved
+                    if (milestone != null) {
+                      Future.delayed(const Duration(milliseconds: 500), () {
+                        if (!context.mounted) return;
+                        CelebrationService.showMilestoneDialog(
+                          context,
+                          milestone,
+                          goal['name'],
+                        );
+                      });
+                    }
+                  } else {
+                    getIt<NavigationService>().showErrorSnackbar(
+                      title: AppStrings.snackErrorTitle,
+                      body: AppStrings.goalsInvalidAmount,
+                    );
+                  }
+                }
+              },
+              child: Text(
+                AppStrings.goalsAddButton,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ],
         );
       },
@@ -362,7 +362,9 @@ class _GoalViewState extends ConsumerState<GoalView> {
                                     Container(
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        color: ColorManager.primary.withValues(alpha: 0.1),
+                                        color: ColorManager.primary.withValues(
+                                          alpha: 0.1,
+                                        ),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Icon(
@@ -439,7 +441,9 @@ class _GoalViewState extends ConsumerState<GoalView> {
                                   AppStrings.tapToAdd,
                                   style: TextStyle(
                                     fontSize: 11,
-                                    color: ColorManager.primary.withValues(alpha: 0.7),
+                                    color: ColorManager.primary.withValues(
+                                      alpha: 0.7,
+                                    ),
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),

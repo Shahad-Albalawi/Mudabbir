@@ -217,7 +217,9 @@ class FloatingBottomNavBar extends ConsumerWidget {
           boxShadow: isActive
               ? [
                   BoxShadow(
-                    color: Theme.of(context).primaryColor.withValues(alpha: 0.4),
+                    color: Theme.of(
+                      context,
+                    ).primaryColor.withValues(alpha: 0.4),
                     blurRadius: 15,
                     offset: Offset(0, 5),
                   ),

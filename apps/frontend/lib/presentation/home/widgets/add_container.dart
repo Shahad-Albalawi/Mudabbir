@@ -108,7 +108,9 @@ class _ActionButton extends StatelessWidget {
               padding: const EdgeInsets.all(AppPadding.p14),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(IOSStyleConstants.radiusMedium),
+                borderRadius: BorderRadius.circular(
+                  IOSStyleConstants.radiusMedium,
+                ),
               ),
               child: Icon(icon, color: color, size: 24),
             ),
@@ -116,9 +118,9 @@ class _ActionButton extends StatelessWidget {
             Text(
               label,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: ColorManager.textPrimary,
-                    fontWeight: FontWeight.w500,
-                  ),
+                color: ColorManager.textPrimary,
+                fontWeight: FontWeight.w500,
+              ),
               textAlign: TextAlign.center,
             ),
           ],

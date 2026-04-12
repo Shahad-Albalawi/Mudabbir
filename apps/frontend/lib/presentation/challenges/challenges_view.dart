@@ -259,17 +259,14 @@ class ChallengesView extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 10),
-            Text(
-              () {
-                final name = UserDisplayName.fromSavedUserInfo(
-                  getIt<HiveService>().getValue(HiveConstants.savedUserInfo),
-                );
-                return name.isEmpty
-                    ? AppStrings.title
-                    : '${AppStrings.title} - $name';
-              }(),
-              style: Theme.of(context).textTheme.headlineLarge,
-            ),
+            Text(() {
+              final name = UserDisplayName.fromSavedUserInfo(
+                getIt<HiveService>().getValue(HiveConstants.savedUserInfo),
+              );
+              return name.isEmpty
+                  ? AppStrings.title
+                  : '${AppStrings.title} - $name';
+            }(), style: Theme.of(context).textTheme.headlineLarge),
           ],
         ),
         centerTitle: false,
@@ -439,7 +436,9 @@ class ChallengesView extends ConsumerWidget {
                                   Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: ColorManager.primary.withValues(alpha: 0.1),
+                                      color: ColorManager.primary.withValues(
+                                        alpha: 0.1,
+                                      ),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Icon(
@@ -501,8 +500,9 @@ class ChallengesView extends ConsumerWidget {
                                         _getStatusIcon(status),
                                         const SizedBox(width: 6),
                                         Text(
-                                          EntityLocalizations
-                                              .challengeStatusLabel(status),
+                                          EntityLocalizations.challengeStatusLabel(
+                                            status,
+                                          ),
                                           style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w600,
@@ -537,8 +537,7 @@ class ChallengesView extends ConsumerWidget {
                                               Icon(
                                                 Icons.calendar_today_outlined,
                                                 size: 14,
-                                                color:
-                                                    scheme.onSurfaceVariant,
+                                                color: scheme.onSurfaceVariant,
                                               ),
                                               const SizedBox(width: 6),
                                               Text(
@@ -581,8 +580,7 @@ class ChallengesView extends ConsumerWidget {
                                               Icon(
                                                 Icons.event_outlined,
                                                 size: 14,
-                                                color:
-                                                    scheme.onSurfaceVariant,
+                                                color: scheme.onSurfaceVariant,
                                               ),
                                               const SizedBox(width: 6),
                                               Text(
@@ -619,7 +617,9 @@ class ChallengesView extends ConsumerWidget {
                                   "اضغط لتحديث الحالة",
                                   style: TextStyle(
                                     fontSize: 11,
-                                    color: ColorManager.primary.withValues(alpha: 0.7),
+                                    color: ColorManager.primary.withValues(
+                                      alpha: 0.7,
+                                    ),
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),

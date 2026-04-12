@@ -18,7 +18,7 @@ class TransactionPopup {
       context: context,
       barrierDismissible: false,
       builder: (_) => Consumer(
-        builder: (context, ref,  _) {
+        builder: (context, ref, _) {
           return Dialog(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
@@ -166,7 +166,10 @@ class TransactionPopup {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _buildSectionHeader(context, AppStrings.txSectionAmount),
+                        _buildSectionHeader(
+                          context,
+                          AppStrings.txSectionAmount,
+                        ),
                         const SizedBox(height: 12),
                         PopupWidgets.amountField(amountCtrl),
                         const SizedBox(height: 24),
@@ -176,7 +179,10 @@ class TransactionPopup {
                         PopupWidgets.dateField(dateCtrl, context),
                         const SizedBox(height: 24),
 
-                        _buildSectionHeader(context, AppStrings.txSectionDetails),
+                        _buildSectionHeader(
+                          context,
+                          AppStrings.txSectionDetails,
+                        ),
                         const SizedBox(height: 12),
                         Row(
                           children: [
@@ -186,7 +192,8 @@ class TransactionPopup {
                                 label: AppStrings.labelAccount,
                                 items: accounts,
                                 onChanged: (val) => accountId = val,
-                                formatItemLabel: EntityLocalizations.accountName,
+                                formatItemLabel:
+                                    EntityLocalizations.accountName,
                               ),
                             ),
                             const SizedBox(width: 16),
@@ -196,7 +203,8 @@ class TransactionPopup {
                                 label: AppStrings.labelCategory,
                                 items: categories,
                                 onChanged: (val) => categoryId = val,
-                                formatItemLabel: EntityLocalizations.categoryName,
+                                formatItemLabel:
+                                    EntityLocalizations.categoryName,
                               ),
                             ),
                           ],
@@ -356,7 +364,9 @@ class TransactionPopup {
               decoration: BoxDecoration(
                 color: ColorManager.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: ColorManager.error.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: ColorManager.error.withValues(alpha: 0.3),
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

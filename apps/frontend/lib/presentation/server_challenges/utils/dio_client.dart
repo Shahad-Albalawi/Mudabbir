@@ -25,6 +25,8 @@ class DioClient {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          // Some CDNs block anonymous clients; helps reach Laravel Cloud from devices.
+          'User-Agent': 'MudabbirFlutter/1.0',
         },
       ),
     );
@@ -77,7 +79,9 @@ class _LoggingInterceptor extends Interceptor {
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
     debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    debugPrint('✅ RESPONSE: ${response.statusCode} ${response.requestOptions.path}');
+    debugPrint(
+      '✅ RESPONSE: ${response.statusCode} ${response.requestOptions.path}',
+    );
     debugPrint('Data: ${response.data}');
     debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     handler.next(response);
@@ -86,7 +90,9 @@ class _LoggingInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
     debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    debugPrint('❌ ERROR: ${err.requestOptions.method} ${err.requestOptions.path}');
+    debugPrint(
+      '❌ ERROR: ${err.requestOptions.method} ${err.requestOptions.path}',
+    );
     debugPrint('Error Type: ${err.type}');
     debugPrint('Status Code: ${err.response?.statusCode}');
     debugPrint('Error Message: ${err.message}');

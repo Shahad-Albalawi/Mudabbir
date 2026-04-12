@@ -15,8 +15,10 @@ import 'package:mudabbir/utils/dev_log.dart';
 class InstantBrowseBootstrap {
   InstantBrowseBootstrap._();
 
-  static const bool _disabled =
-      bool.fromEnvironment('DISABLE_INSTANT_BROWSE', defaultValue: false);
+  static const bool _disabled = bool.fromEnvironment(
+    'DISABLE_INSTANT_BROWSE',
+    defaultValue: false,
+  );
 
   /// Avoid mutating Hive / SQLite when `flutter test` binding is active.
   static bool get _isTestBinding {
@@ -25,10 +27,7 @@ class InstantBrowseBootstrap {
   }
 
   static bool get isEnabled =>
-      kDebugMode &&
-      !_disabled &&
-      AppFlags.allowGuestHome &&
-      !_isTestBinding;
+      kDebugMode && !_disabled && AppFlags.allowGuestHome && !_isTestBinding;
 
   static Future<void> applyIfEnabled() async {
     if (!isEnabled) return;
@@ -43,8 +42,8 @@ class InstantBrowseBootstrap {
     // Guest SQLite + a realistic display name for the app bar.
     await hive.setValue(HiveConstants.savedUserInfo, {
       HiveConstants.userInfoLocalDbKey: 'guest_user',
-      'name': 'سارة العتيبي',
-      'email': 'sara@example.com',
+      'name': 'شهد البلوي',
+      'email': 'shahd@example.com',
     });
 
     await LocalDatabase.instance.initForUser('guest_user');
