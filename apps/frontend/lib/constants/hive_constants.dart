@@ -1,6 +1,5 @@
 class HiveConstants {
   static final String savedToken = 'savedToken';
-  static final String savedCounter = 'counter';
   static final String savedFirstTime = 'firstTime';
   static final String savedUserInfo = 'userInfo';
 

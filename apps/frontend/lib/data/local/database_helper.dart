@@ -60,8 +60,6 @@ class DbHelper {
     return await db.delete(table, where: where, whereArgs: whereArgs);
   }
 
-  // Add this inside PostsDbHelper class
-
   /// READ (Single Row)
   /// Retrieves a specific row based on the where condition.
   Future<Either<Empty, List<Map<String, dynamic>>>> queryRow(
@@ -93,7 +91,6 @@ class DbHelper {
     String? orderBy,
     int? limit,
   }) async {
-    // ... (build the sql string as before)
     final selectedColumns = columns?.join(', ') ?? '*';
     var sql = 'SELECT $selectedColumns FROM $table';
     if (joinClause != null && joinClause.isNotEmpty) sql += ' $joinClause';
@@ -112,7 +109,6 @@ class DbHelper {
     }
   }
 
-  // Add a new method to your DbHelper class to handle the specific budget check.
   Future<Either<String, List<Map<String, dynamic>>>> getBudgetsForAccount(
     int accountId,
     String date,

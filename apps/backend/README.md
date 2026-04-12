@@ -33,7 +33,7 @@ php artisan migrate
 php artisan serve
 ```
 
-Set **`OPENAI_API_KEY`** in `.env` for the chatbot. Optional **`GEMINI_*`** keys are documented in `.env.example` (Gemini is not wired to the default routes).
+Set **`OPENAI_API_KEY`** in `.env` for the chatbot.
 
 ## Useful Composer scripts
 
