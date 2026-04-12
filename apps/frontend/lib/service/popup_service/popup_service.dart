@@ -25,7 +25,7 @@ class PopupService {
     BuildContext context,
     WidgetRef ref,
   ) async {
-    await ChallengePopup().show(context, ref);
+    await _challengePopup.show(context, ref);
   }
 
   Future<void> showAddBudgetPopup(BuildContext context, WidgetRef ref) async {

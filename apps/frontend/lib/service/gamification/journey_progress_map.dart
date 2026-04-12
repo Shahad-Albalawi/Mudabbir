@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:mudabbir/persentation/resources/color_manager.dart';
-import 'package:mudabbir/persentation/resources/strings_manager.dart';
+import 'package:mudabbir/presentation/resources/color_manager.dart';
+import 'package:mudabbir/presentation/resources/strings_manager.dart';
 
 /// Journey-style progress map with animated character traveling toward goal
 class JourneyProgressMap extends StatefulWidget {
@@ -311,7 +311,7 @@ class JourneyPathPainter extends CustomPainter {
     // Draw glow effect for achieved milestones
     if (isAchieved) {
       final glowPaint = Paint()
-        ..color = color.withOpacity(0.3)
+        ..color = color.withValues(alpha: 0.3)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
       canvas.drawCircle(Offset(x, y), 18, glowPaint);
     }
@@ -354,14 +354,14 @@ class JourneyPathPainter extends CustomPainter {
   void _drawTraveler(Canvas canvas, Offset position, Color color) {
     // Draw traveler shadow
     final shadowPaint = Paint()
-      ..color = Colors.black.withOpacity(0.2)
+      ..color = Colors.black.withValues(alpha: 0.2)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
 
     canvas.drawCircle(Offset(position.dx, position.dy + 22), 12, shadowPaint);
 
     // Draw traveler glow
     final glowPaint = Paint()
-      ..color = color.withOpacity(0.4)
+      ..color = color.withValues(alpha: 0.4)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
 
     canvas.drawCircle(position, 20, glowPaint);

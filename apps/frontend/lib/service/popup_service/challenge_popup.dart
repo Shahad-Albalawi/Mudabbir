@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mudabbir/persentation/challanges/challanges_viewmodel.dart';
-import 'package:mudabbir/persentation/resources/color_manager.dart';
-import 'package:mudabbir/persentation/resources/server_challenge_strings.dart';
+import 'package:mudabbir/presentation/challenges/challenges_viewmodel.dart';
+import 'package:mudabbir/presentation/resources/color_manager.dart';
+import 'package:mudabbir/presentation/resources/server_challenge_strings.dart';
 import 'package:mudabbir/service/popup_service/popup_widgets.dart';
 
 class ChallengePopup {
@@ -36,7 +36,7 @@ class ChallengePopup {
               end: Alignment.bottomRight,
               colors: [
                 Theme.of(context).colorScheme.surface,
-                Theme.of(context).colorScheme.surface.withOpacity(0.95),
+                Theme.of(context).colorScheme.surface.withValues(alpha: 0.95),
               ],
             ),
           ),
@@ -56,7 +56,7 @@ class ChallengePopup {
                     gradient: LinearGradient(
                       colors: [
                         ColorManager.primary,
-                        ColorManager.primary.withOpacity(0.8),
+                        ColorManager.primary.withValues(alpha: 0.8),
                       ],
                     ),
                   ),
@@ -65,7 +65,7 @@ class ChallengePopup {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -96,7 +96,7 @@ class ChallengePopup {
                                   ?.copyWith(
                                     color: Theme.of(
                                       context,
-                                    ).colorScheme.onPrimary.withOpacity(0.8),
+                                    ).colorScheme.onPrimary.withValues(alpha: 0.8),
                                   ),
                             ),
                           ],
@@ -230,12 +230,14 @@ class ChallengePopup {
                               await challengeViewmodel.addNewChallenge(
                                 challengeData,
                               );
+                              if (!context.mounted) return;
                               Navigator.pop(context);
                               PopupWidgets.showSuccessSnackBar(
                                 context,
                                 ServerChallengeStrings.localCreateSuccess,
                               );
                             } catch (e) {
+                              if (!context.mounted) return;
                               PopupWidgets.showErrorSnackBar(
                                 context,
                                 ServerChallengeStrings.localCreateFailed(e),

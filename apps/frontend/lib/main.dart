@@ -1,26 +1,21 @@
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:mudabbir/firebase_options.dart';
-import 'package:mudabbir/persentation/resources/theme_manager.dart';
+import 'package:mudabbir/presentation/resources/theme_manager.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/hive_service.dart';
 import 'package:mudabbir/service/language/app_language_controller.dart';
 import 'package:mudabbir/service/notifications/push_notification_service.dart';
-import 'package:mudabbir/service/planner/planner_local_notification_service.dart';
+import 'package:mudabbir/service/debug/instant_browse_bootstrap.dart';
 import 'package:mudabbir/service/routing_service/app_router.dart';
 import 'package:mudabbir/service/theme/app_theme_controller.dart';
+import 'package:mudabbir/utils/dev_log.dart';
 
-// --- App entry: DI, Hive, theme prefs, optional Firebase push, then Riverpod.
+// --- App entry: DI, Hive, theme prefs, optional push, then Riverpod.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  if (DefaultFirebaseOptions.isConfigured) {
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-  }
 
   try {
     setupLocator();
@@ -29,10 +24,10 @@ Future<void> main() async {
     await SystemChrome.setPreferredOrientations([]);
     await Hive.initFlutter();
     await getIt<HiveService>().init();
-    await PlannerLocalNotificationService.instance.initialize();
+    await InstantBrowseBootstrap.applyIfEnabled();
     await PushNotificationService.instance.initializeIfConfigured();
   } catch (e, stack) {
-    debugPrint('Initialization error: $e\n$stack');
+    devLog('Initialization error: $e\n$stack');
     rethrow;
   }
 

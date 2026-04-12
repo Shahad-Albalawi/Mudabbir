@@ -32,7 +32,7 @@ class LocalDatabase {
 
     _database = await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
       onOpen: (db) async {
@@ -44,8 +44,10 @@ class LocalDatabase {
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     await db.execute('PRAGMA foreign_keys = ON');
-    if (oldVersion < 2) {
-      await _createV2Tables(db);
+    if (oldVersion < 3) {
+      await db.execute('DROP TABLE IF EXISTS category_budgets');
+      await db.execute('DROP TABLE IF EXISTS app_notes');
+      await db.execute('DROP TABLE IF EXISTS app_tasks');
     }
   }
 
@@ -120,7 +122,6 @@ class LocalDatabase {
   ''');
 
     await _createAuditTables(db);
-    await _createV2Tables(db);
 
     // --- Insert default data ---
 
@@ -157,43 +158,6 @@ class LocalDatabase {
       status TEXT NOT NULL, -- preview | confirmed | cancelled | executed | undone | failed
       payload TEXT,
       created_at TEXT NOT NULL
-    )
-  ''');
-  }
-
-  /// Planner: per-category monthly limits, notes, tasks (v2+).
-  Future<void> _createV2Tables(Database db) async {
-    await db.execute('''
-    CREATE TABLE IF NOT EXISTS category_budgets (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      category_id INTEGER NOT NULL,
-      amount_limit REAL NOT NULL,
-      year INTEGER NOT NULL,
-      month INTEGER NOT NULL,
-      UNIQUE(category_id, year, month),
-      FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
-    )
-  ''');
-    await db.execute('''
-    CREATE TABLE IF NOT EXISTS app_notes (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      title TEXT NOT NULL,
-      body TEXT NOT NULL DEFAULT '',
-      is_financial INTEGER NOT NULL DEFAULT 0,
-      created_at TEXT NOT NULL,
-      updated_at TEXT NOT NULL
-    )
-  ''');
-    await db.execute('''
-    CREATE TABLE IF NOT EXISTS app_tasks (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      title TEXT NOT NULL,
-      body TEXT NOT NULL DEFAULT '',
-      status TEXT NOT NULL DEFAULT 'pending',
-      category_id INTEGER,
-      created_at TEXT NOT NULL,
-      updated_at TEXT NOT NULL,
-      FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
     )
   ''');
   }

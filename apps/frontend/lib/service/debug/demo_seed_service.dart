@@ -36,6 +36,12 @@ class DemoSeedService {
     await _seed(db);
   }
 
+  /// Debug / instant-browse: always refill guest demo rows (charts, goals, etc.).
+  static Future<void> forceReapplyGuestDemoData() async {
+    final db = await LocalDatabase.instance.database;
+    await _seed(db);
+  }
+
   static Future<void> _seed(Database db) async {
     await db.transaction((txn) async {
       await txn.delete('transactions');
@@ -56,21 +62,45 @@ class DemoSeedService {
       }
 
       final now = DateTime.now();
+      const historyYearsBack = 3;
 
-      for (int m = 0; m < 4; m++) {
-        final monthDate = DateTime(now.year, now.month - m, 2);
-        await txn.insert('transactions', {
-          'amount': 12000.0,
-          'date': monthDate.toIso8601String(),
-          'type': 'income',
-          'notes': 'راتب شهري',
-          'account_id': accountId,
-          'category_id': categoryId('راتب', 'income'),
-        });
+      /// ~3–4 years of monthly income + expenses so charts / totals look realistic.
+      for (int y = now.year - historyYearsBack; y <= now.year; y++) {
+        final lastMonth = y == now.year ? now.month : 12;
+        for (int month = 1; month <= lastMonth; month++) {
+          final baseSalary = 10000.0 + (y - (now.year - historyYearsBack)) * 350.0;
+          await txn.insert('transactions', {
+            'amount': baseSalary,
+            'date': DateTime(y, month, 5).toIso8601String(),
+            'type': 'income',
+            'notes': 'راتب $y-$month',
+            'account_id': accountId,
+            'category_id': categoryId('راتب', 'income'),
+          });
+
+          final expenseDays = [8, 11, 14, 18, 22, 26];
+          final names = ['طعام', 'نقل', 'فواتير', 'تسوق', 'صحة', 'ترفيه'];
+          for (var i = 0; i < expenseDays.length; i++) {
+            final day = expenseDays[i];
+            if (day > DateTime(y, month + 1, 0).day) continue;
+            final cat = names[i % names.length];
+            final wobble = (month * 17 + y * 3 + i * 11) % 40;
+            final amount = 40.0 + wobble + (cat == 'فواتير' ? 80.0 : 0.0);
+            await txn.insert('transactions', {
+              'amount': amount,
+              'date': DateTime(y, month, day).toIso8601String(),
+              'type': 'expense',
+              'notes': 'مصروف $cat',
+              'account_id': accountId,
+              'category_id': categoryId(cat, 'expense'),
+            });
+          }
+        }
       }
 
-      for (int i = 0; i < 45; i++) {
-        final d = now.subtract(Duration(days: i * 2));
+      // Extra density in the last ~60 days (statistics / home feel "alive").
+      for (int i = 0; i < 24; i++) {
+        final d = now.subtract(Duration(days: i * 2 + 1));
         final isFood = i % 4 == 0;
         final isTransport = i % 4 == 1;
         final isBills = i % 4 == 2;
@@ -93,7 +123,7 @@ class DemoSeedService {
           'amount': amount,
           'date': d.toIso8601String(),
           'type': 'expense',
-          'notes': 'عملية تجريبية $i',
+          'notes': 'مصروف يومي',
           'account_id': accountId,
           'category_id': categoryId(categoryName, 'expense'),
         });
@@ -155,6 +185,47 @@ class DemoSeedService {
         'end_date': DateTime(now.year, now.month, 25).toIso8601String(),
         'status': 'نشط',
       });
+      await txn.insert('challenges', {
+        'name': 'ادخار 10% من الراتب',
+        'start_date': DateTime(now.year, now.month - 2, 1).toIso8601String(),
+        'end_date': DateTime(now.year, now.month + 2, 0).toIso8601String(),
+        'status': 'نشط',
+      });
+      await txn.insert('challenges', {
+        'name': 'تتبع المصروفات اليومية',
+        'start_date': DateTime(now.year - 1, 6, 1).toIso8601String(),
+        'end_date': DateTime(now.year - 1, 8, 30).toIso8601String(),
+        'status': 'مكتمل',
+      });
+      await txn.insert('challenges', {
+        'name': 'خفض فاتورة الكهرباء',
+        'start_date': DateTime(now.year, now.month + 1, 1).toIso8601String(),
+        'end_date': DateTime(now.year, now.month + 3, 0).toIso8601String(),
+        'status': 'نشط',
+      });
+
+      const cashBalance = 18500.0;
+      const bankBalance = 42000.0;
+      await txn.update(
+        'accounts',
+        {'balance': cashBalance},
+        where: 'id = ?',
+        whereArgs: [accountId],
+      );
+      final secondAccount = await txn.query(
+        'accounts',
+        where: 'id != ?',
+        whereArgs: [accountId],
+        limit: 1,
+      );
+      if (secondAccount.isNotEmpty) {
+        await txn.update(
+          'accounts',
+          {'balance': bankBalance},
+          where: 'id = ?',
+          whereArgs: [secondAccount.first['id']],
+        );
+      }
     });
   }
 }

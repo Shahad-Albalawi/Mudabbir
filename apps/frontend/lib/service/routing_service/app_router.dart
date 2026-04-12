@@ -1,10 +1,10 @@
 import 'package:mudabbir/constants/app_flags.dart';
 import 'package:mudabbir/constants/hive_constants.dart';
-import 'package:mudabbir/persentation/home/home_page.dart';
-import 'package:mudabbir/persentation/login/login_view.dart';
-import 'package:mudabbir/persentation/onboarding/onboarding_view.dart';
-import 'package:mudabbir/persentation/register/register_view.dart';
-import 'package:mudabbir/persentation/splash/splash_view.dart';
+import 'package:mudabbir/presentation/home/home_page.dart';
+import 'package:mudabbir/presentation/login/login_view.dart';
+import 'package:mudabbir/presentation/onboarding/onboarding_view.dart';
+import 'package:mudabbir/presentation/register/register_view.dart';
+import 'package:mudabbir/presentation/splash/splash_view.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/hive_service.dart';
 import 'package:mudabbir/service/navigation_service.dart';

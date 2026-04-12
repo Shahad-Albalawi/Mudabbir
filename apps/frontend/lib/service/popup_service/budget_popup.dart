@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mudabbir/persentation/resources/color_manager.dart';
-import '../../persentation/budget/budget_viewmodel.dart';
+import 'package:mudabbir/presentation/resources/color_manager.dart';
+import '../../presentation/budget/budget_viewmodel.dart';
 import 'popup_widgets.dart';
 
 class BudgetPopup {
@@ -19,6 +19,7 @@ class BudgetPopup {
     final accResult = await budgetViewmodel.getAccounts();
     accResult.fold((_) {}, (data) => accounts = data);
 
+    if (!context.mounted) return;
     if (accounts.isEmpty) {
       PopupWidgets.showErrorSnackBar(
         context,
@@ -59,7 +60,7 @@ class BudgetPopup {
               end: Alignment.bottomRight,
               colors: [
                 Theme.of(context).colorScheme.surface,
-                Theme.of(context).colorScheme.surface.withOpacity(0.95),
+                Theme.of(context).colorScheme.surface.withValues(alpha: 0.95),
               ],
             ),
           ),
@@ -82,7 +83,7 @@ class BudgetPopup {
                     gradient: LinearGradient(
                       colors: [
                         ColorManager.primary,
-                        ColorManager.primary.withOpacity(0.8),
+                        ColorManager.primary.withValues(alpha: 0.8),
                       ],
                     ),
                   ),
@@ -91,7 +92,7 @@ class BudgetPopup {
                       Container(
                         padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(
                             isSmallScreen ? 8 : 10,
                           ),
@@ -122,7 +123,7 @@ class BudgetPopup {
                                 "Set up your spending limits",
                                 style: TextStyle(
                                   fontSize: isSmallScreen ? 11 : 12,
-                                  color: Colors.white.withOpacity(0.85),
+                                  color: Colors.white.withValues(alpha: 0.85),
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -325,12 +326,14 @@ class BudgetPopup {
                             try {
                               await budgetViewmodel.addNewBudget(budgetData);
 
+                              if (!context.mounted) return;
                               Navigator.pop(context);
                               PopupWidgets.showSuccessSnackBar(
                                 context,
                                 "Budget created successfully! 🎉",
                               );
                             } catch (e) {
+                              if (!context.mounted) return;
                               PopupWidgets.showErrorSnackBar(
                                 context,
                                 "Failed to create budget: $e",

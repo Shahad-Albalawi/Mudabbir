@@ -6,23 +6,24 @@ plugins {
 }
 
 android {
-    namespace = "com.example.mudabbir"
+    namespace = "com.mudabbir.app"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "27.0.12077973"
+    // Work around corrupted SDK Build-Tools 35.0.0 on some machines; use an installed revision.
+    buildToolsVersion = "36.1.0"
+    ndkVersion = flutter.ndkVersion
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
         isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+        jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.mudabbir"
+        applicationId = "com.mudabbir.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -33,8 +34,8 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // Replace with a release keystore before Play Store upload
+            // (see https://docs.flutter.dev/deployment/android#signing-the-app).
             signingConfig = signingConfigs.getByName("debug")
         }
     }
@@ -46,4 +47,25 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+}
+
+// Flutter CLI expects APKs under `<project>/build/app/outputs/flutter-apk/`, while AGP 8+
+// may leave copies only under `android/app/build/...`. Mirror them so `flutter run` works.
+afterEvaluate {
+    val mirrorApksToFlutterToolPath = {
+        val toolOutDir = rootProject.projectDir.parentFile.resolve("build/app/outputs/flutter-apk")
+        toolOutDir.mkdirs()
+        val pluginDir = project.layout.buildDirectory.get().asFile.resolve("outputs/flutter-apk")
+        pluginDir.takeIf { it.isDirectory }?.listFiles()
+            ?.filter { it.isFile && it.extension == "apk" }
+            ?.forEach { apk ->
+                apk.copyTo(toolOutDir.resolve(apk.name), overwrite = true)
+            }
+    }
+    listOf("assembleDebug", "assembleRelease").forEach { taskName ->
+        tasks.named(taskName).configure { doLast { mirrorApksToFlutterToolPath() } }
+    }
+    tasks.findByName("assembleProfile")?.let {
+        tasks.named("assembleProfile").configure { doLast { mirrorApksToFlutterToolPath() } }
+    }
 }

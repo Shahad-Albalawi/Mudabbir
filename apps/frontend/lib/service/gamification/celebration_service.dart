@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mudabbir/persentation/resources/strings_manager.dart';
+import 'package:mudabbir/presentation/resources/strings_manager.dart';
 
 /// Service to handle all celebration animations and effects
 class CelebrationService {
@@ -165,7 +165,7 @@ class _MilestoneDialogState extends State<MilestoneDialog>
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: info.color.withOpacity(0.3),
+                color: info.color.withValues(alpha: 0.3),
                 blurRadius: 20,
                 spreadRadius: 5,
               ),

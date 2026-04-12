@@ -6,6 +6,7 @@ import 'package:mudabbir/service/debug/demo_seed_service.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/hive_service.dart';
 import 'package:mudabbir/service/security/auth_token_secure_store.dart';
+import 'package:mudabbir/utils/dev_log.dart';
 
 class AuthNotifier extends ChangeNotifier {
   final HiveService _hiveService = getIt<HiveService>();
@@ -40,14 +41,18 @@ class AuthNotifier extends ChangeNotifier {
       final user = _hiveService.getValue(HiveConstants.savedUserInfo);
       if (user != null && user is Map) {
         await LocalDatabase.instance.initForUser(user['name']);
-        await DemoSeedService.seedIfDatabaseEmpty();
-        debugPrint('Database initialized for existing user: ${user['name']}');
+        if (AppFlags.enableDemoSeed) {
+          await DemoSeedService.seedIfDatabaseEmpty();
+        }
+        devLog('Database initialized for existing user: ${user['name']}');
       }
     } else {
       _isLoggedIn = false;
       if (AppFlags.allowGuestHome) {
         await LocalDatabase.instance.initForUser('guest_user');
-        await DemoSeedService.seedIfDatabaseEmpty();
+        if (AppFlags.enableDemoSeed) {
+          await DemoSeedService.seedIfDatabaseEmpty();
+        }
       } else {
         await LocalDatabase.instance.close();
       }
@@ -67,8 +72,10 @@ class AuthNotifier extends ChangeNotifier {
 
       // 2. Initialize the database for the new user session.
       await LocalDatabase.instance.initForUser(user['name']);
-      await DemoSeedService.seedIfDatabaseEmpty();
-      debugPrint('Database initialized for new user: ${user['name']}');
+      if (AppFlags.enableDemoSeed) {
+        await DemoSeedService.seedIfDatabaseEmpty();
+      }
+      devLog('Database initialized for new user: ${user['name']}');
 
       // 3. Update the state.
       _isLoggedIn = true;
@@ -76,9 +83,9 @@ class AuthNotifier extends ChangeNotifier {
       // 4. Notify listeners immediately
       notifyListeners();
 
-      debugPrint('Auth state updated: isLoggedIn = $_isLoggedIn');
+      devLog('Auth state updated: isLoggedIn = $_isLoggedIn');
     } catch (e) {
-      debugPrint('Error during login: $e');
+      devLog('Error during login: $e');
       // Rollback on error
       await _hiveService.deleteValue(HiveConstants.savedToken);
       await _hiveService.deleteValue(HiveConstants.savedUserInfo);
@@ -99,7 +106,9 @@ class AuthNotifier extends ChangeNotifier {
     // 2. Guest DB for offline home, or close DB when login is required.
     if (AppFlags.allowGuestHome) {
       await LocalDatabase.instance.initForUser('guest_user');
-      await DemoSeedService.seedIfDatabaseEmpty();
+      if (AppFlags.enableDemoSeed) {
+        await DemoSeedService.seedIfDatabaseEmpty();
+      }
     } else {
       await LocalDatabase.instance.close();
     }

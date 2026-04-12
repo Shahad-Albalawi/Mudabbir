@@ -8,11 +8,13 @@ Thumbs.db
 .cursor/
 
 # --- Flutter (apps/frontend) ---
+apps/frontend/lib/**/*.zip
 apps/frontend/build/
 apps/frontend/.dart_tool/
 apps/frontend/.flutter-plugins
 apps/frontend/.flutter-plugins-dependencies
 apps/frontend/android/.gradle/
+apps/frontend/android/app/.cxx/
 apps/frontend/android/app/debug/
 apps/frontend/android/app/profile/
 apps/frontend/android/app/release/
@@ -42,3 +44,9 @@ apps/backend/bootstrap/cache/*.php
 *.jks
 *.keystore
 **/key.properties
+apps/frontend/.env
+apps/frontend/.env.*
+
+# --- Coverage / test artifacts ---
+apps/frontend/coverage/
+**/coverage/

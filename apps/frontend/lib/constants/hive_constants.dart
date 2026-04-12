@@ -4,9 +4,7 @@ class HiveConstants {
   static final String savedFirstTime = 'firstTime';
   static final String savedUserInfo = 'userInfo';
 
-  /// Planned monthly income for insights / planner (optional).
-  static const String plannerMonthlyIncome = 'plannerMonthlyIncome';
+  /// Optional: when set on [savedUserInfo] map, opens this SQLite profile (`guest_user`, etc.).
+  static const String userInfoLocalDbKey = 'local_db_user';
 
-  /// ISO 4217 code, e.g. SAR (display only for now).
-  static const String plannerCurrencyCode = 'plannerCurrencyCode';
 }

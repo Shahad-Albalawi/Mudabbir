@@ -1,4 +1,4 @@
-import 'package:mudabbir/persentation/resources/network_messages.dart';
+import 'package:mudabbir/presentation/resources/network_messages.dart';
 
 class Failure {
   final int code;
@@ -19,7 +19,7 @@ class ParsingFailure extends Failure {
 }
 
 class ServerFailure extends Failure {
-  const ServerFailure(int code, String message) : super(code, message);
+  const ServerFailure(super.code, super.message);
 }
 
 class UnknownFailure extends Failure {

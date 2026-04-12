@@ -1,5 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:mudabbir/utils/dev_log.dart';
 import 'package:uuid/uuid.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'dart:io';
@@ -27,7 +27,7 @@ class DeviceUtils {
       }
     } catch (e) {
       // fallback to generated UUID
-      debugPrint("Error fetching device ID: $e");
+      devLog('Error fetching device ID: $e');
     }
 
     // If platform ID unavailable, generate a new UUID

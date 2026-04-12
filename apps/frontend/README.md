@@ -14,19 +14,31 @@
 ## التشغيل السريع | Quick start
 
 ```bash
-git clone <your-repo-url>
 cd apps/frontend
 flutter pub get
 flutter run
 ```
 
+في **Debug** يُفعَّل تلقائياً (ما لم تعطِ `DISABLE_INSTANT_BROWSE=true`):
+
+- تخطي الإعداد المبدئي والدخول كضيف مع **بيانات تجريبية** (معاملات، أهداف، ميزانيات، تحديات محلية).
+
+لاختبار مسار التسجيل الحقيقي من الصفر:
+
+```bash
+flutter run --dart-define=DISABLE_INSTANT_BROWSE=true
+```
+
+**باكند محلي** على المحاكي فقط (المضيف `localhost:8000` عبر `10.0.2.2`):
+
+```bash
+flutter run --dart-define=USE_LOCAL_API=true
+```
+
 ## الإعداد | Configuration
 
-- **عنوان الـ API (تسجيل الدخول / التسجيل):**  
-  `lib/constants/api_constants.dart` → `baseUrl`
-- **تحديات السيرفر (Dio):**  
-  `lib/persentation/server_challenges/utils/dio_client.dart` → `baseUrl`  
-  يجب أن يتوافق المسار مع شكل الـ API لديك (مثل `/api`).
+- **عنوان الـ API:** الافتراضي هو السحابة في `lib/constants/api_constants.dart` (`baseUrl`). يمكن تجاوزه بـ `--dart-define=API_BASE_URL=...` أو التطوير المحلي بـ `USE_LOCAL_API=true` كما فوق.
+- **تحديات السيرفر (Dio):** نفس المضيف مع لاحقة `/api` عبر `ApiConstants.apiV1Base`.
 
 لا ترفع مفاتيح أو `.env` يحتوي أسرارًا — تظل الملفات الحساسة خارج Git (راجع `.gitignore`).
 
@@ -37,14 +49,6 @@ Do not commit API secrets; keep them in local env or CI variables.
 - من شاشة **الرئيسية (استكشاف)** اضغط أيقونة **القمر والنجوم** أعلى اليمين لتدوير: نظام الجهاز → فاتح → داكن.
 - On **Explore / Home**, tap the **moon & stars** icon (top-right of the greeting) to cycle **system → light → dark**.
 
-### الإشعارات (Firebase) | Push notifications
-
-- المشروع يتضمن **`firebase_core`**, **`firebase_messaging`**, **`flutter_local_notifications`**.
-- حتى تشغّل الإشعارات عبر FCM، نفّذ:  
-  `dart pub global activate flutterfire_cli` ثم **`flutterfire configure`** ليُولَّد `lib/firebase_options.dart` بمفاتيح حقيقية.  
-  بدون ذلك، التطبيق يعمل لكن يطبع في الـ log أن الإشعارات متجاهلة.
-- راجع **`../../README.md`** (قسم API و Firebase) لربط الرمز مع Laravel أو الإشعارات.
-
 ### جلسة الدخول الآمنة | Auth session
 
 - بعد تسجيل الدخول/التسجيل يُحفظ التوكن في **Hive** و**Flutter Secure Storage**؛ عند فقدان Hive يُستعاد من التخزين الآمن.
@@ -54,7 +58,7 @@ Do not commit API secrets; keep them in local env or CI variables.
 
 | المسار | الوصف |
 |--------|--------|
-| `lib/persentation/` | الشاشات والواجهات (اسم المجلد تاريخي بخطأ إملائي *presentation*؛ تغييره يتطلب إعادة تسمية واسعة للاستيرادات). |
+| `lib/presentation/` | الشاشات والواجهات |
 | `lib/domain/` | النماذج والمستودعات المجردة |
 | `lib/service/` | الخدمات، التوجيه، Hive، الـ API، الإشعارات، الأمان |
 | `../../README.md` | تعليمات المستودع كاملة (باكند، Android Studio، نشر) |

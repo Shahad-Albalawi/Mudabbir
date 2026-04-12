@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mudabbir/persentation/goals/goals_viewmodel.dart';
-import 'package:mudabbir/persentation/resources/color_manager.dart';
+import 'package:mudabbir/presentation/goals/goals_viewmodel.dart';
+import 'package:mudabbir/presentation/resources/color_manager.dart';
 import 'package:mudabbir/service/popup_service/popup_widgets.dart';
 
 class GoalPopup {
@@ -15,7 +15,7 @@ class GoalPopup {
     final endCtrl = TextEditingController();
 
     String? selectedType;
-    final List<String> types = ["Saving", "Investment", "Debt", "Other"];
+    const goalTypes = ['Saving', 'Investment', 'Debt', 'Other'];
 
     // ViewModel
     final goalViewmodel = ref.read(goalViewmodelProvider.notifier);
@@ -36,7 +36,7 @@ class GoalPopup {
               end: Alignment.bottomRight,
               colors: [
                 Theme.of(context).colorScheme.surface,
-                Theme.of(context).colorScheme.surface.withOpacity(0.95),
+                Theme.of(context).colorScheme.surface.withValues(alpha: 0.95),
               ],
             ),
           ),
@@ -56,7 +56,7 @@ class GoalPopup {
                     gradient: LinearGradient(
                       colors: [
                         ColorManager.primary,
-                        ColorManager.primary.withOpacity(0.8),
+                        ColorManager.primary.withValues(alpha: 0.8),
                       ],
                     ),
                   ),
@@ -65,7 +65,7 @@ class GoalPopup {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -96,7 +96,7 @@ class GoalPopup {
                                   ?.copyWith(
                                     color: Theme.of(
                                       context,
-                                    ).colorScheme.onPrimary.withOpacity(0.8),
+                                    ).colorScheme.onPrimary.withValues(alpha: 0.8),
                                   ),
                             ),
                           ],
@@ -166,12 +166,7 @@ class GoalPopup {
                         PopupWidgets.dropdownField<String>(
                           value: selectedType,
                           label: "Select type",
-                          items: [
-                            "Saving",
-                            "Investment",
-                            "Debt",
-                            "Other",
-                          ], // List<String>
+                          items: goalTypes,
                           onChanged: (val) => selectedType = val,
                           validator: (val) =>
                               val == null ? "Please select a type" : null,
@@ -257,12 +252,14 @@ class GoalPopup {
 
                             try {
                               await goalViewmodel.addNewGoal(goalData);
+                              if (!context.mounted) return;
                               Navigator.pop(context);
                               PopupWidgets.showSuccessSnackBar(
                                 context,
                                 "Goal created successfully! 🎉",
                               );
                             } catch (e) {
+                              if (!context.mounted) return;
                               PopupWidgets.showErrorSnackBar(
                                 context,
                                 "Failed to create goal: $e",

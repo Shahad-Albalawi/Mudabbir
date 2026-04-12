@@ -1,5 +1,5 @@
 import 'package:dartz/dartz.dart';
-import 'package:mudabbir/persentation/resources/strings_manager.dart';
+import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import '../../data/local/database_helper.dart';
 import '../../domain/repository/home_repository/home_repository.dart';
 

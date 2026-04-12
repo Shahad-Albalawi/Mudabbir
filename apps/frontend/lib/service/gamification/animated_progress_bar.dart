@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mudabbir/persentation/resources/color_manager.dart';
-import 'package:mudabbir/persentation/resources/strings_manager.dart';
+import 'package:mudabbir/presentation/resources/color_manager.dart';
+import 'package:mudabbir/presentation/resources/strings_manager.dart';
 
 /// Animated progress bar with particle effects
 class AnimatedProgressBar extends StatefulWidget {
@@ -102,12 +102,12 @@ class _AnimatedProgressBarState extends State<AnimatedProgressBar>
                 height: widget.height,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [progressColor, progressColor.withOpacity(0.7)],
+                    colors: [progressColor, progressColor.withValues(alpha: 0.7)],
                   ),
                   borderRadius: BorderRadius.circular(widget.height / 2),
                   boxShadow: [
                     BoxShadow(
-                      color: progressColor.withOpacity(0.4),
+                      color: progressColor.withValues(alpha: 0.4),
                       blurRadius: 8,
                       spreadRadius: 1,
                     ),
@@ -126,9 +126,9 @@ class _AnimatedProgressBarState extends State<AnimatedProgressBar>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        Colors.white.withOpacity(0.0),
-                        Colors.white.withOpacity(0.3),
-                        Colors.white.withOpacity(0.0),
+                        Colors.white.withValues(alpha: 0.0),
+                        Colors.white.withValues(alpha: 0.3),
+                        Colors.white.withValues(alpha: 0.0),
                       ],
                       stops: const [0.0, 0.5, 1.0],
                     ),

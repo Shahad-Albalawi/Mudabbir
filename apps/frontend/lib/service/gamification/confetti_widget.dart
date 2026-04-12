@@ -140,7 +140,7 @@ class ConfettiPainter extends CustomPainter {
       particle.update(animationValue * 100);
 
       final paint = Paint()
-        ..color = particle.color.withOpacity(1.0 - animationValue)
+        ..color = particle.color.withValues(alpha: 1.0 - animationValue)
         ..style = PaintingStyle.fill;
 
       final x = particle.x * size.width;

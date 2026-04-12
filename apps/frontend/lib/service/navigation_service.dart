@@ -96,7 +96,7 @@ class NavigationService {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -127,7 +127,7 @@ class NavigationService {
                     Text(
                       body,
                       style: TextStyle(
-                        color: config.textColor.withOpacity(0.9),
+                        color: config.textColor.withValues(alpha: 0.9),
                         fontSize: 13,
                         height: 1.3,
                       ),
@@ -169,7 +169,7 @@ class NavigationService {
                     ScaffoldMessenger.of(context).hideCurrentSnackBar(),
                 icon: Icon(
                   Icons.close_rounded,
-                  color: config.textColor.withOpacity(0.8),
+                  color: config.textColor.withValues(alpha: 0.8),
                   size: 18,
                 ),
                 constraints: const BoxConstraints(minWidth: 28, minHeight: 28),

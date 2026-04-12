@@ -1,21 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
 import 'package:dartz/dartz.dart';
-import 'package:mudabbir/persentation/resources/color_manager.dart';
-import 'package:mudabbir/persentation/resources/entity_localizations.dart';
-import 'package:mudabbir/persentation/resources/strings_manager.dart';
-import 'package:mudabbir/persentation/home/home_viewmodel.dart';
+import 'package:mudabbir/presentation/resources/color_manager.dart';
+import 'package:mudabbir/presentation/resources/entity_localizations.dart';
+import 'package:mudabbir/presentation/resources/strings_manager.dart';
+import 'package:mudabbir/presentation/home/home_viewmodel.dart';
 
 import '../../data/local/database_helper.dart';
-import '../../domain/repository/home_repository/home_repository.dart';
 import 'popup_widgets.dart';
-import 'popup_validators.dart';
 
 class TransactionPopup {
   final _db = GetIt.I<DbHelper>();
-  final _homeRepo = GetIt.I<HomeRepository>();
 
   Future<void> show(BuildContext context, {required String type}) async {
     await showDialog(
@@ -76,7 +72,7 @@ class TransactionPopup {
               end: Alignment.bottomRight,
               colors: [
                 Theme.of(context).colorScheme.surface,
-                Theme.of(context).colorScheme.surface.withOpacity(0.95),
+                Theme.of(context).colorScheme.surface.withValues(alpha: 0.95),
               ],
             ),
           ),
@@ -96,7 +92,7 @@ class TransactionPopup {
                     gradient: LinearGradient(
                       colors: [
                         ColorManager.primary,
-                        ColorManager.primary.withOpacity(0.8),
+                        ColorManager.primary.withValues(alpha: 0.8),
                       ],
                     ),
                   ),
@@ -133,7 +129,7 @@ class TransactionPopup {
                             vertical: 12,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
@@ -258,6 +254,7 @@ class TransactionPopup {
                             // ✅ Reload Home state
                             await ref.read(homeProvider.notifier).reload();
 
+                            if (!context.mounted) return;
                             Navigator.pop(context);
                             PopupWidgets.showSuccessSnackBar(
                               context,
@@ -357,9 +354,9 @@ class TransactionPopup {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: ColorManager.error.withOpacity(0.1),
+                color: ColorManager.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: ColorManager.error.withOpacity(0.3)),
+                border: Border.all(color: ColorManager.error.withValues(alpha: 0.3)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

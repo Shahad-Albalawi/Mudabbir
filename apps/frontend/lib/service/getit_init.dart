@@ -1,12 +1,11 @@
 import 'package:mudabbir/data/local/database_helper.dart';
 import 'package:mudabbir/data/local/local_database.dart';
 import 'package:mudabbir/domain/repository/budget_repository/budget_repository.dart';
-import 'package:mudabbir/domain/repository/challanges_repository/challanges_repository.dart';
+import 'package:mudabbir/domain/repository/challenges_repository/challenges_repository.dart';
 import 'package:mudabbir/domain/repository/goals_repository/goals_repository.dart';
 import 'package:mudabbir/domain/repository/home_repository/home_repository.dart';
-import 'package:mudabbir/domain/repository/planner_repository/planner_repository.dart';
 import 'package:mudabbir/domain/repository/post_repository/posts_repository.dart';
-import 'package:mudabbir/persentation/chatbot/chatbot_viewmodel.dart';
+import 'package:mudabbir/presentation/chatbot/chatbot_viewmodel.dart';
 import 'package:mudabbir/service/popup_service/budget_popup.dart';
 import 'package:mudabbir/service/popup_service/challenge_popup.dart';
 import 'package:mudabbir/service/popup_service/goal_popup.dart';
@@ -48,8 +47,6 @@ void setupLocator() {
     () => FinancialReportService(),
   );
   getIt.registerLazySingleton<HomeRepository>(() => HomeRepository());
-  getIt.registerLazySingleton<PlannerRepository>(() => PlannerRepository());
-
   getIt.registerLazySingleton<PopupService>(() => PopupService());
   getIt.registerLazySingleton<BudgetRepository>(() => BudgetRepository());
   getIt.registerLazySingleton<GoalsRepository>(() => GoalsRepository());

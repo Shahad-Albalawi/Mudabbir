@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:mudabbir/persentation/resources/strings_manager.dart';
+import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/navigation_service.dart';
 
@@ -97,12 +97,12 @@ class PopupWidgets {
     String Function(T value)? itemLabel,
   }) {
     return DropdownButtonFormField<T>(
-      value: value,
+      initialValue: value,
       decoration: InputDecoration(labelText: label),
       items: items.map((i) {
         if (i is Map<String, dynamic>) {
           final raw = i['name']?.toString() ?? '';
-          final display = formatItemLabel != null ? formatItemLabel!(raw) : raw;
+          final display = formatItemLabel != null ? formatItemLabel(raw) : raw;
           return DropdownMenuItem<T>(
             value: i['id'] as T,
             child: Text(display),

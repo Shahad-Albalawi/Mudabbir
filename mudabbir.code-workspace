@@ -1,0 +1,15 @@
+{
+  "folders": [
+    {
+      "path": "apps/frontend",
+      "name": "Mudabbir (Flutter)"
+    },
+    {
+      "path": ".",
+      "name": "Repository root"
+    }
+  ],
+  "settings": {
+    "dart.projectSearchDepth": 8
+  }
+}
