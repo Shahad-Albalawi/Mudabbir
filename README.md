@@ -23,15 +23,6 @@ Mudabbir enables users to gain full visibility over their financial behavior thr
 
 ---
 
-## Repository Structure
-
-- `apps/frontend` — Flutter mobile application  
-- `apps/backend` — Laravel API (chatbot and challenges system)  
-- `docs` — Documentation and setup guides  
-- `tools` — Development utilities and scripts  
-
----
-
 ## Screenshots
 
 ### Home Screen
