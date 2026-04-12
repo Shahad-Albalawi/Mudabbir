@@ -41,7 +41,7 @@ Mudabbir enables users to gain full visibility over their financial behavior thr
 <img src="assets/screenshots/chatbot.png" width="250"/>
 
 ### Analytics Dashboard
-<img src="assets/screenshots/analytics.png" width="250"/>
+<img src="assets/screenshots/statistics.png" width="250"/>
 
 ### Behavioral Analysis
 <img src="assets/screenshots/behavior.png" width="250"/>
