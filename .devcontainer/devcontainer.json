@@ -4,7 +4,7 @@
   "runArgs": ["--init"],
   "remoteUser": "vscode",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
-  "postCreateCommand": "bash -lc 'set -e; cd apps/backend; php -m | grep -qi pdo_sqlite || (sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends libsqlite3-dev && sudo docker-php-ext-install pdo_sqlite); composer install --no-interaction'",
+  "postCreateCommand": "bash -lc 'set -e; cd backend; php -m | grep -qi pdo_sqlite || (sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends libsqlite3-dev && sudo docker-php-ext-install pdo_sqlite); composer install --no-interaction'",
   "forwardPorts": [8000],
   "portsAttributes": {
     "8000": {

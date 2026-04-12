@@ -14,7 +14,7 @@ If `php` or `composer` are missing or broken on Windows, pick one path below.
 With **Docker Desktop** installed: open the **repository root** in Cursor/VS Code → Command Palette → **Dev Containers: Reopen in Container**. After the image builds, in a terminal:
 
 ```bash
-cd apps/backend
+cd backend
 php artisan serve
 ```
 
@@ -24,7 +24,7 @@ php artisan serve
 
 ### Option A — Docker (no local PHP)
 
-Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) for Windows, then from **`apps/backend`**:
+Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) for Windows, then from **`backend/`**:
 
 ```bash
 docker compose build
@@ -36,14 +36,14 @@ docker compose run --rm api php artisan migrate --force
 docker compose up
 ```
 
-API on **http://127.0.0.1:8000** (Flutter emulator: use `USE_LOCAL_API` / host `10.0.2.2` as in `apps/frontend/README.md`). Put **`OPENAI_API_KEY`** in `.env` on the host (same folder; bind-mounted).
+API on **http://127.0.0.1:8000** (Flutter emulator: use `USE_LOCAL_API` / host `10.0.2.2` as in `frontend/README.md`). Put **`OPENAI_API_KEY`** in `.env` on the host (same folder; bind-mounted).
 
 ### Option B — WSL (Ubuntu)
 
 ```bash
 sudo apt update && sudo apt install -y php8.3 php8.3-sqlite3 php8.3-xml php8.3-mbstring php8.3-curl unzip
 # Composer: https://getcomposer.org/download/
-cd /path/to/repo/apps/backend && composer install
+cd /path/to/repo/backend && composer install
 ```
 
 ### Option C — Fix Windows / Scoop PHP
@@ -58,7 +58,7 @@ Errors like **“Cannot open shim file for read”** usually mean a broken Scoop
 ## Quick start (PHP on PATH)
 
 ```bash
-cd apps/backend
+cd backend
 composer install
 cp .env.example .env          # Windows CMD: copy .env.example .env
 php artisan key:generate
@@ -93,4 +93,4 @@ Code style (when PHP works): `./vendor/bin/pint`
 
 ## Deploy
 
-See **`../../docs/`** (e.g. Render) and repo root **`README.md`**.
+See **`../docs/`** (e.g. Render) and repo root **`../README.md`**.

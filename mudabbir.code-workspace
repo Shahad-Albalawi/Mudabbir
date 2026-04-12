@@ -1,12 +1,12 @@
 {
   "folders": [
     {
-      "path": "apps/frontend",
-      "name": "Mudabbir (Flutter)"
+      "path": "frontend",
+      "name": "Mudabbir — Flutter"
     },
     {
-      "path": ".",
-      "name": "Repository root"
+      "path": "backend",
+      "name": "Mudabbir — Laravel API"
     }
   ],
   "settings": {

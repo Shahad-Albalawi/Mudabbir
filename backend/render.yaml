@@ -3,7 +3,7 @@ services:
     name: mudabbir-backend-api
     env: php
     plan: free
-    rootDir: apps/backend
+    rootDir: backend
     buildCommand: composer install --no-interaction --prefer-dist --optimize-autoloader
     startCommand: php artisan config:clear && php artisan serve --host 0.0.0.0 --port $PORT
     healthCheckPath: /api/challenges

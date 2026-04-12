@@ -5,7 +5,7 @@
   Run from repo root:  powershell -ExecutionPolicy Bypass -File scripts/run-backend-docker.ps1
 #>
 $ErrorActionPreference = "Stop"
-$Backend = (Resolve-Path (Join-Path $PSScriptRoot "..\apps\backend")).Path
+$Backend = (Resolve-Path (Join-Path $PSScriptRoot "..\backend")).Path
 
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
   Write-Error "Docker is not installed or not in PATH. Install Docker Desktop, then retry."

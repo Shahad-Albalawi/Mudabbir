@@ -10,46 +10,46 @@ Thumbs.db
 *.iml
 .cursor/
 
-# --- Flutter (apps/frontend) ---
-apps/frontend/lib/**/*.zip
-apps/frontend/build/
-apps/frontend/.dart_tool/
-apps/frontend/.flutter-plugins
-apps/frontend/.flutter-plugins-dependencies
-apps/frontend/android/.gradle/
-apps/frontend/android/app/.cxx/
-apps/frontend/android/app/debug/
-apps/frontend/android/app/profile/
-apps/frontend/android/app/release/
-apps/frontend/android/local.properties
-apps/frontend/ios/Pods/
-apps/frontend/ios/.symlinks/
-apps/frontend/ios/Flutter/Flutter.podspec
-apps/frontend/macos/Flutter/ephemeral/
-apps/frontend/linux/flutter/ephemeral/
-apps/frontend/windows/flutter/ephemeral/
+# --- Flutter (frontend/) ---
+frontend/lib/**/*.zip
+frontend/build/
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/android/.gradle/
+frontend/android/app/.cxx/
+frontend/android/app/debug/
+frontend/android/app/profile/
+frontend/android/app/release/
+frontend/android/local.properties
+frontend/ios/Pods/
+frontend/ios/.symlinks/
+frontend/ios/Flutter/Flutter.podspec
+frontend/macos/Flutter/ephemeral/
+frontend/linux/flutter/ephemeral/
+frontend/windows/flutter/ephemeral/
 
-# --- Laravel (apps/backend) ---
-apps/backend/vendor/
-apps/backend/node_modules/
-apps/backend/public/build/
-apps/backend/public/hot
-apps/backend/.env
-apps/backend/.env.*
-!apps/backend/.env.example
-apps/backend/.phpunit.cache/
-apps/backend/.phpunit.result.cache
-apps/backend/storage/*.key
-apps/backend/bootstrap/cache/*.php
-!apps/backend/bootstrap/cache/.gitignore
+# --- Laravel (backend/) ---
+backend/vendor/
+backend/node_modules/
+backend/public/build/
+backend/public/hot
+backend/.env
+backend/.env.*
+!backend/.env.example
+backend/.phpunit.cache/
+backend/.phpunit.result.cache
+backend/storage/*.key
+backend/bootstrap/cache/*.php
+!backend/bootstrap/cache/.gitignore
 
 # --- Secrets (any path) ---
 *.jks
 *.keystore
 **/key.properties
-apps/frontend/.env
-apps/frontend/.env.*
+frontend/.env
+frontend/.env.*
 
 # --- Coverage / test artifacts ---
-apps/frontend/coverage/
+frontend/coverage/
 **/coverage/

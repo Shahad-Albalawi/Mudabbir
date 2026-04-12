@@ -1,12 +1,12 @@
 # Deploy Mudabbir Backend on Render
 
-This guide deploys `apps/backend` as a public API for Flutter.
+This guide deploys `backend/` as a public API for Flutter.
 
 ## 1) Create Web Service
 
 1. Open [Render Dashboard](https://dashboard.render.com/).
 2. Click **New** -> **Web Service**.
-3. Connect your Git repo that contains `apps/backend`.
+3. Connect your Git repo that contains `backend/`.
 4. Render will detect `render.yaml` automatically. Approve it.
 
 ## 2) Add Environment Variables
@@ -58,6 +58,7 @@ Expected shape:
 Run app with:
 
 ```bash
+cd frontend
 flutter run --dart-define=CHALLENGES_API_BASE_URL=https://<your-render-domain>/api
 ```
 

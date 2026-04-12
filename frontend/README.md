@@ -9,12 +9,12 @@
 - [Flutter](https://docs.flutter.dev/get-started/install) stable (Dart SDK **^3.8.1** — see `pubspec.yaml`)
 - Android Studio / Xcode (للبناء على الجهاز | for device builds)
 
-كل خطوات المستودع (باكند، Android Studio، نشر): **[../../README.md](../../README.md)** في جذر المشروع.
+كل خطوات المستودع (باكند، Android Studio، نشر): **[../README.md](../README.md)** في جذر المشروع.
 
 ## التشغيل السريع | Quick start
 
 ```bash
-cd apps/frontend
+cd frontend
 flutter pub get
 flutter run
 ```
@@ -61,7 +61,7 @@ Do not commit API secrets; keep them in local env or CI variables.
 | `lib/presentation/` | الشاشات والواجهات |
 | `lib/domain/` | النماذج والمستودعات المجردة |
 | `lib/service/` | الخدمات، التوجيه، Hive، الـ API، الإشعارات، الأمان |
-| `../../README.md` | تعليمات المستودع كاملة (باكند، Android Studio، نشر) |
+| `../README.md` | تعليمات المستودع كاملة (باكند، Android Studio، نشر) |
 | `lib/data/` | الشبكة، الأخطاء، التخزين المحلي |
 | `assets/` | صور، Lottie، خط Tajawal |
 
@@ -78,4 +78,4 @@ flutter test
 
 ---
 
-**ملاحظة:** Monorepo يحتوي `apps/frontend` و `apps/backend` — التوثيق المركزي في **`README.md`** عند جذر المستودع.
+**ملاحظة:** المستودع يحتوي `frontend/` و `backend/` — التوثيق المركزي في **`README.md`** عند الجذر.

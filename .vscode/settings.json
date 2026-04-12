@@ -1,7 +1,7 @@
 {
   "dart.projectSearchDepth": 8,
   "dart.analysisExcludedFolders": [
-    "${workspaceFolder}/apps/backend"
+    "${workspaceFolder}/backend"
   ],
   "files.watcherExclude": {
     "**/build/**": true,
