@@ -35,19 +35,19 @@ Mudabbir enables users to gain full visibility over their financial behavior thr
 ## Screenshots
 
 ### Home Screen
-<img src="assets/screenshots/home.png" width="250"/>
+<img src="screenshots/home.png" width="250"/>
 
 ### AI Chatbot
-<img src="assets/screenshots/chatbot.png" width="250"/>
+<img src="screenshots/chatbot.png" width="250"/>
 
 ### Analytics Dashboard
-<img src="assets/screenshots/statistics.png" width="250"/>
+<img src="screenshots/statistics.png" width="250"/>
 
 ### Behavioral Analysis
-<img src="assets/screenshots/behavior.png" width="250"/>
+<img src="screenshots/behavior.png" width="250"/>
 
 ### Goals Tracking
-<img src="assets/screenshots/goals.png" width="250"/>
+<img src="screenshots/goals.png" width="250"/>
 
 ---
 
@@ -63,10 +63,12 @@ Mudabbir enables users to gain full visibility over their financial behavior thr
 
 ## Technology Stack
 
-- Frontend: Flutter, Dart  
-- Backend: Laravel, PHP, SQLite  
-- API: RESTful services  
-- Version Control: Git, GitHub  
+- Flutter (Frontend)  
+- Dart  
+- Laravel (Backend)  
+- PHP, SQLite  
+- REST APIs  
+- Git & GitHub  
 
 ---
 
