@@ -9,6 +9,19 @@ REST API for the Flutter app: **chatbot** (`POST /api/generate-content`, OpenAI)
 
 If `php` or `composer` are missing or broken on Windows, pick one path below.
 
+### Option 0 — Dev Container (Cursor / VS Code)
+
+With **Docker Desktop** installed: open the **repository root** in Cursor/VS Code → Command Palette → **Dev Containers: Reopen in Container**. After the image builds, in a terminal:
+
+```bash
+cd apps/backend
+php artisan serve
+```
+
+`composer install` runs once in **postCreate**. Copy `.env` / add **`OPENAI_API_KEY`**, then `php artisan key:generate` and `touch database/database.sqlite && php artisan migrate` if you have not already.
+
+**One command on Windows (no PHP on PATH):** from repo root run `scripts/run-backend-docker.ps1` in PowerShell.
+
 ### Option A — Docker (no local PHP)
 
 Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) for Windows, then from **`apps/backend`**:

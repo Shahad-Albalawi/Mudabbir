@@ -1,0 +1,25 @@
+{
+  "name": "Mudabbir (PHP + Composer)",
+  "image": "mcr.microsoft.com/devcontainers/php:1-8.3-bookworm",
+  "runArgs": ["--init"],
+  "remoteUser": "vscode",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "postCreateCommand": "bash -lc 'set -e; cd apps/backend; php -m | grep -qi pdo_sqlite || (sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends libsqlite3-dev && sudo docker-php-ext-install pdo_sqlite); composer install --no-interaction'",
+  "forwardPorts": [8000],
+  "portsAttributes": {
+    "8000": {
+      "label": "Laravel API",
+      "onAutoForward": "notify"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "bmewburn.vscode-intelephense-client"
+      ],
+      "settings": {
+        "php.validate.executablePath": "/usr/local/bin/php"
+      }
+    }
+  }
+}
