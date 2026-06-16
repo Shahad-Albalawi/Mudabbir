@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:mudabbir/data/local/challenge_hive_cache.dart';
+import 'package:mudabbir/data/local/expense_hive_cache.dart';
+import 'package:mudabbir/data/local/goal_hive_cache.dart';
 import 'package:mudabbir/presentation/resources/theme_manager.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/hive_service.dart';
@@ -24,6 +27,12 @@ Future<void> main() async {
     await SystemChrome.setPreferredOrientations([]);
     await Hive.initFlutter();
     await getIt<HiveService>().init();
+    await getIt<ChallengeHiveCache>().init();
+    await getIt<ChallengeHiveCache>().migrateLegacyProgress(
+      Hive.box('myBox').toMap(),
+    );
+    await getIt<ExpenseHiveCache>().init();
+    await getIt<GoalHiveCache>().init();
     await InstantBrowseBootstrap.applyIfEnabled();
     await PushNotificationService.instance.initializeIfConfigured();
   } catch (e, stack) {

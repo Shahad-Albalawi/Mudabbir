@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mudabbir/presentation/home/home_viewmodel.dart';
 import 'package:mudabbir/presentation/home/widgets/add_container.dart';
 import 'package:mudabbir/presentation/home/widgets/summary_widget.dart';
+import 'package:mudabbir/presentation/expenses/expenses_view.dart';
 import 'package:mudabbir/presentation/invite/invite_view.dart';
+import 'package:mudabbir/presentation/resources/expense_strings.dart';
 import 'package:mudabbir/presentation/resources/color_manager.dart';
 import 'package:mudabbir/presentation/resources/ios_style_constants.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
@@ -37,6 +39,17 @@ class ExploreView extends ConsumerWidget {
           const SummaryWidget(),
           const SizedBox(height: _sectionSpacing),
           const AddContainer(),
+          const SizedBox(height: _sectionSpacing),
+          _buildStatCard(
+            context: context,
+            title: ExpenseStrings.viewAllExpenses,
+            icon: Icons.receipt_long_outlined,
+            isPrimary: false,
+            onTap: () {
+              HapticService.light();
+              getIt<NavigationService>().navigate(const ExpensesView());
+            },
+          ),
           const SizedBox(height: _sectionSpacing),
           _buildInviteBanner(context),
           const SizedBox(height: _sectionSpacing),

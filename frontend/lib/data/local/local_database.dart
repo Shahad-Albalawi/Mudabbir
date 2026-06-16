@@ -32,7 +32,7 @@ class LocalDatabase {
 
     _database = await openDatabase(
       path,
-      version: 3,
+      version: 5,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
       onOpen: (db) async {
@@ -48,6 +48,31 @@ class LocalDatabase {
       await db.execute('DROP TABLE IF EXISTS category_budgets');
       await db.execute('DROP TABLE IF EXISTS app_notes');
       await db.execute('DROP TABLE IF EXISTS app_tasks');
+    }
+    if (oldVersion < 4) {
+      await db.execute(
+        'ALTER TABLE transactions ADD COLUMN is_recurring INTEGER NOT NULL DEFAULT 0',
+      );
+      await db.execute(
+        'ALTER TABLE transactions ADD COLUMN recurrence_interval TEXT',
+      );
+    }
+    if (oldVersion < 5) {
+      await db.execute('ALTER TABLE goals ADD COLUMN image_path TEXT');
+      await db.execute(
+        'ALTER TABLE goals ADD COLUMN is_completed INTEGER NOT NULL DEFAULT 0',
+      );
+      await db.execute('ALTER TABLE goals ADD COLUMN completed_at TEXT');
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS goal_contributions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          goal_id INTEGER NOT NULL,
+          amount REAL NOT NULL,
+          contributed_at TEXT NOT NULL,
+          note TEXT,
+          FOREIGN KEY (goal_id) REFERENCES goals(id) ON DELETE CASCADE
+        )
+      ''');
     }
   }
 
@@ -82,7 +107,21 @@ class LocalDatabase {
       current_amount REAL NOT NULL DEFAULT 0.0,
       type TEXT NOT NULL,
       start_date TEXT NOT NULL,
-      end_date TEXT NOT NULL
+      end_date TEXT NOT NULL,
+      image_path TEXT,
+      is_completed INTEGER NOT NULL DEFAULT 0,
+      completed_at TEXT
+    )
+  ''');
+
+    await db.execute('''
+    CREATE TABLE goal_contributions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      goal_id INTEGER NOT NULL,
+      amount REAL NOT NULL,
+      contributed_at TEXT NOT NULL,
+      note TEXT,
+      FOREIGN KEY (goal_id) REFERENCES goals(id) ON DELETE CASCADE
     )
   ''');
 
@@ -105,6 +144,8 @@ class LocalDatabase {
       notes TEXT,
       account_id INTEGER NOT NULL,
       category_id INTEGER NOT NULL,
+      is_recurring INTEGER NOT NULL DEFAULT 0,
+      recurrence_interval TEXT,
       FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE,
       FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT
     )

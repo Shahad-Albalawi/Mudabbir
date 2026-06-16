@@ -1,39 +1,46 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mudabbir/domain/models/challenge_sync_result.dart';
+import 'package:mudabbir/domain/repository/server_challenge_repository/server_challenge_repository.dart';
 import 'package:mudabbir/presentation/resources/server_challenge_strings.dart';
 import 'package:mudabbir/presentation/server_challenges/models/challenge_model.dart';
 import 'package:mudabbir/presentation/server_challenges/providers/challenge_state.dart';
 import 'package:mudabbir/presentation/server_challenges/services/api_exception.dart';
 import 'package:mudabbir/presentation/server_challenges/services/challenge_service.dart';
 import 'package:mudabbir/presentation/server_challenges/utils/dio_client.dart';
+import 'package:mudabbir/service/getit_init.dart';
 
-// Dio Client Provider
+// Dio Client Provider (kept for Riverpod consumers that still reference it)
 final dioClientProvider = Provider<DioClient>((ref) {
-  return DioClient();
+  return getIt<DioClient>();
 });
 
-// Challenge Service Provider
 final challengeServiceProvider = Provider<ChallengeService>((ref) {
-  final dioClient = ref.watch(dioClientProvider);
-  return ChallengeService(dioClient);
+  return getIt<ChallengeService>();
 });
 
-// Challenges List Provider
+final serverChallengeRepositoryProvider = Provider<ServerChallengeRepository>(
+  (ref) => getIt<ServerChallengeRepository>(),
+);
+
 final challengesProvider =
     StateNotifierProvider<ChallengesNotifier, ChallengeState>((ref) {
-      final service = ref.watch(challengeServiceProvider);
-      return ChallengesNotifier(service);
-    });
+  return ChallengesNotifier(ref.watch(serverChallengeRepositoryProvider));
+});
 
 class ChallengesNotifier extends StateNotifier<ChallengeState> {
-  final ChallengeService _service;
+  final ServerChallengeRepository _repository;
 
-  ChallengesNotifier(this._service) : super(const ChallengeInitial());
+  ChallengesNotifier(this._repository) : super(const ChallengeInitial());
 
   Future<void> loadChallenges() async {
     state = const ChallengeLoading();
     try {
-      final challenges = await _service.getChallenges();
-      state = ChallengeLoaded(challenges);
+      final result = await _repository.getChallenges();
+      state = ChallengeLoaded(
+        result.challenges,
+        fromCache: result.fromCache,
+        isOffline: result.isOffline,
+      );
     } on ApiException catch (e) {
       state = ChallengeError(e.getValidationMessage());
     } catch (e) {
@@ -41,21 +48,15 @@ class ChallengesNotifier extends StateNotifier<ChallengeState> {
     }
   }
 
-  Future<void> refreshChallenges() async {
-    try {
-      final challenges = await _service.getChallenges();
-      state = ChallengeLoaded(challenges);
-    } on ApiException catch (e) {
-      state = ChallengeError(e.getValidationMessage());
-    } catch (e) {
-      state = ChallengeError(ServerChallengeStrings.unexpectedErrorLater);
-    }
-  }
+  Future<void> refreshChallenges() async => loadChallenges();
 
   void addChallenge(ChallengeModel challenge) {
     if (state is ChallengeLoaded) {
       final currentState = state as ChallengeLoaded;
-      state = ChallengeLoaded([challenge, ...currentState.challenges]);
+      state = ChallengeLoaded(
+        [challenge, ...currentState.challenges],
+        isOffline: currentState.isOffline,
+      );
     }
   }
 
@@ -67,7 +68,10 @@ class ChallengesNotifier extends StateNotifier<ChallengeState> {
             ? updatedChallenge
             : challenge;
       }).toList();
-      state = ChallengeLoaded(challenges);
+      state = ChallengeLoaded(
+        challenges,
+        isOffline: currentState.isOffline,
+      );
     }
   }
 
@@ -77,34 +81,40 @@ class ChallengesNotifier extends StateNotifier<ChallengeState> {
       final challenges = currentState.challenges
           .where((challenge) => challenge.id != challengeId)
           .toList();
-      state = ChallengeLoaded(challenges);
+      state = ChallengeLoaded(
+        challenges,
+        isOffline: currentState.isOffline,
+      );
     }
   }
 }
 
-// Challenge Detail Provider
 final challengeDetailProvider =
     StateNotifierProvider.family<
       ChallengeDetailNotifier,
       ChallengeDetailState,
       int
     >((ref, challengeId) {
-      final service = ref.watch(challengeServiceProvider);
-      return ChallengeDetailNotifier(service, challengeId);
+      final repository = ref.watch(serverChallengeRepositoryProvider);
+      return ChallengeDetailNotifier(repository, challengeId);
     });
 
 class ChallengeDetailNotifier extends StateNotifier<ChallengeDetailState> {
-  final ChallengeService _service;
+  final ServerChallengeRepository _repository;
   final int _challengeId;
 
-  ChallengeDetailNotifier(this._service, this._challengeId)
+  ChallengeDetailNotifier(this._repository, this._challengeId)
     : super(const ChallengeDetailInitial());
 
   Future<void> loadChallenge() async {
     state = const ChallengeDetailLoading();
     try {
-      final challenge = await _service.getChallenge(_challengeId);
-      state = ChallengeDetailLoaded(challenge);
+      final result = await _repository.getChallenge(_challengeId);
+      state = ChallengeDetailLoaded(
+        result.challenge,
+        fromCache: result.fromCache,
+        isOffline: result.isOffline,
+      );
     } on ApiException catch (e) {
       state = ChallengeDetailError(e.getValidationMessage());
     } catch (e) {
@@ -117,22 +127,21 @@ class ChallengeDetailNotifier extends StateNotifier<ChallengeDetailState> {
   }
 }
 
-// Challenge Operations Provider (create, update, delete)
 final challengeOperationProvider =
     StateNotifierProvider<ChallengeOperationNotifier, ChallengeOperationState>((
       ref,
     ) {
-      final service = ref.watch(challengeServiceProvider);
+      final repository = ref.watch(serverChallengeRepositoryProvider);
       final challengesNotifier = ref.watch(challengesProvider.notifier);
-      return ChallengeOperationNotifier(service, challengesNotifier);
+      return ChallengeOperationNotifier(repository, challengesNotifier);
     });
 
 class ChallengeOperationNotifier
     extends StateNotifier<ChallengeOperationState> {
-  final ChallengeService _service;
+  final ServerChallengeRepository _repository;
   final ChallengesNotifier _challengesNotifier;
 
-  ChallengeOperationNotifier(this._service, this._challengesNotifier)
+  ChallengeOperationNotifier(this._repository, this._challengesNotifier)
     : super(const ChallengeOperationInitial());
 
   Future<void> createChallenge({
@@ -143,7 +152,7 @@ class ChallengeOperationNotifier
   }) async {
     state = const ChallengeOperationLoading();
     try {
-      final challenge = await _service.createChallenge(
+      final challenge = await _repository.createChallenge(
         name: name,
         amount: amount,
         startDate: startDate,
@@ -172,7 +181,7 @@ class ChallengeOperationNotifier
   }) async {
     state = const ChallengeOperationLoading();
     try {
-      final challenge = await _service.updateChallenge(
+      final challenge = await getIt<ChallengeService>().updateChallenge(
         id: id,
         name: name,
         amount: amount,
@@ -196,7 +205,7 @@ class ChallengeOperationNotifier
   Future<void> deleteChallenge(int id) async {
     state = const ChallengeOperationLoading();
     try {
-      await _service.deleteChallenge(id);
+      await _repository.deleteChallenge(id);
       _challengesNotifier.removeChallenge(id);
       state = ChallengeOperationSuccess(
         ServerChallengeStrings.challengeDeletedSuccess,
@@ -214,7 +223,7 @@ class ChallengeOperationNotifier
   }) async {
     state = const ChallengeOperationLoading();
     try {
-      final challenge = await _service.inviteUser(
+      final challenge = await _repository.inviteUser(
         challengeId: challengeId,
         email: email,
       );
@@ -238,7 +247,7 @@ class ChallengeOperationNotifier
   }) async {
     state = const ChallengeOperationLoading();
     try {
-      final challenge = await _service.removeParticipant(
+      final challenge = await _repository.removeParticipant(
         challengeId: challengeId,
         userId: userId,
       );
@@ -257,7 +266,7 @@ class ChallengeOperationNotifier
   Future<void> toggleStatus(int challengeId) async {
     state = const ChallengeOperationLoading();
     try {
-      final challenge = await _service.toggleStatus(challengeId);
+      final challenge = await _repository.toggleStatus(challengeId);
       _challengesNotifier.updateChallenge(challenge);
       state = ChallengeOperationSuccess(
         challenge.achieved
@@ -272,16 +281,15 @@ class ChallengeOperationNotifier
     }
   }
 
-  // NEW: Accept or reject invitation
   Future<void> respondToInvitation({
     required int challengeId,
     required bool accept,
   }) async {
     state = const ChallengeOperationLoading();
     try {
-      final challenge = await _service.respondToInvitation(
+      final challenge = await _repository.respondToInvitation(
         challengeId: challengeId,
-        status: accept ? 'accepted' : 'rejected',
+        accept: accept,
       );
       _challengesNotifier.updateChallenge(challenge);
       state = ChallengeOperationSuccess(
@@ -297,27 +305,101 @@ class ChallengeOperationNotifier
     }
   }
 
+  Future<void> checkIn({
+    required int challengeId,
+    int userId = 1,
+  }) async {
+    state = const ChallengeOperationLoading();
+    try {
+      final result = await _repository.checkIn(
+        challengeId: challengeId,
+        userId: userId,
+      );
+      _challengesNotifier.updateChallenge(result.challenge);
+
+      var message = result.alreadyCheckedIn
+          ? ServerChallengeStrings.alreadyCheckedIn
+          : ServerChallengeStrings.checkInSuccess;
+
+      if (result.newBadges.contains('streak_30')) {
+        message = ServerChallengeStrings.badge30Earned;
+      } else if (result.newBadges.contains('streak_7')) {
+        message = ServerChallengeStrings.badge7Earned;
+      }
+
+      state = ChallengeOperationSuccess(message, challenge: result.challenge);
+    } on ApiException catch (e) {
+      state = ChallengeOperationError(e.getValidationMessage());
+    } catch (e) {
+      state = ChallengeOperationError(ServerChallengeStrings.unexpectedError);
+    }
+  }
+
+  Future<ChallengeProgressResult?> addProgress({
+    required int challengeId,
+    required double amount,
+    int userId = 1,
+  }) async {
+    state = const ChallengeOperationLoading();
+    try {
+      final result = await _repository.addProgress(
+        challengeId: challengeId,
+        amount: amount,
+        userId: userId,
+      );
+      if (result.challenge != null) {
+        _challengesNotifier.updateChallenge(result.challenge!);
+      }
+      final message = result.queuedOffline
+          ? ServerChallengeStrings.progressQueuedOffline
+          : ServerChallengeStrings.progressSaved;
+      state = ChallengeOperationSuccess(message, challenge: result.challenge);
+      return result;
+    } on ApiException catch (e) {
+      state = ChallengeOperationError(e.getValidationMessage());
+      return null;
+    } catch (e) {
+      state = ChallengeOperationError(ServerChallengeStrings.unexpectedError);
+      return null;
+    }
+  }
+
+  Future<void> createFromTemplate(String templateId) async {
+    state = const ChallengeOperationLoading();
+    try {
+      final challenge = await _repository.createFromTemplate(templateId);
+      _challengesNotifier.addChallenge(challenge);
+      state = ChallengeOperationSuccess(
+        ServerChallengeStrings.templateCreated,
+        challenge: challenge,
+      );
+    } on ApiException catch (e) {
+      state = ChallengeOperationError(e.getValidationMessage());
+    } catch (e) {
+      state = ChallengeOperationError(ServerChallengeStrings.unexpectedError);
+    }
+  }
+
   void reset() {
     state = const ChallengeOperationInitial();
   }
 }
 
-// NEW: Pending invitations provider
 final pendingInvitationsProvider =
     StateNotifierProvider<PendingInvitationsNotifier, ChallengeState>((ref) {
-      final service = ref.watch(challengeServiceProvider);
-      return PendingInvitationsNotifier(service);
+      final repository = ref.watch(serverChallengeRepositoryProvider);
+      return PendingInvitationsNotifier(repository);
     });
 
 class PendingInvitationsNotifier extends StateNotifier<ChallengeState> {
-  final ChallengeService _service;
+  final ServerChallengeRepository _repository;
 
-  PendingInvitationsNotifier(this._service) : super(const ChallengeInitial());
+  PendingInvitationsNotifier(this._repository) : super(const ChallengeInitial());
 
   Future<void> loadPendingInvitations() async {
     state = const ChallengeLoading();
     try {
-      final challenges = await _service.getPendingInvitations();
+      final challenges = await _repository.getPendingInvitations();
       state = ChallengeLoaded(challenges);
     } on ApiException catch (e) {
       state = ChallengeError(e.getValidationMessage());
@@ -336,3 +418,19 @@ class PendingInvitationsNotifier extends StateNotifier<ChallengeState> {
     }
   }
 }
+
+final challengeTemplatesProvider =
+    FutureProvider<List<ChallengeTemplateModel>>((ref) async {
+  final repository = ref.watch(serverChallengeRepositoryProvider);
+  return repository.getTemplates();
+});
+
+final challengeLeaderboardProvider = FutureProvider.family<
+    ChallengeLeaderboardModel, int>((ref, challengeId) async {
+  final repository = ref.watch(serverChallengeRepositoryProvider);
+  return repository.getLeaderboard(challengeId);
+});
+
+final challengeProgressProvider = Provider<ServerChallengeRepository>(
+  (ref) => ref.watch(serverChallengeRepositoryProvider),
+);

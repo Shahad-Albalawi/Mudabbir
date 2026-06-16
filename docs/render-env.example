@@ -1,0 +1,20 @@
+# Render environment (paste in Dashboard -> Environment)
+
+APP_NAME=Mudabbir
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://REPLACE-WITH-YOUR-RENDER-URL.onrender.com
+APP_KEY=REPLACE-WITH-key:generate-output
+
+LOG_CHANNEL=stderr
+LOG_LEVEL=warning
+
+DB_CONNECTION=sqlite
+
+CACHE_DRIVER=file
+SESSION_DRIVER=file
+QUEUE_CONNECTION=sync
+
+# AI coach (optional — chatbot works with local fallback if empty)
+AI_PROVIDER=gemini
+GEMINI_API_KEY=

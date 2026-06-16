@@ -12,6 +12,7 @@ import 'package:mudabbir/presentation/server_challenges/widgets/challenge_card.d
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/navigation_service.dart';
 import 'package:mudabbir/presentation/server_challenges/screens/pending_invitations_screen.dart';
+import 'package:mudabbir/presentation/server_challenges/widgets/challenge_templates_strip.dart';
 
 class ChallengesListScreen extends ConsumerStatefulWidget {
   const ChallengesListScreen({super.key});
@@ -47,6 +48,21 @@ class _ChallengesListScreenState extends ConsumerState<ChallengesListScreen>
   Widget build(BuildContext context) {
     final challengeState = ref.watch(challengesProvider);
 
+    ref.listen<ChallengeOperationState>(challengeOperationProvider, (
+      previous,
+      next,
+    ) {
+      if (next is ChallengeOperationSuccess) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.message),
+            backgroundColor: const Color(0xFF4CAF50),
+          ),
+        );
+        ref.read(challengeOperationProvider.notifier).reset();
+      }
+    });
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -73,7 +89,27 @@ class _ChallengesListScreenState extends ConsumerState<ChallengesListScreen>
                       topRight: Radius.circular(32),
                     ),
                   ),
-                  child: _buildBody(challengeState),
+                  child: Column(
+                    children: [
+                      if (challengeState is ChallengeLoaded &&
+                          challengeState.isOffline)
+                        MaterialBanner(
+                          content: Text(
+                            ServerChallengeStrings.offlineBanner,
+                          ),
+                          leading: const Icon(Icons.cloud_off_outlined),
+                          actions: [
+                            TextButton(
+                              onPressed: () => ref
+                                  .read(challengesProvider.notifier)
+                                  .refreshChallenges(),
+                              child: Text(ServerChallengeStrings.retry),
+                            ),
+                          ],
+                        ),
+                      Expanded(child: _buildBody(challengeState)),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -230,24 +266,31 @@ class _ChallengesListScreenState extends ConsumerState<ChallengesListScreen>
   }
 
   Widget _buildTabBarView(ChallengeLoaded state) {
-    return TabBarView(
-      controller: _tabController,
+    return Column(
       children: [
-        _buildChallengesList(
-          state.activeChallenges,
-          ServerChallengeStrings.emptyActive,
-        ),
-        _buildChallengesList(
-          state.upcomingChallenges,
-          ServerChallengeStrings.emptyUpcoming,
-        ),
-        _buildChallengesList(
-          state.completedChallenges,
-          ServerChallengeStrings.emptyCompleted,
-        ),
-        _buildChallengesList(
-          state.expiredChallenges,
-          ServerChallengeStrings.emptyExpired,
+        const ChallengeTemplatesStrip(),
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildChallengesList(
+                state.activeChallenges,
+                ServerChallengeStrings.emptyActive,
+              ),
+              _buildChallengesList(
+                state.upcomingChallenges,
+                ServerChallengeStrings.emptyUpcoming,
+              ),
+              _buildChallengesList(
+                state.completedChallenges,
+                ServerChallengeStrings.emptyCompleted,
+              ),
+              _buildChallengesList(
+                state.expiredChallenges,
+                ServerChallengeStrings.emptyExpired,
+              ),
+            ],
+          ),
         ),
       ],
     );

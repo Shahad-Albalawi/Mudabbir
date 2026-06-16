@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:mudabbir/presentation/analysis/analysis_view.dart';
+import 'package:mudabbir/presentation/expenses/expenses_view.dart';
+import 'package:mudabbir/presentation/resources/expense_strings.dart';
 import 'package:mudabbir/presentation/budget/budget_view.dart';
 import 'package:mudabbir/presentation/resources/app_theme_extensions.dart';
 import 'package:mudabbir/presentation/resources/color_manager.dart';
@@ -54,6 +56,16 @@ class StatisticsView extends ConsumerWidget {
                     fontSize: FontSize.s24,
                     color: context.appColors.onSurface,
                   ),
+                ),
+              ),
+              IconButton(
+                tooltip: ExpenseStrings.viewAllExpenses,
+                onPressed: () {
+                  getIt<NavigationService>().navigate(const ExpensesView());
+                },
+                icon: Icon(
+                  Icons.receipt_long_outlined,
+                  color: context.appColors.primary,
                 ),
               ),
               IconButton(

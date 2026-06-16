@@ -45,6 +45,8 @@ Copy the returned value (starts with `base64:`) into Render `APP_KEY`.
 After deploy finishes, test:
 
 - `GET https://<your-render-domain>/api/challenges`
+- `GET https://<your-render-domain>/api/expenses`
+- `GET https://<your-render-domain>/api/goals`
 - `POST https://<your-render-domain>/api/generate-content`
 
 Expected shape:
@@ -55,11 +57,21 @@ Expected shape:
 
 ## 5) Connect Flutter
 
-Run app with:
+Set the API host in `frontend/config/release.json`, then build:
 
 ```bash
 cd frontend
-flutter run --dart-define=CHALLENGES_API_BASE_URL=https://<your-render-domain>/api
+flutter build apk --release --dart-define-from-file=config/release.json
 ```
 
-If chatbot should also use this backend, update chatbot base URL to the same domain.
+Or from repo root (optional custom URL):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/build-release-apk.ps1 -ApiBaseUrl "https://<your-render-domain>"
+```
+
+For local development on the emulator:
+
+```bash
+flutter run --dart-define=USE_LOCAL_API=true
+```

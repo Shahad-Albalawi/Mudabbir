@@ -1,18 +1,23 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mudabbir/utils/dev_log.dart';
+import 'package:mudabbir/data/network/failure.dart';
+import 'package:mudabbir/domain/models/savings_goal.dart';
 import 'package:mudabbir/domain/repository/goals_repository/goals_repository.dart';
+import 'package:mudabbir/domain/repository/synced_goals_repository/synced_goals_repository.dart';
+import 'package:mudabbir/presentation/resources/goal_strings.dart';
+import 'package:mudabbir/presentation/server_challenges/services/api_exception.dart';
 import 'package:mudabbir/service/getit_init.dart';
+import 'package:mudabbir/utils/dev_log.dart';
 
 const _unsetGoalError = Object();
 
-// State class
 class GoalState {
   final bool isLoading;
-  final List<Map<String, dynamic>> goals; // Fixed typing
+  final List<SavingsGoal> goals;
   final String? error;
   final bool isDelete;
   final bool isAdd;
-  final bool isUpdate;
+  final bool isOffline;
+  final GoalWriteResult? lastContribution;
 
   GoalState({
     this.isLoading = false,
@@ -20,16 +25,19 @@ class GoalState {
     this.error,
     this.isDelete = false,
     this.isAdd = false,
-    this.isUpdate = false,
+    this.isOffline = false,
+    this.lastContribution,
   });
 
   GoalState copyWith({
     bool? isLoading,
-    List<Map<String, dynamic>>? goals,
+    List<SavingsGoal>? goals,
     Object? error = _unsetGoalError,
     bool? isDelete,
     bool? isAdd,
-    bool? isUpdate,
+    bool? isOffline,
+    GoalWriteResult? lastContribution,
+    bool clearContribution = false,
   }) {
     return GoalState(
       isLoading: isLoading ?? this.isLoading,
@@ -37,97 +45,116 @@ class GoalState {
       error: identical(error, _unsetGoalError) ? this.error : error as String?,
       isDelete: isDelete ?? this.isDelete,
       isAdd: isAdd ?? this.isAdd,
-      isUpdate: isUpdate ?? this.isUpdate,
+      isOffline: isOffline ?? this.isOffline,
+      lastContribution:
+          clearContribution ? null : (lastContribution ?? this.lastContribution),
     );
   }
 }
 
-// ViewModel as StateNotifier
 class GoalViewmodel extends StateNotifier<GoalState> {
-  final GoalsRepository _budgetRepository = getIt<GoalsRepository>();
+  final SyncedGoalsRepository _repository = getIt<SyncedGoalsRepository>();
 
   GoalViewmodel() : super(GoalState());
 
-  // get All Goals
   Future<void> getAllGoals() async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true, error: null, clearContribution: true);
 
-    final result = await _budgetRepository.getGoals();
+    try {
+      final result = await _repository.getGoals();
+      state = state.copyWith(
+        isLoading: false,
+        goals: result.goals,
+        isOffline: result.isOffline,
+      );
+    } on ApiException catch (e) {
+      devLog(e.message);
+      state = state.copyWith(isLoading: false, error: e.message);
+    } catch (e) {
+      devLog(e.toString());
+      state = state.copyWith(
+        isLoading: false,
+        error: GoalStrings.updateFailed,
+      );
+    }
+  }
+
+  Future<void> addNewGoal({
+    required String name,
+    required double target,
+    required double currentAmount,
+    required String type,
+    required DateTime startDate,
+    required DateTime endDate,
+    String? imageSourcePath,
+  }) async {
+    final result = await _repository.createGoal(
+      name: name,
+      target: target,
+      currentAmount: currentAmount,
+      type: type,
+      startDate: startDate,
+      endDate: endDate,
+      imageSourcePath: imageSourcePath,
+    );
 
     result.fold(
-      (l) {
-        devLog(l.message);
-        state = state.copyWith(isLoading: false, error: l.message);
-      },
-      (r) {
-        devLog(r.toString());
-        if (r.isEmpty) {
-          state = state.copyWith(isLoading: false, goals: []);
-        } else {
-          // Ensure proper typing when setting goals
-          final typedGoals = r
-              .map((goal) => Map<String, dynamic>.from(goal))
-              .toList();
-          state = state.copyWith(isLoading: false, goals: typedGoals);
+      (failure) => state = state.copyWith(error: failure.userFacingMessage),
+      (sync) => state = state.copyWith(
+        isAdd: true,
+        error: sync.queuedOffline ? GoalStrings.savedOffline : null,
+      ),
+    );
+  }
+
+  Future<void> deleteGoal(int id) async {
+    final result = await _repository.deleteGoal(id);
+    result.fold(
+      (_) {},
+      (sync) {
+        if (sync.deleted) {
+          final updated = state.goals.where((g) => g.id != id).toList();
+          state = state.copyWith(goals: updated, isDelete: true);
         }
       },
     );
   }
 
-  addNewGoal(Map<String, dynamic> data) async {
-    await _budgetRepository.addGoal(data);
-    state = state.copyWith(isAdd: true, goals: state.goals);
-  }
+  Future<GoalWriteResult?> addContribution({
+    required int goalId,
+    required double amount,
+    String? note,
+  }) async {
+    final result = await _repository.addContribution(
+      goalId: goalId,
+      amount: amount,
+      note: note,
+    );
 
-  // delete budget
-  deleteGoal(int id) async {
-    final result = await _budgetRepository.removeGoal(id);
-    if (result == 1) {
-      // Remove the budget from the current state immediately
-      final updatedGoals = state.goals
-          .where((budget) => budget['id'] != id)
-          .toList();
-      state = state.copyWith(goals: updatedGoals, isDelete: true);
-    }
-  }
-
-  // New method to update goal amount
-  Future<void> updateGoalAmount(int goalId, double amountToAdd) async {
-    try {
-      // Find the current goal
-      final goalIndex = state.goals.indexWhere((goal) => goal['id'] == goalId);
-      if (goalIndex == -1) return;
-
-      final currentGoal = state.goals[goalIndex];
-      final currentAmount = (currentGoal['current_amount'] ?? 0.0).toDouble();
-      final newAmount = currentAmount + amountToAdd;
-
-      // Update in database
-      final result = await _budgetRepository.updateGoalAmount(
-        goalId,
-        newAmount,
-      );
-
-      if (result > 0) {
-        // Update the goal in the current state with proper typing
-        final updatedGoals = List<Map<String, dynamic>>.from(
-          state.goals.map((goal) => Map<String, dynamic>.from(goal)),
+    return result.fold(
+      (failure) {
+        state = state.copyWith(error: failure.userFacingMessage);
+        return null;
+      },
+      (sync) {
+        final writeResult = sync.result;
+        final updated = state.goals
+            .map(
+              (g) => g.id == goalId ? writeResult.goal : g,
+            )
+            .toList();
+        state = state.copyWith(
+          goals: updated,
+          lastContribution: writeResult,
+          error: sync.queuedOffline ? GoalStrings.savedOffline : null,
         );
-        updatedGoals[goalIndex] = Map<String, dynamic>.from({
-          ...currentGoal,
-          'current_amount': newAmount,
-        });
-
-        state = state.copyWith(goals: updatedGoals, isUpdate: true);
-      }
-    } catch (e) {
-      state = state.copyWith(error: 'فشل في تحديث الهدف');
-      devLog('Error updating goal: $e');
-    }
+        return writeResult;
+      },
+    );
   }
 }
 
 final goalViewmodelProvider =
     StateNotifierProvider.autoDispose<GoalViewmodel, GoalState>((ref) {
-      return GoalViewmodel()..getAllGoals();
-    });
+  return GoalViewmodel()..getAllGoals();
+});

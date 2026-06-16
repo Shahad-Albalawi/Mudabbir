@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\AiQuotaExceededException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
@@ -26,7 +27,7 @@ class OpenAiService
             $response = Http::withToken($apiKey)
                 ->acceptJson()
                 ->withOptions([
-                    'verify' => filter_var(config('openai.verify_ssl', true), FILTER_VALIDATE_BOOL),
+                    'verify' => filter_var(config('openai.verify_ssl', true), FILTER_VALIDATE_BOOLEAN),
                 ])
                 ->timeout((int) config('openai.timeout', 30))
                 ->connectTimeout((int) config('openai.connect_timeout', 10))
@@ -65,15 +66,15 @@ class OpenAiService
 
             return trim($text);
         } catch (RequestException $e) {
-            $status = $e->response?->status();
-            $apiMessage = $this->extractApiErrorMessage($e->response?->json());
+            $status = $e->response ? $e->response->status() : null;
+            $apiMessage = $this->extractApiErrorMessage($e->response ? $e->response->json() : null);
 
             if ($status === 401 || $status === 403) {
                 throw new RuntimeException($apiMessage ?: 'OpenAI authentication failed.');
             }
 
-            if ($status === 429) {
-                throw new RuntimeException($apiMessage ?: 'OpenAI rate limit exceeded.');
+            if ($status === 429 || $this->isQuotaMessage($apiMessage)) {
+                throw new AiQuotaExceededException($apiMessage ?: 'OpenAI rate limit exceeded.');
             }
 
             if ($status !== null && $status >= 500) {
@@ -81,12 +82,12 @@ class OpenAiService
             }
 
             throw new RuntimeException($apiMessage ?: 'OpenAI request failed.');
-        } catch (ConnectionException) {
+        } catch (ConnectionException $e) {
             throw new RuntimeException('Failed to connect to OpenAI.');
         }
     }
 
-    private function extractApiErrorMessage(mixed $json): ?string
+    private function extractApiErrorMessage($json): ?string
     {
         if (! is_array($json)) {
             return null;
@@ -101,5 +102,18 @@ class OpenAiService
         $message = trim($message);
 
         return $message === '' ? null : $message;
+    }
+
+    private function isQuotaMessage(?string $message): bool
+    {
+        if ($message === null) {
+            return false;
+        }
+
+        $lower = strtolower($message);
+
+        return str_contains($lower, 'quota')
+            || str_contains($lower, 'rate limit')
+            || str_contains($lower, 'billing');
     }
 }

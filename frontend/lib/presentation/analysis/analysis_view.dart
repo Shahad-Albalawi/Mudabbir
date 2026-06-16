@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:mudabbir/domain/models/behavioral_snapshot.dart';
+import 'package:mudabbir/presentation/resources/behavioral_strings.dart';
 import 'package:mudabbir/presentation/resources/color_manager.dart';
 import 'package:mudabbir/presentation/resources/entity_localizations.dart';
 import 'package:mudabbir/presentation/resources/font_manager.dart';
@@ -43,6 +46,12 @@ class AnalysisView extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            _buildBehavioralScoreCard(context, state),
+            const SizedBox(height: 20),
+            _buildMonthComparisonCard(context, state),
+            const SizedBox(height: 20),
+            _buildAnomaliesSection(context, state),
+            const SizedBox(height: 20),
             _buildHealthScoreCard(context, state),
             const SizedBox(height: 20),
             _buildStatusCard(
@@ -71,12 +80,386 @@ class AnalysisView extends ConsumerWidget {
             const SizedBox(height: 20),
             _buildCategoryInsights(context, state),
             const SizedBox(height: 20),
+            if (state.weekdayInsight.isNotEmpty)
+              _buildWeekdayInsight(context, state),
+            if (state.weekdayInsight.isNotEmpty) const SizedBox(height: 20),
             _buildRecommendations(context, state),
             const SizedBox(height: 20),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildBehavioralScoreCard(BuildContext context, AnalysisState state) {
+    final scheme = Theme.of(context).colorScheme;
+    final color = _getHealthColor(state.behavioralRating);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            ColorManager.primary.withValues(alpha: 0.12),
+            scheme.surface,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: ColorManager.primary.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            BehavioralStrings.behavioralScoreTitle,
+            style: getBoldStyle(
+              fontSize: FontSize.s18,
+              color: scheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            BehavioralStrings.behavioralScoreSubtitle,
+            style: getRegularStyle(
+              fontSize: FontSize.s12,
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              SizedBox(
+                width: 88,
+                height: 88,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      value: state.behavioralScore / 100,
+                      strokeWidth: 8,
+                      backgroundColor: scheme.outline.withValues(alpha: 0.2),
+                      valueColor: AlwaysStoppedAnimation<Color>(color),
+                    ),
+                    Text(
+                      '${state.behavioralScore}',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      state.behavioralRating,
+                      style: getBoldStyle(
+                        fontSize: FontSize.s20,
+                        color: color,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      state.monthComparisonSummary,
+                      style: getRegularStyle(
+                        fontSize: FontSize.s12,
+                        color: scheme.onSurfaceVariant,
+                      ).copyWith(height: 1.4),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMonthComparisonCard(BuildContext context, AnalysisState state) {
+    if (state.monthlyTrend.isEmpty) return const SizedBox.shrink();
+    final scheme = Theme.of(context).colorScheme;
+    final maxY = state.monthlyTrend
+        .map((p) => p.expense)
+        .fold(0.0, (a, b) => a > b ? a : b);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            BehavioralStrings.monthComparisonTitle,
+            style: getBoldStyle(fontSize: FontSize.s16, color: scheme.onSurface),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 180,
+            child: BarChart(
+              BarChartData(
+                maxY: maxY <= 0 ? 100 : maxY * 1.2,
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: maxY <= 0 ? 25 : maxY / 4,
+                  getDrawingHorizontalLine: (value) => FlLine(
+                    color: scheme.outline.withValues(alpha: 0.15),
+                    strokeWidth: 1,
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                titlesData: FlTitlesData(
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  leftTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        final index = value.toInt();
+                        if (index < 0 || index >= state.monthlyTrend.length) {
+                          return const SizedBox.shrink();
+                        }
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Text(
+                            state.monthlyTrend[index].label,
+                            style: getRegularStyle(
+                              fontSize: FontSize.s12,
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                barGroups: [
+                  for (var i = 0; i < state.monthlyTrend.length; i++)
+                    BarChartGroupData(
+                      x: i,
+                      barRods: [
+                        BarChartRodData(
+                          toY: state.monthlyTrend[i].expense,
+                          width: 14,
+                          color: i == state.monthlyTrend.length - 1
+                              ? ColorManager.primary
+                              : ColorManager.primary.withValues(alpha: 0.45),
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(6),
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnomaliesSection(BuildContext context, AnalysisState state) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          BehavioralStrings.anomaliesTitle,
+          style: getBoldStyle(fontSize: FontSize.s20, color: scheme.onSurface),
+        ),
+        const SizedBox(height: 12),
+        if (state.anomalies.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: ColorManager.success.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: ColorManager.success.withValues(alpha: 0.25),
+              ),
+            ),
+            child: Text(
+              BehavioralStrings.noAnomalies,
+              style: getRegularStyle(
+                fontSize: FontSize.s14,
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+          )
+        else
+          ...state.anomalies.map(
+            (anomaly) => _buildAnomalyCard(context, anomaly),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildAnomalyCard(BuildContext context, SpendingAnomaly anomaly) {
+    final scheme = Theme.of(context).colorScheme;
+    final color = _anomalyColor(anomaly.severity);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: ColorManager.shadowLight,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(_anomalyIcon(anomaly.type), color: color, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  BehavioralStrings.anomalyTitle(anomaly),
+                  style: getSemiBoldStyle(
+                    fontSize: FontSize.s14,
+                    color: scheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  BehavioralStrings.anomalyMessage(anomaly),
+                  style: getRegularStyle(
+                    fontSize: FontSize.s12,
+                    color: scheme.onSurfaceVariant,
+                  ).copyWith(height: 1.4),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeekdayInsight(BuildContext context, AnalysisState state) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.calendar_today_rounded, color: ColorManager.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  BehavioralStrings.weekdayPatternTitle,
+                  style: getSemiBoldStyle(
+                    fontSize: FontSize.s14,
+                    color: scheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  state.weekdayInsight,
+                  style: getRegularStyle(
+                    fontSize: FontSize.s12,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _anomalyColor(AnomalySeverity severity) {
+    switch (severity) {
+      case AnomalySeverity.critical:
+        return ColorManager.error;
+      case AnomalySeverity.warning:
+        return ColorManager.warning;
+      case AnomalySeverity.info:
+        return ColorManager.primary;
+    }
+  }
+
+  IconData _anomalyIcon(AnomalyType type) {
+    switch (type) {
+      case AnomalyType.monthlySpike:
+        return Icons.trending_up_rounded;
+      case AnomalyType.overspending:
+        return Icons.warning_amber_rounded;
+      case AnomalyType.categorySpike:
+        return Icons.category_rounded;
+      case AnomalyType.largeTransaction:
+        return Icons.payments_rounded;
+      case AnomalyType.weekendSplurge:
+        return Icons.weekend_rounded;
+      case AnomalyType.spendingBurst:
+        return Icons.receipt_long_rounded;
+    }
   }
 
   Widget _buildHealthScoreCard(BuildContext context, AnalysisState state) {
@@ -344,7 +727,7 @@ class AnalysisView extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          AppStrings.analysisRecommendationsTitle,
+          BehavioralStrings.personalizedRecsTitle,
           style: getBoldStyle(fontSize: FontSize.s20, color: scheme.onSurface),
         ),
         const SizedBox(height: 12),
@@ -417,7 +800,10 @@ class AnalysisView extends ConsumerWidget {
     if (_isAr(rating, 'ضعيف', 'weak')) {
       return const Color(0xFFFA8C16);
     }
-    if (_isAr(rating, 'حرج', 'critical')) {
+    if (_isAr(rating, 'يحتاج تحسين', 'needs work')) {
+      return ColorManager.warning;
+    }
+    if (_isAr(rating, 'معرض للخطر', 'at risk')) {
       return ColorManager.error;
     }
     if (l == 'outstanding') return ColorManager.success;

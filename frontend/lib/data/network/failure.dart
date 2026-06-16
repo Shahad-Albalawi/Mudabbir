@@ -26,12 +26,24 @@ class UnknownFailure extends Failure {
   const UnknownFailure(String message) : super(-4, message);
 }
 
+class ValidationFailure extends Failure {
+  const ValidationFailure(String message) : super(-5, message);
+}
+
+class BudgetExceededFailure extends Failure {
+  final double budgetRemaining;
+  const BudgetExceededFailure(String message, {this.budgetRemaining = 0})
+      : super(-6, message);
+}
+
 extension FailureUserMessage on Failure {
   String get userFacingMessage {
     if (this is NetworkFailure) return NetworkUserMessages.network;
     if (this is TimeoutFailure) return NetworkUserMessages.timeout;
     if (this is ParsingFailure) return NetworkUserMessages.parsing;
     if (this is UnknownFailure) return NetworkUserMessages.unknown;
+    if (this is ValidationFailure) return message;
+    if (this is BudgetExceededFailure) return message;
     if (this is ServerFailure) {
       return NetworkUserMessages.serverPolish(message, code);
     }

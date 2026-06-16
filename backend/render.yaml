@@ -4,7 +4,11 @@ services:
     env: php
     plan: free
     rootDir: backend
-    buildCommand: composer install --no-interaction --prefer-dist --optimize-autoloader
+    buildCommand: >-
+      composer install --no-interaction --prefer-dist --optimize-autoloader
+      && mkdir -p database storage/framework/cache storage/framework/sessions storage/framework/views storage/logs
+      && touch database/database.sqlite
+      && php artisan migrate --force
     startCommand: php artisan config:clear && php artisan serve --host 0.0.0.0 --port $PORT
     healthCheckPath: /api/challenges
     autoDeploy: true

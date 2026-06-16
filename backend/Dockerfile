@@ -1,5 +1,4 @@
-# PHP + Composer for local API without installing PHP on the host (use with docker compose).
-FROM php:8.3-cli-bookworm
+FROM php:8.0-cli-bookworm
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \

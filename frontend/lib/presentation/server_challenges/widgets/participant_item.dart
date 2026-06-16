@@ -4,6 +4,7 @@ import 'package:mudabbir/presentation/resources/server_challenge_strings.dart';
 import 'package:mudabbir/presentation/resources/font_manager.dart';
 import 'package:mudabbir/presentation/resources/styles_manager.dart';
 import 'package:mudabbir/presentation/server_challenges/models/challenge_model.dart';
+import 'package:mudabbir/presentation/server_challenges/widgets/challenge_badge_chip.dart';
 
 class ParticipantItem extends StatelessWidget {
   final ParticipantModel participant;
@@ -83,11 +84,26 @@ class ParticipantItem extends StatelessWidget {
                   children: [
                     _buildStatusBadge(),
                     const SizedBox(width: 8),
+                    if (participant.isAccepted && participant.streakDays > 0) ...[
+                      Icon(Icons.local_fire_department,
+                          size: 12, color: const Color(0xFFFF7043)),
+                      const SizedBox(width: 2),
+                      Text(
+                        '${participant.streakDays}',
+                        style: getMediumStyle(
+                          fontSize: FontSize.s12,
+                          color: const Color(0xFFFF7043),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
                     if (participant.targetAmount != null) ...[
                       Icon(Icons.flag, size: 12, color: ColorManager.primary),
                       const SizedBox(width: 4),
                       Text(
-                        '\$${participant.targetAmount!.toStringAsFixed(2)}',
+                        ServerChallengeStrings.formatAmount(
+                          participant.targetAmount!,
+                        ),
                         style: getMediumStyle(
                           fontSize: FontSize.s12,
                           color: ColorManager.primary,
@@ -107,6 +123,18 @@ class ParticipantItem extends StatelessWidget {
                       ),
                   ],
                 ),
+                if (participant.badges.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    children: [
+                      if (participant.hasStreak7Badge)
+                        const ChallengeBadgeChip(badgeId: 'streak_7', compact: true),
+                      if (participant.hasStreak30Badge)
+                        const ChallengeBadgeChip(badgeId: 'streak_30', compact: true),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),

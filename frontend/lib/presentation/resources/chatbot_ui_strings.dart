@@ -386,4 +386,125 @@ class ChatbotUi {
       : 'هل تريد بدء محادثة جديدة؟ سيتم حذف جميع الرسائل الحالية.';
 
   static String get clearDialogConfirm => _e ? 'Clear' : 'مسح';
+
+  static String get localFallbackQuotaNotice => _e
+      ? 'Smart coach is temporarily busy — here is an answer from your saved data:'
+      : 'المساعد الذكي غير متاح مؤقتاً — هذا رد من بياناتك المحفوظة:';
+
+  static String get localFallbackOfflineNotice => _e
+      ? 'Could not reach the cloud coach — here is an answer from your saved data:'
+      : 'تعذر الاتصال بالمساعد السحابي — هذا رد من بياناتك المحفوظة:';
+
+  static String localFallbackBalance(
+    String income,
+    String expense,
+    String balance,
+    int score,
+    String status,
+  ) => _e
+      ? 'This month:\n'
+            '• Income: $income ﷼\n'
+            '• Expenses: $expense ﷼\n'
+            '• Balance: $balance ﷼\n'
+            '• Health score: $score/100 ($status)'
+      : 'ملخص هذا الشهر:\n'
+            '• الدخل: $income ﷼\n'
+            '• المصروفات: $expense ﷼\n'
+            '• الرصيد: $balance ﷼\n'
+            '• درجة الصحة المالية: $score/100 ($status)';
+
+  static String localFallbackSnapshot(
+    String income,
+    String expense,
+    String balance,
+    int score,
+    String status,
+    String alerts,
+    String topCategory,
+    String goalsLine,
+  ) => _e
+      ? 'Quick snapshot 📊\n'
+            '• Income: $income ﷼ | Expenses: $expense ﷼ | Balance: $balance ﷼\n'
+            '• Health score: $score/100 ($status)\n'
+            '• Alerts: $alerts\n'
+            '• $topCategory\n'
+            '• $goalsLine'
+      : 'لمحة سريعة من بياناتك 📊\n'
+            '• الدخل: $income ﷼ | المصروفات: $expense ﷼ | الرصيد: $balance ﷼\n'
+            '• درجة الصحة المالية: $score/100 ($status)\n'
+            '• التنبيهات: $alerts\n'
+            '• $topCategory\n'
+            '• $goalsLine';
+
+  static String get localFallbackNoGoals => _e
+      ? 'You have no saved goals yet. Add one from the Goals tab or say "create goal".'
+      : 'لا توجد أهداف محفوظة. أضف هدفاً من شاشة الأهداف أو اكتب "أنشئ هدف".';
+
+  static String localFallbackGoalLine(
+    String name,
+    String current,
+    String target,
+    String pct,
+  ) => _e
+      ? '- $name: $current / $target ﷼ ($pct%)'
+      : '- $name: $current / $target ﷼ ($pct%)';
+
+  static String localFallbackGoalsIntro(
+    String lines,
+    String surplus,
+    String income,
+  ) => _e
+      ? 'Your goals:\n$lines\n\nMonthly surplus: $surplus ﷼ (income $income ﷼).'
+      : 'أهدافك:\n$lines\n\nالفائض الشهري: $surplus ﷼ (الدخل $income ﷼).';
+
+  static String localFallbackNoBudget(String expense) => _e
+      ? 'No active budget found. This month\'s spending so far: $expense ﷼.'
+      : 'لا توجد ميزانية نشطة. مصروفاتك هذا الشهر حتى الآن: $expense ﷼.';
+
+  static String localFallbackBudget(
+    String budget,
+    String spent,
+    String remaining,
+    String usedPct,
+  ) => _e
+      ? 'Budget: $budget ﷼\n'
+            'Spent: $spent ﷼ ($usedPct%)\n'
+            'Remaining: $remaining ﷼'
+      : 'الميزانية: $budget ﷼\n'
+            'المصروف: $spent ﷼ ($usedPct%)\n'
+            'المتبقي: $remaining ﷼';
+
+  static String get localFallbackNoExpenses => _e
+      ? 'No expense transactions recorded this month yet.'
+      : 'لا توجد مصروفات مسجلة لهذا الشهر بعد.';
+
+  static String localFallbackCategoryLine(
+    String name,
+    String amount,
+    String share,
+  ) => _e
+      ? '- $name: $amount ﷼ ($share%)'
+      : '- $name: $amount ﷼ ($share%)';
+
+  static String localFallbackExpenses(String total, String lines) => _e
+      ? 'This month\'s spending: $total ﷼\nTop categories:\n$lines'
+      : 'مصروفات هذا الشهر: $total ﷼\nأعلى الفئات:\n$lines';
+
+  static String get localFallbackNoCategoryData => _e
+      ? 'No category spending data this month.'
+      : 'لا توجد بيانات فئات لهذا الشهر.';
+
+  static String localFallbackTopCategory(String name, String amount) => _e
+      ? 'Top category: $name ($amount ﷼)'
+      : 'أعلى فئة إنفاق: $name ($amount ﷼)';
+
+  static String get localFallbackGoalsNone => _e
+      ? 'No active goals in progress.'
+      : 'لا توجد أهداف قيد التنفيذ.';
+
+  static String localFallbackGoalsCount(int count) => _e
+      ? 'Active goals: $count'
+      : 'أهداف قيد التنفيذ: $count';
+
+  static String get localFallbackOtherCategory => _e ? 'Other' : 'أخرى';
 }

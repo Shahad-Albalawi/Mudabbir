@@ -8,6 +8,8 @@ import 'package:mudabbir/constants/api_constants.dart';
 import 'package:mudabbir/presentation/resources/chatbot_llm_prompt.dart';
 import 'package:mudabbir/presentation/resources/chatbot_ui_strings.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
+import 'package:mudabbir/service/chatbot/chatbot_api_result.dart';
+import 'package:mudabbir/service/chatbot/chatbot_local_fallback.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/utils/dev_log.dart';
 import 'package:mudabbir/service/reporting/financial_report_service.dart';
@@ -250,15 +252,48 @@ class ChatbotViewModel extends BaseViewModel {
       // Build the complete prompt with system instructions and user message
       final completePrompt = _buildCompletePrompt(contextData, userMessage);
 
-      // Send to Laravel backend
-      final response = await _sendToBackend(completePrompt);
+      // Send to Laravel backend (falls back to local data on quota/network issues).
+      final apiResult = await _sendToBackend(completePrompt);
 
-      // Add AI response
-      messages.add(ChatMessage(text: response, isUser: false));
+      if (apiResult.isSuccess && apiResult.message != null) {
+        messages.add(ChatMessage(text: apiResult.message!, isUser: false));
+      } else if (apiResult.useLocalFallback) {
+        messages.add(
+          ChatMessage(
+            text: _buildLocalFallbackMessage(
+              userMessage: userMessage,
+              contextData: contextData,
+              quotaExceeded: apiResult.quotaExceeded,
+            ),
+            isUser: false,
+          ),
+        );
+      } else {
+        messages.add(
+          ChatMessage(
+            text: apiResult.message ?? ChatbotUi.genericProcessError,
+            isUser: false,
+          ),
+        );
+      }
     } catch (e) {
-      messages.add(
-        ChatMessage(text: ChatbotUi.genericProcessError, isUser: false),
-      );
+      try {
+        final contextData = await _getAllDatabaseContext();
+        messages.add(
+          ChatMessage(
+            text: _buildLocalFallbackMessage(
+              userMessage: userMessage,
+              contextData: contextData,
+              quotaExceeded: false,
+            ),
+            isUser: false,
+          ),
+        );
+      } catch (_) {
+        messages.add(
+          ChatMessage(text: ChatbotUi.genericProcessError, isUser: false),
+        );
+      }
     } finally {
       isLoadingResponse = false;
       notifyListeners();
@@ -1187,7 +1222,24 @@ class ChatbotViewModel extends BaseViewModel {
     }
   }
 
-  Future<String> _sendToBackend(String content) async {
+  String _buildLocalFallbackMessage({
+    required String userMessage,
+    required Map<String, dynamic> contextData,
+    required bool quotaExceeded,
+  }) {
+    final insights = _buildFinancialInsights(contextData);
+    final notice = quotaExceeded
+        ? ChatbotUi.localFallbackQuotaNotice
+        : ChatbotUi.localFallbackOfflineNotice;
+    final body = ChatbotLocalFallback.buildReply(
+      userMessage: userMessage,
+      contextData: contextData,
+      insights: insights,
+    );
+    return '$notice\n\n$body';
+  }
+
+  Future<ChatbotApiResult> _sendToBackend(String content) async {
     Object? lastError;
 
     for (final url in _apiUrls) {
@@ -1219,12 +1271,14 @@ class ChatbotViewModel extends BaseViewModel {
           if (response.statusCode == 200) {
             final result = _parseApiResponse(response.bodyBytes);
             if (result.isNotEmpty) {
-              return result;
+              return ChatbotApiResult.success(result);
             }
+            return ChatbotApiResult.fallback();
           }
 
-          if (response.statusCode == 429) {
-            return ChatbotUi.rateLimited;
+          if (response.statusCode == 429 ||
+              _isQuotaResponse(response.statusCode, response.bodyBytes)) {
+            return ChatbotApiResult.quotaExceeded();
           }
 
           // If backend returns internal error with specific code like 53, map to friendly text.
@@ -1232,8 +1286,11 @@ class ChatbotViewModel extends BaseViewModel {
             final serverMessage = _extractServerErrorMessage(
               response.bodyBytes,
             );
+            if (_isQuotaMessage(serverMessage)) {
+              return ChatbotApiResult.quotaExceeded();
+            }
             if (serverMessage.contains('53')) {
-              return ChatbotUi.server53;
+              return ChatbotApiResult.failure(ChatbotUi.server53);
             }
             lastError = 'HTTP ${response.statusCode}: $serverMessage';
             continue;
@@ -1248,10 +1305,12 @@ class ChatbotViewModel extends BaseViewModel {
           }
 
           // For other status codes, stop and return a clear code.
-          return ChatbotUi.httpError(response.statusCode);
+          return ChatbotApiResult.failure(
+            ChatbotUi.httpError(response.statusCode),
+          );
         } on TimeoutException {
           // Timeout is likely global connectivity/latency issue; no need to keep retrying many shapes.
-          return ChatbotUi.requestTimeout;
+          return ChatbotApiResult.fallback();
         } on http.ClientException catch (e) {
           lastError = e;
           continue;
@@ -1267,9 +1326,22 @@ class ChatbotViewModel extends BaseViewModel {
 
     devLog('[Chatbot API] All retries failed: $lastError');
     if (lastError is SocketException || lastError is http.ClientException) {
-      return ChatbotUi.noInternet;
+      return ChatbotApiResult.fallback();
     }
-    return ChatbotUi.assistantUnreachable;
+    return ChatbotApiResult.fallback();
+  }
+
+  bool _isQuotaResponse(int statusCode, List<int> bodyBytes) {
+    if (statusCode == 429) return true;
+    return _isQuotaMessage(_extractServerErrorMessage(bodyBytes));
+  }
+
+  bool _isQuotaMessage(String message) {
+    final lower = message.toLowerCase();
+    return lower.contains('quota') ||
+        lower.contains('rate limit') ||
+        lower.contains('resource exhausted') ||
+        lower.contains('quota_exceeded');
   }
 
   /// Parse API response - supports multiple backend formats.
@@ -1315,6 +1387,13 @@ class ChatbotViewModel extends BaseViewModel {
       final body = utf8.decode(bodyBytes, allowMalformed: true);
       final decoded = jsonDecode(body);
       if (decoded is Map<String, dynamic>) {
+        final error = decoded['error'];
+        if (error is Map<String, dynamic>) {
+          final code = error['code']?.toString() ?? '';
+          final msg = error['message']?.toString() ?? '';
+          if (code == 'QUOTA_EXCEEDED') return msg.isNotEmpty ? msg : 'QUOTA_EXCEEDED';
+          if (msg.isNotEmpty) return msg;
+        }
         final msg = decoded['message'] ?? decoded['error'] ?? decoded['detail'];
         if (msg != null) return msg.toString();
       }

@@ -16,6 +16,16 @@ class DbHelper {
     return await db.insert(table, data);
   }
 
+  /// Inserts or replaces a row (used when syncing server-assigned ids).
+  Future<int> insertOrReplace(String table, Map<String, dynamic> data) async {
+    Database db = await _localDatabase.database;
+    return await db.insert(
+      table,
+      data,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
   Future<Database> get database => _localDatabase.database;
 
   /// READ (All Rows) - MODIFIED

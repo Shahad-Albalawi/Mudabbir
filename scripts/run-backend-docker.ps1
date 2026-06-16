@@ -2,6 +2,7 @@
 <#
 .SYNOPSIS
   Build and run the Laravel API in Docker (no local PHP required).
+  Without Docker, use: scripts/setup-backend.ps1 then scripts/start-backend.ps1
   Run from repo root:  powershell -ExecutionPolicy Bypass -File scripts/run-backend-docker.ps1
 #>
 $ErrorActionPreference = "Stop"

@@ -9,7 +9,13 @@ use Illuminate\Http\Request;
 
 class ChallengeController extends Controller
 {
-    public function __construct(private readonly ChallengeStore $store) {}
+    /** @var ChallengeStore */
+    private $store;
+
+    public function __construct(ChallengeStore $store)
+    {
+        $this->store = $store;
+    }
 
     public function index(): JsonResponse
     {
@@ -114,5 +120,69 @@ class ChallengeController extends Controller
     public function pendingInvitations(): JsonResponse
     {
         return response()->json(['success' => true, 'data' => $this->store->pendingInvitations()]);
+    }
+
+    public function templates(): JsonResponse
+    {
+        return response()->json(['success' => true, 'data' => $this->store->templates()]);
+    }
+
+    public function createFromTemplate(Request $request): JsonResponse
+    {
+        $payload = $request->validate([
+            'template_id' => ['required', 'string', 'max:64'],
+        ]);
+
+        $challenge = $this->store->createFromTemplate((string) $payload['template_id']);
+        if (! $challenge) {
+            return response()->json(['success' => false, 'message' => 'Template not found'], 404);
+        }
+
+        return response()->json(['success' => true, 'data' => $challenge], 201);
+    }
+
+    public function checkIn(Request $request, int $id): JsonResponse
+    {
+        $payload = $request->validate([
+            'user_id' => ['sometimes', 'integer', 'min:1'],
+        ]);
+
+        $userId = (int) ($payload['user_id'] ?? 1);
+        $result = $this->store->checkIn($id, $userId);
+        if (! $result) {
+            return response()->json(['success' => false, 'message' => 'Challenge or participant not found'], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $result['challenge'],
+            'meta' => $result['meta'],
+        ]);
+    }
+
+    public function recordProgress(Request $request, int $id): JsonResponse
+    {
+        $payload = $request->validate([
+            'user_id' => ['sometimes', 'integer', 'min:1'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
+        ]);
+
+        $userId = (int) ($payload['user_id'] ?? 1);
+        $challenge = $this->store->recordProgress($id, $userId, (float) $payload['amount']);
+        if (! $challenge) {
+            return response()->json(['success' => false, 'message' => 'Challenge or participant not found'], 404);
+        }
+
+        return response()->json(['success' => true, 'data' => $challenge]);
+    }
+
+    public function leaderboard(int $id): JsonResponse
+    {
+        $board = $this->store->leaderboard($id);
+        if (! $board) {
+            return response()->json(['success' => false, 'message' => 'Challenge not found'], 404);
+        }
+
+        return response()->json(['success' => true, 'data' => $board]);
     }
 }

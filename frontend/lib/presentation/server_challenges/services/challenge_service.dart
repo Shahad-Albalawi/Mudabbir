@@ -288,4 +288,102 @@ class ChallengeService {
       throw ApiException.fromDioError(e);
     }
   }
+
+  Future<List<ChallengeTemplateModel>> getTemplates() async {
+    try {
+      final response = await _dioClient.dio.get('/challenges/templates');
+      if (response.data['success'] == true) {
+        final List<dynamic> data = response.data['data'] as List<dynamic>;
+        return data
+            .map((json) =>
+                ChallengeTemplateModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+      }
+      throw ApiException(message: 'Failed to load templates');
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<ChallengeModel> createFromTemplate(String templateId) async {
+    try {
+      final response = await _dioClient.dio.post(
+        '/challenges/from-template',
+        data: {'template_id': templateId},
+      );
+      if (response.data['success'] == true) {
+        return ChallengeModel.fromJson(
+          response.data['data'] as Map<String, dynamic>,
+        );
+      }
+      throw ApiException(message: 'Failed to create from template');
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<ChallengeCheckInResult> checkIn({
+    required int challengeId,
+    int userId = 1,
+  }) async {
+    try {
+      final response = await _dioClient.dio.post(
+        '/challenges/$challengeId/check-in',
+        data: {'user_id': userId},
+      );
+      if (response.data['success'] == true) {
+        final meta = response.data['meta'] as Map<String, dynamic>? ?? {};
+        final newBadges = (meta['new_badges'] as List<dynamic>? ?? [])
+            .map((e) => e.toString())
+            .toList();
+        return ChallengeCheckInResult(
+          challenge: ChallengeModel.fromJson(
+            response.data['data'] as Map<String, dynamic>,
+          ),
+          alreadyCheckedIn: meta['already_checked_in'] as bool? ?? false,
+          newBadges: newBadges,
+        );
+      }
+      throw ApiException(message: 'Failed to check in');
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<ChallengeModel> recordProgress({
+    required int challengeId,
+    required double amount,
+    int userId = 1,
+  }) async {
+    try {
+      final response = await _dioClient.dio.post(
+        '/challenges/$challengeId/progress',
+        data: {'user_id': userId, 'amount': amount},
+      );
+      if (response.data['success'] == true) {
+        return ChallengeModel.fromJson(
+          response.data['data'] as Map<String, dynamic>,
+        );
+      }
+      throw ApiException(message: 'Failed to record progress');
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<ChallengeLeaderboardModel> getLeaderboard(int challengeId) async {
+    try {
+      final response = await _dioClient.dio.get(
+        '/challenges/$challengeId/leaderboard',
+      );
+      if (response.data['success'] == true) {
+        return ChallengeLeaderboardModel.fromJson(
+          response.data['data'] as Map<String, dynamic>,
+        );
+      }
+      throw ApiException(message: 'Failed to load leaderboard');
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
 }

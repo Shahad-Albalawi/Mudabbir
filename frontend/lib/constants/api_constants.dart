@@ -1,14 +1,15 @@
 /// Remote API configuration.
 ///
-/// **Default:** hosted Laravel (`_prodBaseUrl`) for challenges + chatbot.
-/// If that host returns errors (e.g. 530), set `API_BASE_URL` to your own API
-/// or run a local backend with `USE_LOCAL_API=true`.
+/// **Release APK:** URL is set in `frontend/config/release.json` and applied via
+/// `scripts/build-release-apk.ps1` or:
+/// `flutter build apk --release --dart-define-from-file=config/release.json`
+///
+/// **Default production host** (Laravel Cloud). Override at build time with
+/// `--dart-define=API_BASE_URL=https://your-api.example.com` if you deploy elsewhere
+/// (e.g. Render — see `docs/DEPLOY_RENDER.md`).
 ///
 /// **Local backend** (Android emulator → host port 8000):
 /// `flutter run --dart-define=USE_LOCAL_API=true`
-///
-/// **Custom host:**
-/// `flutter run --dart-define=API_BASE_URL=https://api.example.com`
 class ApiConstants {
   static const String _prodBaseUrl =
       'https://gemini-api-s-challenges-uvxa39.laravel.cloud';

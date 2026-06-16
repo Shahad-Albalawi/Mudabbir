@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Services\OpenAiService;
+use App\Services\AiCoachService;
 use Mockery;
 use Tests\TestCase;
 
@@ -17,10 +17,16 @@ class GenerateContentTest extends TestCase
 
     public function test_generate_content_returns_clean_response(): void
     {
-        $this->mock(OpenAiService::class, function (Mockery\MockInterface $mock): void {
+        $this->mock(AiCoachService::class, function (Mockery\MockInterface $mock): void {
             $mock->shouldReceive('generate')
                 ->once()
-                ->andReturn('Hello from OpenAI');
+                ->andReturn('Hello from AI coach');
+            $mock->shouldReceive('provider')
+                ->once()
+                ->andReturn('openai');
+            $mock->shouldReceive('model')
+                ->once()
+                ->andReturn('gpt-4o-mini');
         });
 
         $response = $this->postJson('/api/generate-content', [
@@ -35,5 +41,22 @@ class GenerateContentTest extends TestCase
                 'message',
                 'meta' => ['provider', 'model'],
             ]);
+    }
+
+    public function test_generate_content_returns_429_when_quota_exceeded(): void
+    {
+        $this->mock(AiCoachService::class, function (Mockery\MockInterface $mock): void {
+            $mock->shouldReceive('generate')
+                ->once()
+                ->andThrow(new \App\Exceptions\AiQuotaExceededException('Quota exceeded'));
+        });
+
+        $response = $this->postJson('/api/generate-content', [
+            'content' => 'Hello',
+        ]);
+
+        $response
+            ->assertStatus(429)
+            ->assertJsonPath('error.code', 'QUOTA_EXCEEDED');
     }
 }

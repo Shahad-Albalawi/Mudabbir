@@ -13,6 +13,8 @@ class ApiException implements Exception {
 
   String get userMessage => ApiExceptionLocalizations.display(message);
 
+  bool get isNetworkError => statusCode == null;
+
   factory ApiException.fromDioError(DioException error) {
     switch (error.type) {
       case DioExceptionType.connectionTimeout:

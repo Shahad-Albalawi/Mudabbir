@@ -15,8 +15,14 @@ class ChallengeLoading extends ChallengeState {
 
 class ChallengeLoaded extends ChallengeState {
   final List<ChallengeModel> challenges;
+  final bool fromCache;
+  final bool isOffline;
 
-  const ChallengeLoaded(this.challenges);
+  const ChallengeLoaded(
+    this.challenges, {
+    this.fromCache = false,
+    this.isOffline = false,
+  });
 
   List<ChallengeModel> get activeChallenges =>
       challenges.where((c) => c.isActive).toList()
@@ -56,8 +62,14 @@ class ChallengeDetailLoading extends ChallengeDetailState {
 
 class ChallengeDetailLoaded extends ChallengeDetailState {
   final ChallengeModel challenge;
+  final bool fromCache;
+  final bool isOffline;
 
-  const ChallengeDetailLoaded(this.challenge);
+  const ChallengeDetailLoaded(
+    this.challenge, {
+    this.fromCache = false,
+    this.isOffline = false,
+  });
 }
 
 class ChallengeDetailError extends ChallengeDetailState {

@@ -72,6 +72,18 @@ flutter analyze
 flutter test
 ```
 
+**APK للعرض (إصدار + رابط الإنتاج):**
+
+```powershell
+# من جذر المستودع — يستخدم frontend/config/release.json
+powershell -ExecutionPolicy Bypass -File scripts/build-release-apk.ps1
+
+# أو مع رابط API مخصص (مثلاً Render)
+powershell -ExecutionPolicy Bypass -File scripts/build-release-apk.ps1 -ApiBaseUrl "https://your-api.onrender.com"
+```
+
+الملف الناتج: `frontend/build/app/outputs/flutter-apk/app-release.apk`
+
 ## المساهمة | Contributing
 
 افتح **Issue** أو **Pull Request** مع وصف واضح للتغيير.

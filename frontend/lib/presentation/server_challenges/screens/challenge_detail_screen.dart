@@ -7,10 +7,12 @@ import 'package:mudabbir/presentation/resources/styles_manager.dart';
 import 'package:mudabbir/presentation/server_challenges/models/challenge_model.dart';
 import 'package:mudabbir/presentation/server_challenges/providers/challenge_provider.dart';
 import 'package:mudabbir/presentation/server_challenges/providers/challenge_state.dart';
+import 'package:mudabbir/presentation/server_challenges/widgets/challenge_badge_chip.dart';
+import 'package:mudabbir/presentation/server_challenges/widgets/challenge_leaderboard_card.dart';
 import 'package:mudabbir/presentation/server_challenges/widgets/participant_item.dart';
 import 'package:intl/intl.dart';
 import 'package:mudabbir/service/getit_init.dart';
-import 'package:mudabbir/service/hive_service.dart';
+import 'package:mudabbir/domain/repository/server_challenge_repository/server_challenge_repository.dart';
 
 class ChallengeDetailScreen extends ConsumerStatefulWidget {
   final int challengeId;
@@ -23,7 +25,8 @@ class ChallengeDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
-  final HiveService _hiveService = getIt<HiveService>();
+  ServerChallengeRepository get _repository =>
+      getIt<ServerChallengeRepository>();
 
   @override
   void initState() {
@@ -35,18 +38,34 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
     });
   }
 
-  String _getCurrentAmountKey(int challengeId) =>
-      'challenge_${challengeId}_current_amount';
-
-  double _getCurrentAmount(int challengeId) {
-    return _hiveService.getValue(_getCurrentAmountKey(challengeId)) ?? 0.0;
+  double _getCurrentAmount(ChallengeModel challenge) {
+    final me = challenge.participants.firstWhere(
+      (p) => p.id == challenge.creatorId,
+      orElse: () => challenge.participants.first,
+    );
+    final fromServer = me.currentProgress;
+    if (fromServer > 0) return fromServer;
+    return _repository.progressForChallenge(challenge.id, userId: me.id);
   }
 
-  Future<void> _updateCurrentAmount(int challengeId, double amountToAdd) async {
-    final currentAmount = _getCurrentAmount(challengeId);
-    final newAmount = currentAmount + amountToAdd; // Add instead of replace
-    await _hiveService.setValue(_getCurrentAmountKey(challengeId), newAmount);
-    setState(() {}); // Refresh UI
+  Future<void> _addProgress(ChallengeModel challenge, double amount) async {
+    final me = challenge.participants.firstWhere(
+      (p) => p.id == challenge.creatorId,
+      orElse: () => challenge.participants.first,
+    );
+    final result = await ref
+        .read(challengeOperationProvider.notifier)
+        .addProgress(
+          challengeId: challenge.id,
+          amount: amount,
+          userId: me.id,
+        );
+    if (result?.challenge != null && mounted) {
+      ref
+          .read(challengeDetailProvider(widget.challengeId).notifier)
+          .updateLocalChallenge(result!.challenge!);
+      setState(() {});
+    }
   }
 
   @override
@@ -58,7 +77,7 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
       previous,
       next,
     ) {
-      if (next is ChallengeOperationSuccess) {
+        if (next is ChallengeOperationSuccess) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.message),
@@ -66,11 +85,11 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
           ),
         );
 
-        // Update local challenge if available
         if (next.challenge != null) {
           ref
               .read(challengeDetailProvider(widget.challengeId).notifier)
               .updateLocalChallenge(next.challenge!);
+          ref.invalidate(challengeLeaderboardProvider(widget.challengeId));
         }
       } else if (next is ChallengeOperationError) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -111,7 +130,13 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
         child: CircularProgressIndicator(),
       ),
       ChallengeDetailError(:final message) => _buildError(message),
-      ChallengeDetailLoaded(:final challenge) => _buildContent(challenge),
+      ChallengeDetailLoaded(:final challenge, :final isOffline) =>
+        Column(
+          children: [
+            if (isOffline) _buildOfflineBanner(),
+            Expanded(child: _buildContent(challenge)),
+          ],
+        ),
     };
   }
 
@@ -150,6 +175,21 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
     );
   }
 
+  Widget _buildOfflineBanner() {
+    return MaterialBanner(
+      content: Text(ServerChallengeStrings.offlineBanner),
+      leading: const Icon(Icons.cloud_off_outlined),
+      actions: [
+        TextButton(
+          onPressed: () => ref
+              .read(challengeDetailProvider(widget.challengeId).notifier)
+              .loadChallenge(),
+          child: Text(ServerChallengeStrings.retry),
+        ),
+      ],
+    );
+  }
+
   Widget _buildContent(ChallengeModel challenge) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -158,10 +198,84 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
         children: [
           _buildInfoCard(challenge),
           const SizedBox(height: 16),
+          _buildStreakCard(challenge),
+          const SizedBox(height: 16),
           _buildStatusCard(challenge),
+          const SizedBox(height: 16),
+          ChallengeLeaderboardCard(challengeId: challenge.id),
           const SizedBox(height: 16),
           _buildParticipantsCard(challenge),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStreakCard(ChallengeModel challenge) {
+    final me = challenge.participants.firstWhere(
+      (p) => p.id == challenge.creatorId,
+      orElse: () => challenge.participants.first,
+    );
+    final today = DateTime.now().toIso8601String().split('T').first;
+    final checkedToday = me.lastCheckIn == today;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.local_fire_department, color: Color(0xFFFF7043)),
+                const SizedBox(width: 8),
+                Text(
+                  ServerChallengeStrings.streakTitle,
+                  style: getBoldStyle(
+                    fontSize: FontSize.s16,
+                    color: ColorManager.darkGrey,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              ServerChallengeStrings.streakDays(me.streakDays),
+              style: getBoldStyle(
+                fontSize: FontSize.s20,
+                color: ColorManager.primary,
+              ),
+            ),
+            if (me.badges.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                children: [
+                  if (me.hasStreak7Badge)
+                    const ChallengeBadgeChip(badgeId: 'streak_7'),
+                  if (me.hasStreak30Badge)
+                    const ChallengeBadgeChip(badgeId: 'streak_30'),
+                ],
+              ),
+            ],
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: checkedToday
+                    ? null
+                    : () => ref
+                        .read(challengeOperationProvider.notifier)
+                        .checkIn(challengeId: challenge.id, userId: me.id),
+                icon: const Icon(Icons.check_circle_outline),
+                label: Text(
+                  checkedToday
+                      ? ServerChallengeStrings.alreadyCheckedIn
+                      : ServerChallengeStrings.checkInButton,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -283,7 +397,7 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
   }
 
   Widget _buildStatusCard(ChallengeModel challenge) {
-    final currentAmount = _getCurrentAmount(challenge.id);
+    final currentAmount = _getCurrentAmount(challenge);
     final targetAmount =
         challenge.participants
             .firstWhere(
@@ -491,7 +605,7 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            '\$${amount.toStringAsFixed(2)}',
+            ServerChallengeStrings.formatAmount(amount),
             style: getBoldStyle(fontSize: FontSize.s18, color: color),
           ),
         ],
@@ -501,7 +615,7 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
 
   // Update the _showUpdateAmountDialog to show current amount and accept new amount to add
   void _showUpdateAmountDialog(ChallengeModel challenge) {
-    final currentAmount = _getCurrentAmount(challenge.id);
+    final currentAmount = _getCurrentAmount(challenge);
     final amountController = TextEditingController();
 
     showDialog(
@@ -528,7 +642,7 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '\$${currentAmount.toStringAsFixed(2)}',
+                    ServerChallengeStrings.formatAmount(currentAmount),
                     style: getBoldStyle(
                       fontSize: FontSize.s20,
                       color: ColorManager.primary,
@@ -576,50 +690,11 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
             child: Text(ServerChallengeStrings.cancel),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               final amountToAdd = double.tryParse(amountController.text.trim());
               if (amountToAdd != null && amountToAdd > 0) {
                 Navigator.pop(context);
-                _updateCurrentAmount(challenge.id, amountToAdd);
-
-                // Check if target reached and mark as achieved
-                final targetAmount =
-                    challenge.participants
-                        .firstWhere(
-                          (p) => p.id == challenge.creatorId,
-                          orElse: () => challenge.participants.first,
-                        )
-                        .targetAmount ??
-                    0.0;
-
-                final newTotalAmount = _getCurrentAmount(challenge.id);
-
-                if (newTotalAmount >= targetAmount && targetAmount > 0) {
-                  // Mark as achieved on server
-                  ref
-                      .read(challengeOperationProvider.notifier)
-                      .toggleStatus(challenge.id);
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(ServerChallengeStrings.goalCongrats),
-                      backgroundColor: const Color(0xFF4CAF50),
-                      duration: const Duration(seconds: 3),
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        ServerChallengeStrings.addedAmountSuccess(
-                          amountToAdd.toStringAsFixed(2),
-                        ),
-                      ),
-                      backgroundColor: ColorManager.primary,
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                }
+                await _addProgress(challenge, amountToAdd);
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(

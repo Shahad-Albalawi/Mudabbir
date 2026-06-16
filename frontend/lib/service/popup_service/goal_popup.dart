@@ -1,292 +1,329 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mudabbir/presentation/goals/goals_viewmodel.dart';
 import 'package:mudabbir/presentation/resources/color_manager.dart';
+import 'package:mudabbir/presentation/resources/goal_strings.dart';
 import 'package:mudabbir/service/popup_service/popup_widgets.dart';
 
 class GoalPopup {
+  final ImagePicker _picker = ImagePicker();
+
   Future<void> show(BuildContext context, WidgetRef ref) async {
     final formKey = GlobalKey<FormState>();
 
     final nameCtrl = TextEditingController();
     final targetCtrl = TextEditingController();
-    final currentCtrl = TextEditingController(text: "0.0");
-    final startCtrl = TextEditingController();
+    final currentCtrl = TextEditingController(text: '0');
+    final startCtrl = TextEditingController(
+      text: DateTime.now().toIso8601String().split('T').first,
+    );
     final endCtrl = TextEditingController();
 
     String? selectedType;
-    const goalTypes = ['Saving', 'Investment', 'Debt', 'Other'];
+    String? imagePath;
 
-    // ViewModel
     final goalViewmodel = ref.read(goalViewmodelProvider.notifier);
 
     await showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        elevation: 24,
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.9,
-          constraints: const BoxConstraints(maxWidth: 400, maxHeight: 650),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Theme.of(context).colorScheme.surface,
-                Theme.of(context).colorScheme.surface.withValues(alpha: 0.95),
-              ],
+      builder: (_) => StatefulBuilder(
+        builder: (context, setLocalState) {
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
             ),
-          ),
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Header
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
-                    ),
-                    gradient: LinearGradient(
-                      colors: [
-                        ColorManager.primary,
-                        ColorManager.primary.withValues(alpha: 0.8),
-                      ],
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          Icons.flag_outlined,
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
+            elevation: 24,
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.9,
+              constraints: const BoxConstraints(maxWidth: 400, maxHeight: 700),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                color: Theme.of(context).colorScheme.surface,
+              ),
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _header(context),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(24),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Text(
-                              "Create Goal",
-                              style: Theme.of(context).textTheme.headlineSmall
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onPrimary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              "Set your financial goal",
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onPrimary
-                                        .withValues(alpha: 0.8),
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Content
-                Flexible(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _buildSectionHeader(context, "Goal Name"),
-                        const SizedBox(height: 12),
-                        PopupWidgets.textField(
-                          controller: nameCtrl,
-                          label: "Enter goal name",
-                          icon: Icons.text_fields,
-                          validator: (val) => val == null || val.isEmpty
-                              ? "Name is required"
-                              : null,
-                        ),
-                        const SizedBox(height: 20),
-
-                        _buildSectionHeader(context, "Target Amount"),
-                        const SizedBox(height: 12),
-                        PopupWidgets.textField(
-                          controller: targetCtrl,
-                          label: "Enter target amount",
-                          icon: Icons.attach_money,
-                          validator: (val) {
-                            if (val == null || val.isEmpty) {
-                              return "Target amount is required";
-                            }
-                            final num? n = num.tryParse(val);
-                            if (n == null || n <= 0) {
-                              return "Enter a valid number";
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 20),
-
-                        _buildSectionHeader(context, "Current Amount"),
-                        const SizedBox(height: 12),
-                        PopupWidgets.textField(
-                          controller: currentCtrl,
-                          label: "Current amount (optional)",
-                          icon: Icons.savings_outlined,
-                          validator: (val) {
-                            if (val == null || val.isEmpty) return null;
-                            final num? n = num.tryParse(val);
-                            if (n == null || n < 0) {
-                              return "Enter a valid number";
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 20),
-
-                        _buildSectionHeader(context, "Goal Type"),
-                        const SizedBox(height: 12),
-                        PopupWidgets.dropdownField<String>(
-                          value: selectedType,
-                          label: "Select type",
-                          items: goalTypes,
-                          onChanged: (val) => selectedType = val,
-                          validator: (val) =>
-                              val == null ? "Please select a type" : null,
-                        ),
-                        const SizedBox(height: 20),
-
-                        _buildSectionHeader(context, "Goal Period"),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: PopupWidgets.dateField(
-                                startCtrl,
-                                context,
-                                label: "Start Date",
-                                validator: (val) => val == null || val.isEmpty
-                                    ? "Start date required"
-                                    : null,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: PopupWidgets.dateField(
-                                endCtrl,
-                                context,
-                                label: "End Date",
-                                validator: (val) {
-                                  if (val == null || val.isEmpty) {
-                                    return "End date required";
+                            Center(
+                              child: GestureDetector(
+                                onTap: () async {
+                                  final picked = await _picker.pickImage(
+                                    source: ImageSource.gallery,
+                                    maxWidth: 1200,
+                                    imageQuality: 85,
+                                  );
+                                  if (picked != null) {
+                                    setLocalState(() => imagePath = picked.path);
                                   }
-                                  if (startCtrl.text.isNotEmpty) {
-                                    final start = DateTime.tryParse(
-                                      startCtrl.text,
-                                    );
-                                    final end = DateTime.tryParse(val);
-                                    if (start != null &&
-                                        end != null &&
-                                        end.isBefore(start)) {
-                                      return "End must be after start";
-                                    }
-                                  }
-                                  return null;
                                 },
+                                child: Container(
+                                  width: 96,
+                                  height: 96,
+                                  decoration: BoxDecoration(
+                                    color: ColorManager.primary
+                                        .withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: ColorManager.primary
+                                          .withValues(alpha: 0.25),
+                                    ),
+                                  ),
+                                  child: imagePath != null
+                                      ? ClipRRect(
+                                          borderRadius:
+                                              BorderRadius.circular(15),
+                                          child: Image.file(
+                                            File(imagePath!),
+                                            fit: BoxFit.cover,
+                                          ),
+                                        )
+                                      : Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.add_a_photo_outlined,
+                                              color: ColorManager.primary,
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              GoalStrings.pickImage,
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: ColorManager.primary,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                ),
                               ),
+                            ),
+                            const SizedBox(height: 20),
+                            _section(GoalStrings.goalName),
+                            const SizedBox(height: 8),
+                            PopupWidgets.textField(
+                              controller: nameCtrl,
+                              label: GoalStrings.goalNameHint,
+                              icon: Icons.flag_outlined,
+                              validator: (val) => val == null || val.isEmpty
+                                  ? GoalStrings.nameRequired
+                                  : null,
+                            ),
+                            const SizedBox(height: 16),
+                            _section(GoalStrings.targetAmount),
+                            const SizedBox(height: 8),
+                            PopupWidgets.textField(
+                              controller: targetCtrl,
+                              label: GoalStrings.targetAmount,
+                              icon: Icons.savings_outlined,
+                              validator: (val) {
+                                if (val == null || val.isEmpty) {
+                                  return GoalStrings.targetRequired;
+                                }
+                                final n = double.tryParse(val);
+                                if (n == null || n <= 0) {
+                                  return GoalStrings.invalidAmount;
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            _section(GoalStrings.currentAmount),
+                            const SizedBox(height: 8),
+                            PopupWidgets.textField(
+                              controller: currentCtrl,
+                              label: GoalStrings.currentAmount,
+                              icon: Icons.account_balance_wallet_outlined,
+                              validator: (val) {
+                                if (val == null || val.isEmpty) return null;
+                                final n = double.tryParse(val);
+                                if (n == null || n < 0) {
+                                  return GoalStrings.invalidAmount;
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            _section(GoalStrings.goalType),
+                            const SizedBox(height: 8),
+                            PopupWidgets.dropdownField<String>(
+                              value: selectedType,
+                              label: GoalStrings.goalType,
+                              items: GoalStrings.goalTypes,
+                              onChanged: (val) =>
+                                  setLocalState(() => selectedType = val),
+                              validator: (val) => val == null
+                                  ? GoalStrings.typeRequired
+                                  : null,
+                            ),
+                            const SizedBox(height: 16),
+                            _section(GoalStrings.goalPeriod),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: PopupWidgets.dateField(
+                                    startCtrl,
+                                    context,
+                                    label: GoalStrings.startDate,
+                                    validator: (val) =>
+                                        val == null || val.isEmpty
+                                            ? GoalStrings.startRequired
+                                            : null,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: PopupWidgets.dateField(
+                                    endCtrl,
+                                    context,
+                                    label: GoalStrings.endDate,
+                                    validator: (val) {
+                                      if (val == null || val.isEmpty) {
+                                        return GoalStrings.endRequired;
+                                      }
+                                      final start =
+                                          DateTime.tryParse(startCtrl.text);
+                                      final end = DateTime.tryParse(val);
+                                      if (start != null &&
+                                          end != null &&
+                                          !end.isAfter(start)) {
+                                        return GoalStrings.endAfterStart;
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: Text(GoalStrings.cancel),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                if (!(formKey.currentState?.validate() ??
+                                    false)) {
+                                  return;
+                                }
 
-                // Actions
-                Container(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text("Cancel"),
-                        ),
+                                await goalViewmodel.addNewGoal(
+                                  name: nameCtrl.text,
+                                  target: double.parse(targetCtrl.text),
+                                  currentAmount:
+                                      double.tryParse(currentCtrl.text) ?? 0,
+                                  type: selectedType!,
+                                  startDate:
+                                      DateTime.parse(startCtrl.text),
+                                  endDate: DateTime.parse(endCtrl.text),
+                                  imageSourcePath: imagePath,
+                                );
+
+                                if (!context.mounted) return;
+                                Navigator.pop(context);
+                                PopupWidgets.showSuccessSnackBar(
+                                  context,
+                                  GoalStrings.createdSuccess,
+                                );
+                              },
+                              child: Text(GoalStrings.createButton),
+                            ),
+                          ),
+                        ],
                       ),
-                      const Spacer(),
-                      Expanded(
-                        flex: 2,
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            if (!(formKey.currentState?.validate() ?? false)) {
-                              return;
-                            }
-
-                            final goalData = {
-                              "name": nameCtrl.text,
-                              "target": double.parse(targetCtrl.text),
-                              "current_amount":
-                                  double.tryParse(currentCtrl.text) ?? 0.0,
-                              "type": selectedType,
-                              "start_date": startCtrl.text,
-                              "end_date": endCtrl.text,
-                            };
-
-                            try {
-                              await goalViewmodel.addNewGoal(goalData);
-                              if (!context.mounted) return;
-                              Navigator.pop(context);
-                              PopupWidgets.showSuccessSnackBar(
-                                context,
-                                "Goal created successfully! 🎉",
-                              );
-                            } catch (e) {
-                              if (!context.mounted) return;
-                              PopupWidgets.showErrorSnackBar(
-                                context,
-                                "Failed to create goal: $e",
-                              );
-                            }
-                          },
-                          child: const Text("Create Goal"),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title) {
+  Widget _header(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+        gradient: LinearGradient(
+          colors: [
+            ColorManager.primary,
+            ColorManager.primary.withValues(alpha: 0.85),
+          ],
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.flag_outlined, color: Colors.white),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  GoalStrings.createTitle,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                Text(
+                  GoalStrings.createSubtitle,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.85),
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _section(String title) {
     return Text(
       title,
-      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+      style: TextStyle(
         fontWeight: FontWeight.w600,
         color: ColorManager.primary,
+        fontSize: 13,
       ),
     );
   }

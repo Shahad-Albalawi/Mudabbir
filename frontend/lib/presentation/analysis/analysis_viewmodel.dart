@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mudabbir/domain/models/behavioral_snapshot.dart';
+import 'package:mudabbir/domain/repository/behavioral_analysis_repository/behavioral_analysis_repository.dart';
 import 'package:mudabbir/presentation/resources/analysis_copy.dart';
 import 'package:mudabbir/presentation/resources/entity_localizations.dart';
 import 'package:mudabbir/presentation/statistics/statistics_viewmodel.dart';
+import 'package:mudabbir/service/getit_init.dart';
 
 class AnalysisState {
   final String financialHealthRating;
@@ -12,6 +15,15 @@ class AnalysisState {
   final Map<String, String> categoryInsights;
   final String balanceStatus;
   final double savingsRate;
+
+  final int behavioralScore;
+  final String behavioralRating;
+  final List<MonthlySpendingPoint> monthlyTrend;
+  final List<SpendingAnomaly> anomalies;
+  final String monthComparisonSummary;
+  final String weekdayInsight;
+  final List<String> personalizedRecommendations;
+
   final bool isLoading;
 
   const AnalysisState({
@@ -23,6 +35,13 @@ class AnalysisState {
     this.categoryInsights = const {},
     this.balanceStatus = '',
     this.savingsRate = 0,
+    this.behavioralScore = 0,
+    this.behavioralRating = '',
+    this.monthlyTrend = const [],
+    this.anomalies = const [],
+    this.monthComparisonSummary = '',
+    this.weekdayInsight = '',
+    this.personalizedRecommendations = const [],
     this.isLoading = false,
   });
 
@@ -35,6 +54,13 @@ class AnalysisState {
     Map<String, String>? categoryInsights,
     String? balanceStatus,
     double? savingsRate,
+    int? behavioralScore,
+    String? behavioralRating,
+    List<MonthlySpendingPoint>? monthlyTrend,
+    List<SpendingAnomaly>? anomalies,
+    String? monthComparisonSummary,
+    String? weekdayInsight,
+    List<String>? personalizedRecommendations,
     bool? isLoading,
   }) {
     return AnalysisState(
@@ -47,19 +73,79 @@ class AnalysisState {
       categoryInsights: categoryInsights ?? this.categoryInsights,
       balanceStatus: balanceStatus ?? this.balanceStatus,
       savingsRate: savingsRate ?? this.savingsRate,
+      behavioralScore: behavioralScore ?? this.behavioralScore,
+      behavioralRating: behavioralRating ?? this.behavioralRating,
+      monthlyTrend: monthlyTrend ?? this.monthlyTrend,
+      anomalies: anomalies ?? this.anomalies,
+      monthComparisonSummary:
+          monthComparisonSummary ?? this.monthComparisonSummary,
+      weekdayInsight: weekdayInsight ?? this.weekdayInsight,
+      personalizedRecommendations:
+          personalizedRecommendations ?? this.personalizedRecommendations,
       isLoading: isLoading ?? this.isLoading,
     );
   }
 }
 
-/// Derived from [statisticsProvider] whenever stats finish loading (no stale StateNotifier).
-final analysisProvider = Provider<AnalysisState>((ref) {
-  final stats = ref.watch(statisticsProvider);
-  if (stats.isLoading) {
-    return const AnalysisState(isLoading: true);
+final analysisProvider =
+    StateNotifierProvider<AnalysisNotifier, AnalysisState>(
+  (ref) => AnalysisNotifier(ref),
+);
+
+class AnalysisNotifier extends StateNotifier<AnalysisState> {
+  AnalysisNotifier(this._ref) : super(const AnalysisState(isLoading: true)) {
+    _ref.listen<StatisticsState>(statisticsProvider, (_, stats) {
+      _rebuild(stats);
+    });
+    _rebuild(_ref.read(statisticsProvider));
   }
-  return AnalysisLogic.fromStatistics(stats);
-});
+
+  final Ref _ref;
+  final BehavioralAnalysisRepository _behavioralRepo =
+      getIt<BehavioralAnalysisRepository>();
+
+  Future<void> _rebuild(StatisticsState statistics) async {
+    if (statistics.isLoading) {
+      state = const AnalysisState(isLoading: true);
+      return;
+    }
+
+    state = const AnalysisState(isLoading: true);
+
+    final behavioralEither = await _behavioralRepo.buildSnapshot(statistics);
+    final behavioral = behavioralEither.fold(
+      (_) => const BehavioralSnapshot(),
+      (snapshot) => snapshot,
+    );
+
+    final base = AnalysisLogic.fromStatistics(statistics);
+    state = base.copyWith(
+      behavioralScore: behavioral.behavioralScore,
+      behavioralRating: behavioral.behavioralRating,
+      monthlyTrend: behavioral.monthlyTrend,
+      anomalies: behavioral.anomalies,
+      monthComparisonSummary: behavioral.monthComparisonSummary,
+      weekdayInsight: behavioral.weekdayInsight,
+      personalizedRecommendations: _mergeRecommendations(
+        base.recommendations,
+        behavioral.personalizedRecommendations,
+      ),
+      isLoading: false,
+    );
+  }
+
+  List<String> _mergeRecommendations(
+    List<String> general,
+    List<String> personalized,
+  ) {
+    final merged = <String>[];
+    final seen = <String>{};
+    for (final item in [...personalized, ...general]) {
+      if (seen.add(item)) merged.add(item);
+    }
+    return merged.take(8).toList();
+  }
+}
 
 /// Pure analysis from SQLite aggregates (see [StatisticsViewModel]).
 class AnalysisLogic {

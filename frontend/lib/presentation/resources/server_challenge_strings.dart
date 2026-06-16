@@ -5,6 +5,7 @@ class ServerChallengeStrings {
   ServerChallengeStrings._();
 
   static bool get _e => AppStrings.isEnglishLocale;
+  static bool get isArabic => !_e;
 
   // —— Unexpected / operations ——
   static String get unexpectedError => _e
@@ -337,4 +338,67 @@ class ServerChallengeStrings {
   static String get invitePendingStatus => _e ? 'Pending' : 'معلق';
 
   static String get inviteDeclined => _e ? 'Declined' : 'مرفوض';
+
+  // —— Feature E: streaks, leaderboard, badges, templates ——
+  static String get templatesTitle =>
+      _e ? 'Ready-made challenges' : 'تحديات جاهزة';
+
+  static String get templatesSubtitle => _e
+      ? 'Start a popular challenge in one tap'
+      : 'ابدأ تحدياً شائعاً بنقرة واحدة';
+
+  static String get useTemplate => _e ? 'Start' : 'ابدأ';
+
+  static String templateDays(int days) =>
+      _e ? '$days days' : '$days يوم';
+
+  static String get streakTitle => _e ? 'Daily streak' : 'السلسلة اليومية';
+
+  static String streakDays(int days) =>
+      _e ? '$days day streak' : 'سلسلة $days يوم';
+
+  static String get checkInButton => _e ? 'Check in today' : 'تسجيل حضور اليوم';
+
+  static String get alreadyCheckedIn =>
+      _e ? 'Already checked in today' : 'سجّلت حضورك اليوم';
+
+  static String get leaderboardTitle =>
+      _e ? 'Leaderboard' : 'لوحة المتصدرين';
+
+  static String get leaderboardEmpty =>
+      _e ? 'No participants yet' : 'لا يوجد مشاركون بعد';
+
+  static String rankLabel(int rank) => _e ? '#$rank' : 'المركز $rank';
+
+  static String get badge7Title =>
+      _e ? '7-day streak' : 'سلسلة 7 أيام';
+
+  static String get badge30Title =>
+      _e ? '30-day streak' : 'سلسلة 30 يوم';
+
+  static String get badge7Earned =>
+      _e ? 'You earned the 7-day badge!' : 'حصلت على شارة 7 أيام!';
+
+  static String get badge30Earned =>
+      _e ? 'You earned the 30-day badge!' : 'حصلت على شارة 30 يوم!';
+
+  static String get checkInSuccess =>
+      _e ? 'Checked in successfully' : 'تم تسجيل الحضور بنجاح';
+
+  static String get templateCreated =>
+      _e ? 'Challenge started from template' : 'تم بدء التحدي من القالب';
+
+  static String formatAmount(double amount) =>
+      '${amount.toStringAsFixed(0)} ${_e ? 'SAR' : '﷼'}';
+
+  static String get offlineBanner => _e
+      ? 'Offline — showing saved data. Changes will sync when you reconnect.'
+      : 'وضع عدم الاتصال — عرض بيانات محفوظة. ستُزامَن التغييرات عند عودة الشبكة.';
+
+  static String get progressSaved =>
+      _e ? 'Progress saved' : 'تم حفظ التقدم';
+
+  static String get progressQueuedOffline => _e
+      ? 'Saved locally — will sync when online'
+      : 'حُفظ محلياً — سيُزامَن عند الاتصال';
 }

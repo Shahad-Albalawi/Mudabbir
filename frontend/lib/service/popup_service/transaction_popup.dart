@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
 import 'package:dartz/dartz.dart';
 import 'package:mudabbir/presentation/resources/color_manager.dart';
+import 'package:mudabbir/data/network/failure.dart';
+import 'package:mudabbir/domain/models/expense_transaction.dart';
+import 'package:mudabbir/domain/repository/expense_repository/expense_repository.dart';
+import 'package:mudabbir/presentation/resources/expense_strings.dart';
 import 'package:mudabbir/presentation/resources/entity_localizations.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/presentation/home/home_viewmodel.dart';
@@ -12,6 +16,7 @@ import 'popup_widgets.dart';
 
 class TransactionPopup {
   final _db = GetIt.I<DbHelper>();
+  final _expenseRepository = GetIt.I<ExpenseRepository>();
 
   Future<void> show(BuildContext context, {required String type}) async {
     await showDialog(
@@ -144,7 +149,7 @@ class TransactionPopup {
                                 ),
                               ),
                               Text(
-                                '\$${currentBalance.toStringAsFixed(2)}',
+                                ExpenseStrings.formatAmount(currentBalance),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 18,
@@ -240,33 +245,70 @@ class TransactionPopup {
                             }
 
                             final amount = double.parse(amountCtrl.text);
-
-                            // ✅ Validate expense against balance
-                            if (type == 'expense') {
-                              if (amount > currentBalance) {
-                                _showBalanceError(context, currentBalance);
-                                return;
-                              }
+                            if (accountId == null || categoryId == null) {
+                              return;
                             }
 
-                            // Save transaction
-                            await _db.insert('transactions', {
-                              'amount': amount,
-                              'date': dateCtrl.text,
-                              'type': type,
-                              'notes': notesCtrl.text.trim(),
-                              'account_id': accountId,
-                              'category_id': categoryId,
-                            });
+                            String? feedback;
+                            if (type == 'expense') {
+                              final tx = ExpenseTransaction(
+                                id: 0,
+                                amount: amount,
+                                date: dateCtrl.text,
+                                type: type,
+                                notes: notesCtrl.text.trim().isEmpty
+                                    ? null
+                                    : notesCtrl.text.trim(),
+                                accountId: accountId!,
+                                categoryId: categoryId!,
+                                accountName: EntityLocalizations.accountName(
+                                  accounts.firstWhere(
+                                    (a) => a['id'] == accountId,
+                                    orElse: () => {'name': ''},
+                                  ),
+                                ),
+                                categoryName: EntityLocalizations.categoryName(
+                                  categories.firstWhere(
+                                    (c) => c['id'] == categoryId,
+                                    orElse: () => {'name': ''},
+                                  ),
+                                ),
+                              );
+                              final result = await _expenseRepository
+                                  .addTransaction(tx);
+                              final ok = result.fold((failure) {
+                                PopupWidgets.showSuccessSnackBar(
+                                  context,
+                                  failure.userFacingMessage,
+                                );
+                                return false;
+                              }, (write) {
+                                feedback = write.budgetMessage;
+                                return true;
+                              });
+                              if (!ok) return;
+                            } else {
+                              await _db.insert('transactions', {
+                                'amount': amount,
+                                'date': dateCtrl.text,
+                                'type': type,
+                                'notes': notesCtrl.text.trim(),
+                                'account_id': accountId,
+                                'category_id': categoryId,
+                                'is_recurring': 0,
+                              });
+                            }
 
-                            // ✅ Reload Home state
                             await ref.read(homeProvider.notifier).reload();
 
                             if (!context.mounted) return;
                             Navigator.pop(context);
+                            final successText = feedback == null
+                                ? AppStrings.txSuccess(type)
+                                : '${AppStrings.txSuccess(type)}\n$feedback';
                             PopupWidgets.showSuccessSnackBar(
                               context,
-                              AppStrings.txSuccess(type),
+                              successText,
                             );
                           },
                           style: ElevatedButton.styleFrom(
@@ -379,7 +421,7 @@ class TransactionPopup {
                     ),
                   ),
                   Text(
-                    '\$${currentBalance.toStringAsFixed(2)}',
+                    ExpenseStrings.formatAmount(currentBalance),
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
