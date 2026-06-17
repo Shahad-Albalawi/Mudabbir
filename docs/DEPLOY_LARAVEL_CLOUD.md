@@ -24,17 +24,30 @@
 
 | الإعداد | القيمة |
 |---------|--------|
-| المستودع | GitHub/GitLab الذي يحتوي المشروع |
-| الفرع | `main` (أو فرع الإنتاج عندك) |
-| **Root directory** | `backend` |
+| المستودع | `Shahad-Albalawi/Mudabbir` على GitHub |
+| **الفرع** | **`laravel-cloud`** (مو `main`) |
 
-مهم: المشروع monorepo — مجلد Laravel هو `backend/` وليس الجذر.
+### لماذا فرع `laravel-cloud`؟
+
+المشروع **monorepo** — Laravel داخل `backend/` ولا يوجد حقل Root directory في Laravel Cloud.
+
+**GitHub Action** (`laravel-cloud-branch.yml`) ينشئ فرع `laravel-cloud` تلقائياً فيه محتوى `backend/` فقط في الجذر. Laravel Cloud يبني مباشرة بدون سكربت معقّد.
+
+> بعد كل `push` على `main`، يُحدَّث فرع `laravel-cloud` خلال دقيقة. في Laravel Cloud اختر هذا الفرع ثم **Save & Deploy**.
+
+### بديل (إذا بقيت على فرع `main`)
+
+انسخ سكربت `.laravel-cloud/build.sh` في أوامر البناء — راجع القسم 3 أدناه.
 
 ---
 
 ## 3) أوامر البناء والنشر (Deployments)
 
-### Build commands
+افتح البيئة → **Deployments**.
+
+### إذا الفرع = `laravel-cloud` (مُوصى به)
+
+**Build commands:**
 
 ```bash
 composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
@@ -42,11 +55,30 @@ php artisan config:cache
 php artisan route:cache
 ```
 
-### Deploy commands
+**Deploy commands:**
 
 ```bash
 php artisan migrate --force
 ```
+
+### إذا الفرع = `main` (بديل)
+
+**Build commands:**
+
+```bash
+bash .laravel-cloud/build.sh
+composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+php artisan config:cache
+php artisan route:cache
+```
+
+**Deploy commands:**
+
+```bash
+php artisan migrate --force
+```
+
+> احذف أوامر `npm install` / `npm run build` الافتراضية إذا فشلت — الـ API لا يحتاج بناء Flutter.
 
 لا تشغّل `php artisan storage:link` على Laravel Cloud (لا يُحفظ بين النشرات). ملفات JSON للمصروفات/الأهداف/التحديات تُخزَّن في `storage/app/` — على القرص المؤقت؛ للإنتاج الجاد يُفضّل لاحقاً قاعدة بيانات أو Object Storage.
 
@@ -61,7 +93,7 @@ php artisan migrate --force
 | `APP_NAME` | `Mudabbir` |
 | `APP_ENV` | `production` |
 | `APP_DEBUG` | `false` |
-| `APP_URL` | `https://gemini-api-s-challenges-uvxa39.laravel.cloud` (أو الرابط الجديد) |
+| `APP_URL` | `https://laravel-main-nb0wjv.free.laravel.cloud` |
 | `APP_KEY` | انسخ من `php artisan key:generate --show` محلياً |
 | `LOG_LEVEL` | `warning` |
 | `DB_CONNECTION` | `sqlite` للبداية، أو `mysql` إذا أرفقت **Database** من Laravel Cloud |
@@ -87,7 +119,7 @@ php artisan migrate --force
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/check-production-api.ps1 `
-  -ApiBaseUrl "https://gemini-api-s-challenges-uvxa39.laravel.cloud"
+  -ApiBaseUrl "https://laravel-main-nb0wjv.free.laravel.cloud"
 ```
 
 المتوقع:
@@ -120,6 +152,7 @@ powershell -ExecutionPolicy Bypass -File scripts/build-release-apk.ps1 `
 
 | العرض | الإجراء |
 |-------|---------|
+| `composer.lock` / `composer.json` could not be found | أضف سكربت البناء في القسم 3 (monorepo) — لا يوجد Root directory في الواجهة |
 | 530 / 1016 بعد النشر | تأكد أن النشر نجح وأن البيئة **Running**؛ أعد Deploy |
 | 500 على `/api/health` | راجع سجلات البيئة في Laravel Cloud؛ غالباً `APP_KEY` ناقص أو `migrate` فشل |
 | 401 على `/api/expenses` | طبيعي بدون توكن — سجّل دخول من التطبيق أولاً |
