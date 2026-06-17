@@ -47,19 +47,19 @@
 
 ### إذا الفرع = `laravel-cloud` (مُوصى به)
 
-**Build commands:**
+**Build commands** — سطر واحد فقط (يتجنب أخطاء الإملاء):
 
 ```bash
-composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
-php artisan config:cache
-php artisan route:cache
+bash cloud-build.sh
 ```
 
 **Deploy commands:**
 
 ```bash
-php artisan migrate --force
+bash cloud-deploy.sh
 ```
+
+> لا تكتب `composer install` يدوياً في لوحة Laravel Cloud — السكربت `cloud-build.sh` في فرع `laravel-cloud` يشغّل الأوامر الصحيحة.
 
 ### إذا الفرع = `main` (بديل)
 
@@ -152,7 +152,8 @@ powershell -ExecutionPolicy Bypass -File scripts/build-release-apk.ps1 `
 
 | العرض | الإجراء |
 |-------|---------|
-| `composer.lock` / `composer.json` could not be found | أضف سكربت البناء في القسم 3 (monorepo) — لا يوجد Root directory في الواجهة |
+| `composer.lock` / `composer.json` could not be found | استخدم فرع `laravel-cloud` بدل `main` |
+| `--optimize-autoliader` option does not exist | خطأ إملائي — استبدل أوامر البناء بـ `bash cloud-build.sh` |
 | 530 / 1016 بعد النشر | تأكد أن النشر نجح وأن البيئة **Running**؛ أعد Deploy |
 | 500 على `/api/health` | راجع سجلات البيئة في Laravel Cloud؛ غالباً `APP_KEY` ناقص أو `migrate` فشل |
 | 401 على `/api/expenses` | طبيعي بدون توكن — سجّل دخول من التطبيق أولاً |
