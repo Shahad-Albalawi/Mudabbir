@@ -154,6 +154,7 @@ powershell -ExecutionPolicy Bypass -File scripts/build-release-apk.ps1 `
 |-------|---------|
 | `composer.lock` / `composer.json` could not be found | استخدم فرع `laravel-cloud` بدل `main` |
 | `--optimize-autoliader` option does not exist | خطأ إملائي — استبدل أوامر البناء بـ `bash cloud-build.sh` |
+| `nette/schema` requires php 7.1 - 8.3 | Laravel Cloud على PHP 8.5 — `cloud-build.sh` يحدّث الحزم تلقائياً |
 | 530 / 1016 بعد النشر | تأكد أن النشر نجح وأن البيئة **Running**؛ أعد Deploy |
 | 500 على `/api/health` | راجع سجلات البيئة في Laravel Cloud؛ غالباً `APP_KEY` ناقص أو `migrate` فشل |
 | 401 على `/api/expenses` | طبيعي بدون توكن — سجّل دخول من التطبيق أولاً |
