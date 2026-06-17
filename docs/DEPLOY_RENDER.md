@@ -44,16 +44,19 @@ Copy the returned value (starts with `base64:`) into Render `APP_KEY`.
 
 After deploy finishes, test:
 
-- `GET https://<your-render-domain>/api/challenges`
-- `GET https://<your-render-domain>/api/expenses`
-- `GET https://<your-render-domain>/api/goals`
-- `POST https://<your-render-domain>/api/generate-content`
+- `GET https://<your-render-domain>/api/health` — must return `200` (public; used by Render health checks)
+- `POST https://<your-render-domain>/api/register` — Sanctum auth (Phase 1+)
+- `GET https://<your-render-domain>/api/expenses` — requires `Authorization: Bearer <token>`
 
-Expected shape:
+Or run from repo root:
 
-```json
-{ "success": true, "data": [] }
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/check-production-api.ps1 -ApiBaseUrl "https://<your-render-domain>"
 ```
+
+Legacy checks (now require auth):
+
+- `GET /api/challenges`, `/api/expenses`, `/api/goals` → `401` without token is expected.
 
 ## 5) Connect Flutter
 

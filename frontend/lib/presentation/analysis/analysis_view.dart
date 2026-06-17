@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:mudabbir/domain/models/behavioral_snapshot.dart';
 import 'package:mudabbir/presentation/resources/behavioral_strings.dart';
-import 'package:mudabbir/presentation/resources/color_manager.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
+import 'package:mudabbir/presentation/resources/analysis_colors.dart';
+import 'package:mudabbir/presentation/widgets/app_card.dart';
+import 'package:mudabbir/presentation/widgets/behavioral_score_card.dart';
 import 'package:mudabbir/presentation/resources/entity_localizations.dart';
 import 'package:mudabbir/presentation/resources/font_manager.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
@@ -59,7 +62,7 @@ class AnalysisView extends ConsumerWidget {
               AppStrings.analysisBalanceTitle,
               state.balanceStatus,
               Icons.account_balance_wallet,
-              _getStatusColor(state.balanceStatus),
+              _getStatusColor(scheme, state.balanceStatus),
             ),
             const SizedBox(height: 16),
             _buildStatusCard(
@@ -67,7 +70,7 @@ class AnalysisView extends ConsumerWidget {
               AppStrings.analysisSpendingTitle,
               state.spendingAnalysis,
               Icons.shopping_cart,
-              _getStatusColor(state.spendingAnalysis),
+              _getStatusColor(scheme, state.spendingAnalysis),
             ),
             const SizedBox(height: 16),
             _buildStatusCard(
@@ -75,7 +78,7 @@ class AnalysisView extends ConsumerWidget {
               AppStrings.analysisSavingsBehaviorTitle,
               state.savingsAnalysis,
               Icons.savings,
-              _getStatusColor(state.savingsAnalysis),
+              _getStatusColor(scheme, state.savingsAnalysis),
             ),
             const SizedBox(height: 20),
             _buildCategoryInsights(context, state),
@@ -92,100 +95,13 @@ class AnalysisView extends ConsumerWidget {
   }
 
   Widget _buildBehavioralScoreCard(BuildContext context, AnalysisState state) {
-    final scheme = Theme.of(context).colorScheme;
-    final color = _getHealthColor(state.behavioralRating);
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            ColorManager.primary.withValues(alpha: 0.12),
-            scheme.surface,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: ColorManager.primary.withValues(alpha: 0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            BehavioralStrings.behavioralScoreTitle,
-            style: getBoldStyle(
-              fontSize: FontSize.s18,
-              color: scheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            BehavioralStrings.behavioralScoreSubtitle,
-            style: getRegularStyle(
-              fontSize: FontSize.s12,
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              SizedBox(
-                width: 88,
-                height: 88,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    CircularProgressIndicator(
-                      value: state.behavioralScore / 100,
-                      strokeWidth: 8,
-                      backgroundColor: scheme.outline.withValues(alpha: 0.2),
-                      valueColor: AlwaysStoppedAnimation<Color>(color),
-                    ),
-                    Text(
-                      '${state.behavioralScore}',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: color,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      state.behavioralRating,
-                      style: getBoldStyle(
-                        fontSize: FontSize.s20,
-                        color: color,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      state.monthComparisonSummary,
-                      style: getRegularStyle(
-                        fontSize: FontSize.s12,
-                        color: scheme.onSurfaceVariant,
-                      ).copyWith(height: 1.4),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
+    return BehavioralScoreCard(
+      score: state.behavioralScore,
+      rating: state.behavioralRating,
+      summary: state.monthComparisonSummary,
+      accentColor: AnalysisColors.health(
+        Theme.of(context).colorScheme,
+        state.behavioralRating,
       ),
     );
   }
@@ -197,19 +113,8 @@ class AnalysisView extends ConsumerWidget {
         .map((p) => p.expense)
         .fold(0.0, (a, b) => a > b ? a : b);
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return AppCard(
+      margin: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -257,7 +162,7 @@ class AnalysisView extends ConsumerWidget {
                             state.monthlyTrend[index].label,
                             style: getRegularStyle(
                               fontSize: FontSize.s12,
-                              color: scheme.onSurfaceVariant,
+                              color: scheme.textMuted,
                             ),
                           ),
                         );
@@ -274,8 +179,8 @@ class AnalysisView extends ConsumerWidget {
                           toY: state.monthlyTrend[i].expense,
                           width: 14,
                           color: i == state.monthlyTrend.length - 1
-                              ? ColorManager.primary
-                              : ColorManager.primary.withValues(alpha: 0.45),
+                              ? scheme.primary
+                              : scheme.primary.withValues(alpha: 0.45),
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(6),
                           ),
@@ -307,17 +212,17 @@ class AnalysisView extends ConsumerWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: ColorManager.success.withValues(alpha: 0.1),
+              color: scheme.success.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: ColorManager.success.withValues(alpha: 0.25),
+                color: scheme.success.withValues(alpha: 0.25),
               ),
             ),
             child: Text(
               BehavioralStrings.noAnomalies,
               style: getRegularStyle(
                 fontSize: FontSize.s14,
-                color: scheme.onSurfaceVariant,
+                color: scheme.textMuted,
               ),
             ),
           )
@@ -331,7 +236,7 @@ class AnalysisView extends ConsumerWidget {
 
   Widget _buildAnomalyCard(BuildContext context, SpendingAnomaly anomaly) {
     final scheme = Theme.of(context).colorScheme;
-    final color = _anomalyColor(anomaly.severity);
+    final color = _anomalyColor(scheme, anomaly.severity);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -340,13 +245,6 @@ class AnalysisView extends ConsumerWidget {
         color: scheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.withValues(alpha: 0.3)),
-        boxShadow: [
-          BoxShadow(
-            color: ColorManager.shadowLight,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -376,7 +274,7 @@ class AnalysisView extends ConsumerWidget {
                   BehavioralStrings.anomalyMessage(anomaly),
                   style: getRegularStyle(
                     fontSize: FontSize.s12,
-                    color: scheme.onSurfaceVariant,
+                    color: scheme.textMuted,
                   ).copyWith(height: 1.4),
                 ),
               ],
@@ -394,18 +292,12 @@ class AnalysisView extends ConsumerWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: scheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: scheme.outline.withValues(alpha: 0.18)),
       ),
       child: Row(
         children: [
-          Icon(Icons.calendar_today_rounded, color: ColorManager.primary),
+          Icon(Icons.calendar_today_rounded, color: scheme.primary),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -423,7 +315,7 @@ class AnalysisView extends ConsumerWidget {
                   state.weekdayInsight,
                   style: getRegularStyle(
                     fontSize: FontSize.s12,
-                    color: scheme.onSurfaceVariant,
+                    color: scheme.textMuted,
                   ),
                 ),
               ],
@@ -434,14 +326,14 @@ class AnalysisView extends ConsumerWidget {
     );
   }
 
-  Color _anomalyColor(AnomalySeverity severity) {
+  Color _anomalyColor(ColorScheme scheme, AnomalySeverity severity) {
     switch (severity) {
       case AnomalySeverity.critical:
-        return ColorManager.error;
+        return scheme.error;
       case AnomalySeverity.warning:
-        return ColorManager.warning;
+        return scheme.warning;
       case AnomalySeverity.info:
-        return ColorManager.primary;
+        return scheme.primary;
     }
   }
 
@@ -464,20 +356,14 @@ class AnalysisView extends ConsumerWidget {
 
   Widget _buildHealthScoreCard(BuildContext context, AnalysisState state) {
     final scheme = Theme.of(context).colorScheme;
-    final color = _getHealthColor(state.financialHealthRating);
+    final color = _getHealthColor(scheme, state.financialHealthRating);
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: scheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: scheme.outline.withValues(alpha: 0.18)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -563,7 +449,7 @@ class AnalysisView extends ConsumerWidget {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: _getSavingsRateColor(state.savingsRate),
+                      color: _getSavingsRateColor(scheme, state.savingsRate),
                     ),
                   ),
                 ],
@@ -587,14 +473,8 @@ class AnalysisView extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: scheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: scheme.outline.withValues(alpha: 0.18)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -636,7 +516,7 @@ class AnalysisView extends ConsumerWidget {
                 description,
                 style: getRegularStyle(
                   fontSize: FontSize.s14,
-                  color: scheme.onSurfaceVariant,
+                  color: scheme.textMuted,
                 ).copyWith(height: 1.5),
               ),
             ),
@@ -661,21 +541,9 @@ class AnalysisView extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
         ...state.categoryInsights.entries.map((entry) {
-          final color = _getCategoryInsightColor(entry.value);
-          return Container(
+          final color = _getCategoryInsightColor(scheme, entry.value);
+          return AppCard(
             margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: scheme.surface,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: ColorManager.shadowLight,
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
             child: Row(
               children: [
                 Container(
@@ -703,7 +571,7 @@ class AnalysisView extends ConsumerWidget {
                         entry.value,
                         style: getRegularStyle(
                           fontSize: FontSize.s12,
-                          color: scheme.onSurfaceVariant,
+                          color: scheme.textMuted,
                         ),
                       ),
                     ],
@@ -738,11 +606,10 @@ class AnalysisView extends ConsumerWidget {
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: ColorManager.primaryWithOpacity10,
+              color: scheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: ColorManager.primary.withValues(alpha: 0.2),
-                width: 1,
+                color: scheme.primary.withValues(alpha: 0.2),
               ),
             ),
             child: Row(
@@ -752,14 +619,14 @@ class AnalysisView extends ConsumerWidget {
                   height: 36,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: ColorManager.primary,
+                    color: scheme.primary,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
                     "${index + 1}",
                     style: getBoldStyle(
                       fontSize: FontSize.s14,
-                      color: Colors.white,
+                      color: scheme.onPrimary,
                     ),
                   ),
                 ),
@@ -786,28 +653,19 @@ class AnalysisView extends ConsumerWidget {
     return l == ar || l == en;
   }
 
-  Color _getHealthColor(String rating) {
+  Color _getHealthColor(ColorScheme scheme, String rating) {
     final l = rating.toLowerCase();
-    if (_isAr(rating, 'ممتاز', 'excellent')) {
-      return ColorManager.success;
+    if (_isAr(rating, 'ممتاز', 'excellent') || l == 'outstanding') {
+      return scheme.success;
     }
-    if (_isAr(rating, 'جيد', 'good')) {
-      return const Color(0xFF52C41A);
+    if (_isAr(rating, 'جيد', 'good')) return scheme.success.withValues(alpha: 0.85);
+    if (_isAr(rating, 'مقبول', 'fair')) return scheme.warning;
+    if (_isAr(rating, 'ضعيف', 'weak') ||
+        _isAr(rating, 'يحتاج تحسين', 'needs work')) {
+      return scheme.warning;
     }
-    if (_isAr(rating, 'مقبول', 'fair')) {
-      return ColorManager.warning;
-    }
-    if (_isAr(rating, 'ضعيف', 'weak')) {
-      return const Color(0xFFFA8C16);
-    }
-    if (_isAr(rating, 'يحتاج تحسين', 'needs work')) {
-      return ColorManager.warning;
-    }
-    if (_isAr(rating, 'معرض للخطر', 'at risk')) {
-      return ColorManager.error;
-    }
-    if (l == 'outstanding') return ColorManager.success;
-    return ColorManager.grey;
+    if (_isAr(rating, 'معرض للخطر', 'at risk')) return scheme.error;
+    return scheme.textMuted;
   }
 
   IconData _getHealthIcon(String rating) {
@@ -830,68 +688,48 @@ class AnalysisView extends ConsumerWidget {
     return Icons.help_outline;
   }
 
-  Color _getStatusColor(String description) {
+  Color _getStatusColor(ColorScheme scheme, String description) {
     final d = description.toLowerCase();
     if (d.startsWith('حرج') || d.startsWith('critical') || d.startsWith('🚨')) {
-      return ColorManager.error;
+      return scheme.error;
     }
-    if (d.startsWith('تحذير') ||
-        d.startsWith('warning') ||
-        d.startsWith('⚠️')) {
-      return const Color(0xFFFA8C16);
+    if (d.startsWith('تحذير') || d.startsWith('warning') || d.startsWith('⚠️')) {
+      return scheme.warning;
     }
-    if (d.startsWith('تنبيه') || d.startsWith('alert')) {
-      return ColorManager.warning;
-    }
+    if (d.startsWith('تنبيه') || d.startsWith('alert')) return scheme.warning;
     if (d.startsWith('مقبول') || d.startsWith('fair')) {
-      return const Color(0xFFFFA940);
+      return scheme.warning.withValues(alpha: 0.85);
     }
-    if (d.startsWith('جيد') || d.startsWith('good')) {
-      return const Color(0xFF52C41A);
-    }
+    if (d.startsWith('جيد') || d.startsWith('good')) return scheme.success;
     if (d.startsWith('ممتاز') ||
         d.startsWith('excellent') ||
         d.startsWith('استثنائي') ||
         d.startsWith('outstanding')) {
-      return ColorManager.success;
+      return scheme.success;
     }
-    if (d.startsWith('weak') || d.startsWith('ضعيف')) {
-      return const Color(0xFFFA8C16);
-    }
-    return ColorManager.primary;
+    if (d.startsWith('weak') || d.startsWith('ضعيف')) return scheme.warning;
+    return scheme.primary;
   }
 
-  Color _getCategoryInsightColor(String insight) {
+  Color _getCategoryInsightColor(ColorScheme scheme, String insight) {
     final i = insight.toLowerCase();
-    if (i.startsWith('تنبيه') || i.startsWith('alert')) {
-      return ColorManager.error;
-    }
-    if (i.startsWith('عالي') || i.startsWith('high')) {
-      return ColorManager.warning;
-    }
+    if (i.startsWith('تنبيه') || i.startsWith('alert')) return scheme.error;
+    if (i.startsWith('عالي') || i.startsWith('high')) return scheme.warning;
     if (i.startsWith('متوسط') || i.startsWith('medium')) {
-      return const Color(0xFFFFA940);
+      return scheme.warning.withValues(alpha: 0.85);
     }
-    if (i.startsWith('منخفض') || i.startsWith('low')) {
-      return const Color(0xFF52C41A);
-    }
+    if (i.startsWith('منخفض') || i.startsWith('low')) return scheme.success;
     if (i.startsWith('قليل جداً') || i.startsWith('very low')) {
-      return ColorManager.success;
+      return scheme.success;
     }
-    return ColorManager.primary;
+    return scheme.primary;
   }
 
-  Color _getSavingsRateColor(double rate) {
-    if (rate < 0) {
-      return ColorManager.error;
-    } else if (rate < 10) {
-      return ColorManager.warning;
-    } else if (rate < 20) {
-      return const Color(0xFFFFA940);
-    } else if (rate < 30) {
-      return const Color(0xFF52C41A);
-    } else {
-      return ColorManager.success;
-    }
+  Color _getSavingsRateColor(ColorScheme scheme, double rate) {
+    if (rate < 0) return scheme.error;
+    if (rate < 10) return scheme.warning;
+    if (rate < 20) return scheme.warning.withValues(alpha: 0.85);
+    if (rate < 30) return scheme.success.withValues(alpha: 0.85);
+    return scheme.success;
   }
 }

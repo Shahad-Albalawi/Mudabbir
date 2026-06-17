@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mudabbir/presentation/resources/color_manager.dart';
+import 'package:mudabbir/presentation/widgets/ios_dialog_style.dart';
 import '../../presentation/budget/budget_viewmodel.dart';
 import 'popup_widgets.dart';
 
@@ -39,10 +39,8 @@ class BudgetPopup {
       context: context,
       barrierDismissible: false,
       builder: (_) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(isSmallScreen ? 12 : 20),
-        ),
-        elevation: 24,
+        shape: IOSDialogStyle.dialogShape(),
+        elevation: 0,
         insetPadding: EdgeInsets.symmetric(
           horizontal: isVerySmallScreen ? 12 : 20,
           vertical: isVerySmallScreen ? 20 : 40,
@@ -53,86 +51,17 @@ class BudgetPopup {
             maxWidth: isMediumScreen ? double.infinity : 400,
             maxHeight: screenHeight * 0.9,
           ),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(isSmallScreen ? 12 : 20),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Theme.of(context).colorScheme.surface,
-                Theme.of(context).colorScheme.surface.withValues(alpha: 0.95),
-              ],
-            ),
-          ),
+          decoration: IOSDialogStyle.surfaceDecoration(context),
           child: Form(
             key: formKey,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Header
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isSmallScreen ? 12 : 20,
-                    vertical: isSmallScreen ? 14 : 20,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(isSmallScreen ? 12 : 20),
-                      topRight: Radius.circular(isSmallScreen ? 12 : 20),
-                    ),
-                    gradient: LinearGradient(
-                      colors: [
-                        ColorManager.primary,
-                        ColorManager.primary.withValues(alpha: 0.8),
-                      ],
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(
-                            isSmallScreen ? 8 : 10,
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.account_balance_wallet_outlined,
-                          color: Colors.white,
-                          size: isSmallScreen ? 18 : 22,
-                        ),
-                      ),
-                      SizedBox(width: isSmallScreen ? 10 : 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Create Budget",
-                              style: TextStyle(
-                                fontSize: isSmallScreen ? 15 : 18,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            if (!isVerySmallScreen) ...[
-                              const SizedBox(height: 2),
-                              Text(
-                                "Set up your spending limits",
-                                style: TextStyle(
-                                  fontSize: isSmallScreen ? 11 : 12,
-                                  color: Colors.white.withValues(alpha: 0.85),
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                IOSDialogStyle.header(
+                  context,
+                  title: 'Create Budget',
+                  subtitle: 'Set up your spending limits',
+                  icon: Icons.account_balance_wallet_outlined,
                 ),
 
                 // Content - Scrollable
@@ -377,13 +306,6 @@ class BudgetPopup {
     String title,
     bool isSmallScreen,
   ) {
-    return Text(
-      title,
-      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-        fontWeight: FontWeight.w600,
-        color: ColorManager.primary,
-        fontSize: isSmallScreen ? 12 : 14,
-      ),
-    );
+    return IOSDialogStyle.sectionLabel(context, title);
   }
 }

@@ -42,14 +42,6 @@ class _OnboardingViewState extends ConsumerState<OnboardingView>
 
     _fadeController.forward();
     _scaleController.forward();
-
-    // Set status bar style
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-      ),
-    );
   }
 
   @override
@@ -92,15 +84,17 @@ class _OnboardingViewState extends ConsumerState<OnboardingView>
   Widget build(BuildContext context) {
     final sliderViewObject = ref.watch(onboardingViewModelProvider);
     final viewModel = ref.read(onboardingViewModelProvider.notifier);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final overlay = isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        systemOverlayStyle: SystemUiOverlayStyle.dark,
+        systemOverlayStyle: overlay,
         actions: [
-          SkipButton(onTap: _handleSkip), // Use GoRouter-friendly skip
+          SkipButton(onTap: _handleSkip),
         ],
       ),
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,

@@ -17,14 +17,17 @@ class ExpenseController extends Controller
         $this->store = $store;
     }
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        return response()->json(['success' => true, 'data' => $this->store->all()]);
+        $userId = (int) $request->user()->id;
+
+        return response()->json(['success' => true, 'data' => $this->store->all($userId)]);
     }
 
-    public function show(int $id): JsonResponse
+    public function show(Request $request, int $id): JsonResponse
     {
-        $expense = $this->store->find($id);
+        $userId = (int) $request->user()->id;
+        $expense = $this->store->find($id, $userId);
         if (! $expense) {
             return response()->json(['success' => false, 'message' => 'Expense not found'], 404);
         }
@@ -47,8 +50,10 @@ class ExpenseController extends Controller
             'recurrence_interval' => ['nullable', 'string', 'max:32'],
         ]);
 
+        $userId = (int) $request->user()->id;
+
         return response()->json(
-            ['success' => true, 'data' => $this->store->create($payload)],
+            ['success' => true, 'data' => $this->store->create($payload, $userId)],
             201
         );
     }
@@ -66,19 +71,36 @@ class ExpenseController extends Controller
             'category_name' => ['nullable', 'string', 'max:255'],
             'is_recurring' => ['sometimes', 'boolean'],
             'recurrence_interval' => ['nullable', 'string', 'max:32'],
+            'updated_at' => ['nullable', 'date'],
         ]);
 
-        $expense = $this->store->update($id, $payload);
-        if (! $expense) {
+        $userId = (int) $request->user()->id;
+        $result = $this->store->update(
+            $id,
+            $payload,
+            $userId,
+            $request->input('updated_at')
+        );
+        if (! $result) {
             return response()->json(['success' => false, 'message' => 'Expense not found'], 404);
         }
 
-        return response()->json(['success' => true, 'data' => $expense]);
+        if (! empty($result['conflict'])) {
+            return response()->json([
+                'success' => false,
+                'conflict' => true,
+                'message' => 'Server has a newer version of this expense.',
+                'data' => $result['data'],
+            ], 409);
+        }
+
+        return response()->json(['success' => true, 'data' => $result['data']]);
     }
 
-    public function destroy(int $id): JsonResponse
+    public function destroy(Request $request, int $id): JsonResponse
     {
-        if (! $this->store->delete($id)) {
+        $userId = (int) $request->user()->id;
+        if (! $this->store->delete($id, $userId)) {
             return response()->json(['success' => false, 'message' => 'Expense not found'], 404);
         }
 

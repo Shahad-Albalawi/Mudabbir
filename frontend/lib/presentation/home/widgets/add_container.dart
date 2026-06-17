@@ -1,12 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mudabbir/presentation/home/home_viewmodel.dart';
-import 'package:mudabbir/presentation/resources/color_manager.dart';
-import 'package:mudabbir/presentation/resources/ios_style_constants.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
-import 'package:mudabbir/presentation/resources/values_manager.dart';
 import 'package:mudabbir/presentation/server_challenges/screens/challenges_list_screen.dart';
+import 'package:mudabbir/presentation/widgets/app_card.dart';
 import 'package:mudabbir/presentation/widgets/ios_pressable.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/haptic_service.dart';
@@ -19,61 +17,53 @@ class AddContainer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final homeViewModel = ref.read(homeProvider.notifier);
+    final scheme = Theme.of(context).colorScheme;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: AppPadding.p20),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppPadding.p20,
-        vertical: AppPadding.p24,
-      ),
-      decoration: BoxDecoration(
-        color: ColorManager.white,
-        borderRadius: BorderRadius.circular(IOSStyleConstants.radiusXLarge),
-        boxShadow: [
-          BoxShadow(
-            color: ColorManager.shadowLight,
-            blurRadius: IOSStyleConstants.shadowBlur,
-            offset: const Offset(0, 2),
-            spreadRadius: 0,
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _ActionButton(
-            label: AppStrings.addExpense,
-            icon: CupertinoIcons.minus_circle,
-            color: ColorManager.error,
-            onTap: () {
-              HapticService.medium();
-              getIt<PopupService>().showAddExpensePopup(context);
-              homeViewModel.loadFinancialSummary();
-              ref.read(homeProvider.notifier).reload();
-            },
-          ),
-          _ActionButton(
-            label: AppStrings.addIncome,
-            icon: CupertinoIcons.add_circled,
-            color: ColorManager.success,
-            onTap: () {
-              HapticService.medium();
-              getIt<PopupService>().showAddIncomePopup(context);
-              homeViewModel.loadFinancialSummary();
-              ref.read(homeProvider.notifier).reload();
-            },
-          ),
-          _ActionButton(
-            label: AppStrings.addChallenge,
-            icon: CupertinoIcons.flag_fill,
-            color: ColorManager.primary,
-            onTap: () {
-              HapticService.medium();
-              getIt<NavigationService>().navigate(ChallengesListScreen());
-            },
-          ),
-        ],
+    return AppCard(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: IntrinsicHeight(
+        child: Row(
+          children: [
+            Expanded(
+              child: _ActionButton(
+                label: AppStrings.addExpense,
+                icon: CupertinoIcons.minus,
+                onTap: () {
+                  HapticService.medium();
+                  getIt<PopupService>().showAddExpensePopup(context);
+                },
+              ),
+            ),
+            VerticalDivider(
+              width: 1,
+              color: scheme.outline.withValues(alpha: 0.2),
+            ),
+            Expanded(
+              child: _ActionButton(
+                label: AppStrings.addIncome,
+                icon: CupertinoIcons.plus,
+                onTap: () {
+                  HapticService.medium();
+                  getIt<PopupService>().showAddIncomePopup(context);
+                },
+              ),
+            ),
+            VerticalDivider(
+              width: 1,
+              color: scheme.outline.withValues(alpha: 0.2),
+            ),
+            Expanded(
+              child: _ActionButton(
+                label: AppStrings.addChallenge,
+                icon: CupertinoIcons.flag,
+                onTap: () {
+                  HapticService.medium();
+                  getIt<NavigationService>().navigate(ChallengesListScreen());
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -82,46 +72,43 @@ class AddContainer extends ConsumerWidget {
 class _ActionButton extends StatelessWidget {
   final String label;
   final IconData icon;
-  final Color color;
   final VoidCallback onTap;
 
   const _ActionButton({
     required this.label,
     required this.icon,
-    required this.color,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return IOSPressable(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppPadding.p12,
-          vertical: AppPadding.p8,
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(AppPadding.p14),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(
-                  IOSStyleConstants.radiusMedium,
-                ),
+                color: scheme.homeGreenSoft,
+                shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: color, size: 24),
+              child: Icon(icon, color: scheme.homeGreen, size: 20),
             ),
-            const SizedBox(height: AppSize.s8),
+            const SizedBox(height: 8),
             Text(
               label,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: ColorManager.textPrimary,
-                fontWeight: FontWeight.w500,
+                color: scheme.textOnCard,
+                fontWeight: FontWeight.w600,
               ),
               textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

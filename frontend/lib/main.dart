@@ -6,6 +6,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:mudabbir/data/local/challenge_hive_cache.dart';
 import 'package:mudabbir/data/local/expense_hive_cache.dart';
 import 'package:mudabbir/data/local/goal_hive_cache.dart';
+import 'package:mudabbir/presentation/resources/app_fonts.dart';
+import 'package:mudabbir/presentation/resources/font_manager.dart';
 import 'package:mudabbir/presentation/resources/theme_manager.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/hive_service.dart';
@@ -33,6 +35,7 @@ Future<void> main() async {
     );
     await getIt<ExpenseHiveCache>().init();
     await getIt<GoalHiveCache>().init();
+    await AppFonts.ensureLoaded();
     await InstantBrowseBootstrap.applyIfEnabled();
     await PushNotificationService.instance.initializeIfConfigured();
   } catch (e, stack) {
@@ -75,7 +78,13 @@ class MyApp extends StatelessWidget {
           builder: (context, child) {
             return Directionality(
               textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
-              child: child ?? const SizedBox.shrink(),
+              child: DefaultTextStyle(
+                style: const TextStyle(
+                  fontFamily: FontConstants.thmanyahFamily,
+                  fontFamilyFallback: FontConstants.fontFamilyFallback,
+                ),
+                child: child ?? const SizedBox.shrink(),
+              ),
             );
           },
         );

@@ -2,33 +2,45 @@
 
 namespace App\Services;
 
+use App\Services\Concerns\ResolvesSyncConflicts;
+use App\Services\Concerns\UsesJsonStorePath;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\File;
 
 class ExpenseStore
 {
+    use ResolvesSyncConflicts;
+    use UsesJsonStorePath;
+
     /** @var string */
     private $path;
 
     public function __construct()
     {
-        $this->path = storage_path('app/expenses.json');
+        $this->path = $this->jsonStorePath('expenses.json');
     }
 
-    public function all(): array
+    public function all(int $userId): array
     {
         $data = $this->read();
+
+        $owned = array_values(array_filter(
+            $data['expenses'],
+            function (array $expense) use ($userId): bool {
+                return (int) ($expense['user_id'] ?? 0) === $userId;
+            }
+        ));
 
         return array_values(array_map(function (array $expense): array {
             return $this->normalizeExpense($expense);
-        }, $data['expenses']));
+        }, $owned));
     }
 
-    public function find(int $id): ?array
+    public function find(int $id, int $userId): ?array
     {
         $data = $this->read();
         foreach ($data['expenses'] as $expense) {
-            if ((int) $expense['id'] === $id) {
+            if ((int) $expense['id'] === $id && (int) ($expense['user_id'] ?? 0) === $userId) {
                 return $this->normalizeExpense($expense);
             }
         }
@@ -36,25 +48,37 @@ class ExpenseStore
         return null;
     }
 
-    public function create(array $payload): array
+    public function create(array $payload, int $userId): array
     {
         $data = $this->read();
         $id = (int) $data['next_expense_id'];
         $data['next_expense_id'] = $id + 1;
 
-        $expense = $this->buildExpense($id, $payload);
+        $expense = $this->buildExpense($id, $payload, $userId);
         $data['expenses'][] = $expense;
         $this->write($data);
 
         return $expense;
     }
 
-    public function update(int $id, array $updates): ?array
+    /**
+     * @return array{conflict: bool, data: array}|null
+     */
+    public function update(int $id, array $updates, int $userId, ?string $clientUpdatedAt = null): ?array
     {
         $data = $this->read();
         foreach ($data['expenses'] as $idx => $expense) {
-            if ((int) $expense['id'] !== $id) {
+            if ((int) $expense['id'] !== $id || (int) ($expense['user_id'] ?? 0) !== $userId) {
                 continue;
+            }
+
+            $conflict = $this->resolveUpdateConflict(
+                $expense,
+                $clientUpdatedAt,
+                fn (array $row): array => $this->normalizeExpense($row)
+            );
+            if ($conflict !== null) {
+                return $conflict;
             }
 
             $merged = array_merge($expense, $this->filterUpdatable($updates));
@@ -62,20 +86,23 @@ class ExpenseStore
             $data['expenses'][$idx] = $this->normalizeExpense($merged);
             $this->write($data);
 
-            return $data['expenses'][$idx];
+            return [
+                'conflict' => false,
+                'data' => $data['expenses'][$idx],
+            ];
         }
 
         return null;
     }
 
-    public function delete(int $id): bool
+    public function delete(int $id, int $userId): bool
     {
         $data = $this->read();
         $before = count($data['expenses']);
         $data['expenses'] = array_values(array_filter(
             $data['expenses'],
-            function (array $expense) use ($id): bool {
-                return (int) $expense['id'] !== $id;
+            function (array $expense) use ($id, $userId): bool {
+                return ! ((int) $expense['id'] === $id && (int) ($expense['user_id'] ?? 0) === $userId);
             }
         ));
 
@@ -88,12 +115,13 @@ class ExpenseStore
         return true;
     }
 
-    private function buildExpense(int $id, array $payload): array
+    private function buildExpense(int $id, array $payload, int $userId): array
     {
         $now = Carbon::now()->toISOString();
 
         return $this->normalizeExpense([
             'id' => $id,
+            'user_id' => $userId,
             'amount' => (float) $payload['amount'],
             'date' => (string) $payload['date'],
             'type' => (string) ($payload['type'] ?? 'expense'),
@@ -137,6 +165,7 @@ class ExpenseStore
     {
         return [
             'id' => (int) $expense['id'],
+            'user_id' => (int) ($expense['user_id'] ?? 0),
             'amount' => (float) $expense['amount'],
             'date' => (string) $expense['date'],
             'type' => (string) ($expense['type'] ?? 'expense'),

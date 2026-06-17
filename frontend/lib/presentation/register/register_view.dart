@@ -10,7 +10,8 @@ import 'package:mudabbir/service/hive_service.dart';
 import 'package:mudabbir/service/navigation_service.dart';
 import 'package:mudabbir/service/routing_service/auth_notifier.dart';
 import 'package:mudabbir/utils/dev_log.dart';
-import '../resources/color_manager.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
+import 'package:mudabbir/presentation/widgets/app_card.dart';
 import '../resources/strings_manager.dart';
 
 class RegisterView extends ConsumerWidget {
@@ -82,87 +83,30 @@ class RegisterView extends ConsumerWidget {
     return Scaffold(
       backgroundColor: scheme.surfaceContainerHighest,
       body: SafeArea(
-        child: Stack(
-          children: [
-            _buildModernBackground(context),
-            Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 20,
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            child: Column(
+              children: [
+                Text(
+                  AppStrings.createAccount,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-                child: Column(
-                  children: [
-                    // App Logo/Icon & Header
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 30),
-                      child: Column(
-                        children: [
-                          // Container(
-                          //   width: 90,
-                          //   height: 90,
-                          //   decoration: BoxDecoration(
-                          //     gradient: LinearGradient(
-                          //       colors: [
-                          //         ColorManager.primary,
-                          //         ColorManager.darkPrimary,
-                          //       ],
-                          //     ),
-                          //     borderRadius: BorderRadius.circular(22),
-                          //     boxShadow: [
-                          //       BoxShadow(
-                          //         color: ColorManager.primary.withValues(alpha: 0.3),
-                          //         blurRadius: 20,
-                          //         offset: const Offset(0, 10),
-                          //       ),
-                          //     ],
-                          //   ),
-                          //   child: SvgPicture.asset(
-                          //     ImageAssets.onBoardingLogo2,
-                          //     fit: BoxFit.contain,
-                          //     width: 50,
-                          //     height: 50,
-                          //   ),
-                          // ),
-                          const SizedBox(height: 20),
-                          Text(
-                            AppStrings.createAccount,
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: scheme.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            AppStrings.registerSubtitle,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: scheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // Register Form Card
-                    Container(
-                      padding: const EdgeInsets.all(28),
-                      decoration: BoxDecoration(
-                        color: scheme.surface,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: scheme.outline.withValues(alpha: 0.25),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.06),
-                            blurRadius: 24,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: Form(
+                const SizedBox(height: 6),
+                Text(
+                  AppStrings.registerSubtitle,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: scheme.textMuted,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 28),
+                AppCard(
+                  margin: EdgeInsets.zero,
+                  padding: const EdgeInsets.all(24),
+                  child: Form(
                         key: _formKey,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -239,41 +183,20 @@ class RegisterView extends ConsumerWidget {
                             ),
                             const SizedBox(height: 32),
 
-                            // Register Button
-                            Container(
-                              height: 56,
-                              decoration: BoxDecoration(
-                                color: scheme.primary,
-                                borderRadius: BorderRadius.circular(18),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: scheme.primary.withValues(
-                                      alpha: 0.24,
-                                    ),
-                                    blurRadius: 14,
-                                    offset: const Offset(0, 8),
-                                  ),
-                                ],
-                              ),
+                            SizedBox(
+                              height: 48,
                               child: registerState.isLoading
-                                  ? const Center(
-                                      child: CircularProgressIndicator(
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                              ColorManager.white,
-                                            ),
-                                      ),
-                                    )
-                                  : ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.transparent,
-                                        shadowColor: Colors.transparent,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            18,
-                                          ),
+                                  ? Center(
+                                      child: SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.5,
+                                          color: scheme.primary,
                                         ),
                                       ),
+                                    )
+                                  : FilledButton(
                                       onPressed: () {
                                         if (_formKey.currentState!.validate()) {
                                           registerViewModel.register(
@@ -284,14 +207,7 @@ class RegisterView extends ConsumerWidget {
                                           );
                                         }
                                       },
-                                      child: Text(
-                                        AppStrings.createAccountButton,
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: ColorManager.white,
-                                        ),
-                                      ),
+                                      child: Text(AppStrings.createAccountButton),
                                     ),
                             ),
                           ],
@@ -311,7 +227,7 @@ class RegisterView extends ConsumerWidget {
                             AppStrings.alreadyHaveAccount,
                             style: TextStyle(
                               fontSize: 16,
-                              color: scheme.onSurfaceVariant,
+                              color: scheme.textMuted,
                             ),
                           ),
                           GestureDetector(
@@ -334,9 +250,7 @@ class RegisterView extends ConsumerWidget {
                 ),
               ),
             ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
@@ -371,40 +285,32 @@ class RegisterView extends ConsumerWidget {
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(
-              color: scheme.onSurfaceVariant.withValues(alpha: 0.8),
+              color: scheme.textMuted.withValues(alpha: 0.8),
             ),
-            prefixIcon: Container(
-              margin: const EdgeInsets.all(12),
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: ColorManager.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: ColorManager.primary, size: 20),
-            ),
+            prefixIcon: Icon(icon, color: scheme.textMuted, size: 20),
             filled: true,
-            fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.7),
+            fillColor: scheme.surfaceContainerHighest,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(AppLayout.chipRadius),
               borderSide: BorderSide.none,
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(AppLayout.chipRadius),
               borderSide: BorderSide(
-                color: scheme.outline.withValues(alpha: 0.4),
+                color: scheme.outline.withValues(alpha: 0.3),
               ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15),
-              borderSide: BorderSide(color: ColorManager.primary, width: 2),
+              borderRadius: BorderRadius.circular(AppLayout.chipRadius),
+              borderSide: BorderSide(color: scheme.primary, width: 1.5),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15),
-              borderSide: const BorderSide(color: ColorManager.error),
+              borderRadius: BorderRadius.circular(AppLayout.chipRadius),
+              borderSide: BorderSide(color: scheme.error),
             ),
             focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15),
-              borderSide: const BorderSide(color: ColorManager.error, width: 2),
+              borderRadius: BorderRadius.circular(AppLayout.chipRadius),
+              borderSide: BorderSide(color: scheme.error, width: 1.5),
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 20,
@@ -412,38 +318,6 @@ class RegisterView extends ConsumerWidget {
             ),
           ),
           validator: validator,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildModernBackground(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Stack(
-      children: [
-        Positioned(
-          top: -70,
-          left: -50,
-          child: Container(
-            width: 210,
-            height: 210,
-            decoration: BoxDecoration(
-              color: scheme.primary.withValues(alpha: 0.10),
-              shape: BoxShape.circle,
-            ),
-          ),
-        ),
-        Positioned(
-          bottom: -90,
-          right: -80,
-          child: Container(
-            width: 260,
-            height: 260,
-            decoration: BoxDecoration(
-              color: scheme.secondary.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-          ),
         ),
       ],
     );

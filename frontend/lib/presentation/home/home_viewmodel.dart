@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mudabbir/constants/hive_constants.dart';
 import 'package:mudabbir/data/local/local_database.dart';
 import 'package:mudabbir/domain/repository/home_repository/home_repository.dart';
+import 'package:mudabbir/domain/services/financial_date_utils.dart';
 import 'package:mudabbir/presentation/explore/explore_view.dart';
 import 'package:mudabbir/presentation/goals/goals_view.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/presentation/statistics/statistics_view.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/hive_service.dart';
+import 'package:mudabbir/utils/local_db_user_id.dart';
 
 class HomeState {
   final double totalIncome;
@@ -80,14 +82,7 @@ class HomeViewModel extends StateNotifier<HomeState> {
     final user = await getIt<HiveService>().getValue(
       HiveConstants.savedUserInfo,
     );
-    final userName =
-        (user is Map &&
-            user[HiveConstants.userInfoLocalDbKey] != null &&
-            user[HiveConstants.userInfoLocalDbKey].toString().trim().isNotEmpty)
-        ? user[HiveConstants.userInfoLocalDbKey].toString().trim()
-        : (user is Map && user['name'] != null)
-        ? user['name'].toString()
-        : 'guest_user';
+    final userName = resolveLocalDbUserId(user);
     await LocalDatabase.instance.initForUser(userName);
 
     // All-time
@@ -96,22 +91,21 @@ class HomeViewModel extends StateNotifier<HomeState> {
 
     // This month (first and last day)
     final now = DateTime.now();
-    final firstDay = DateTime(now.year, now.month, 1);
-    final lastDay = DateTime(now.year, now.month + 1, 0);
+    final thisMonth = FinancialDateUtils.monthRange(now);
+    final prevAnchor = DateTime(now.year, now.month - 1, 1);
+    final previousMonth = FinancialDateUtils.monthRange(prevAnchor);
 
     final monthlyIncome = await homeRepository.getTotalIncome(
-      startDate: firstDay.toIso8601String(),
-      endDate: lastDay.toIso8601String(),
+      startDate: thisMonth.start,
+      endDate: thisMonth.end,
     );
     final monthlyExpense = await homeRepository.getTotalExpense(
-      startDate: firstDay.toIso8601String(),
-      endDate: lastDay.toIso8601String(),
+      startDate: thisMonth.start,
+      endDate: thisMonth.end,
     );
-    final previousFirstDay = DateTime(now.year, now.month - 1, 1);
-    final previousLastDay = DateTime(now.year, now.month, 0);
     final previousMonthExpense = await homeRepository.getTotalExpense(
-      startDate: previousFirstDay.toIso8601String(),
-      endDate: previousLastDay.toIso8601String(),
+      startDate: previousMonth.start,
+      endDate: previousMonth.end,
     );
     final financialHealthScore = _calculateFinancialHealthScore(
       monthlyIncome: monthlyIncome,
@@ -144,11 +138,10 @@ class HomeViewModel extends StateNotifier<HomeState> {
     final samples = <double>[];
     for (int i = 1; i <= 3; i++) {
       final monthDate = DateTime(now.year, now.month - i, 1);
-      final start = DateTime(monthDate.year, monthDate.month, 1);
-      final end = DateTime(monthDate.year, monthDate.month + 1, 0);
+      final range = FinancialDateUtils.monthRange(monthDate);
       final expense = await homeRepository.getTotalExpense(
-        startDate: start.toIso8601String(),
-        endDate: end.toIso8601String(),
+        startDate: range.start,
+        endDate: range.end,
       );
       if (expense > 0) {
         samples.add(expense);

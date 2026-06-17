@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/app_colors.dart';
 import 'package:mudabbir/presentation/resources/color_manager.dart';
 import 'package:mudabbir/presentation/resources/font_manager.dart';
@@ -14,13 +15,16 @@ ThemeData getApplicationTheme() {
     splashColor: ColorManager.primaryWithOpacity20,
     highlightColor: ColorManager.primaryWithOpacity08,
     useMaterial3: true,
-    fontFamily: 'Tajawal',
+    fontFamily: FontConstants.thmanyahFamily,
+    fontFamilyFallback: FontConstants.fontFamilyFallback,
     scaffoldBackgroundColor: AppColors.background,
 
     colorScheme: ColorScheme(
       brightness: Brightness.light,
       primary: AppColors.primary,
       onPrimary: Colors.white,
+      primaryContainer: const Color(0xFFE3F0E8),
+      onPrimaryContainer: const Color(0xFF1B4332),
       secondary: AppColors.secondary,
       onSecondary: const Color(0xFF0A2E1F),
       tertiary: AppColors.accent,
@@ -38,15 +42,18 @@ ThemeData getApplicationTheme() {
 
     cardTheme: CardThemeData(
       color: AppColors.card,
-      shadowColor: ColorManager.shadowLight,
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      shadowColor: Colors.transparent,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: AppColors.textSecondary.withValues(alpha: 0.15)),
+      ),
       margin: const EdgeInsets.all(8),
     ),
 
     // Modern app bar theme
     appBarTheme: AppBarTheme(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.card,
       elevation: 0,
       scrolledUnderElevation: 0,
       shadowColor: Colors.transparent,
@@ -104,6 +111,16 @@ ThemeData getApplicationTheme() {
       ),
     ),
 
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    ),
+
     // Enhanced text theme
     textTheme: TextTheme(
       // Headlines
@@ -112,53 +129,53 @@ ThemeData getApplicationTheme() {
         fontSize: FontSize.s20,
       ),
       headlineMedium: getBoldStyle(
-        color: ColorManager.darkGrey,
+        color: AppColors.textPrimary,
         fontSize: FontSize.s14,
       ),
       headlineSmall: getBoldStyle(
         color: AppColors.textPrimary,
-        fontSize: FontSize.s14,
+        fontSize: FontSize.s16,
       ),
 
       // Titles
       titleLarge: getSemiBoldStyle(
-        color: ColorManager.darkGrey,
+        color: AppColors.textPrimary,
         fontSize: FontSize.s18,
       ),
       titleMedium: getMediumStyle(
-        color: ColorManager.darkGrey,
+        color: AppColors.textPrimary,
         fontSize: FontSize.s16,
       ),
       titleSmall: getMediumStyle(
-        color: ColorManager.primary,
+        color: AppColors.textPrimary,
         fontSize: FontSize.s14,
       ),
 
       // Body
       bodyLarge: getRegularStyle(
-        color: ColorManager.darkGrey,
+        color: AppColors.textPrimary,
         fontSize: FontSize.s16,
       ),
       bodyMedium: getRegularStyle(
-        color: ColorManager.grey1,
+        color: AppColors.textPrimary.withValues(alpha: 0.9),
         fontSize: FontSize.s14,
       ),
       bodySmall: getRegularStyle(
-        color: ColorManager.grey,
-        fontSize: FontSize.s12,
+        color: AppColors.textSecondary,
+        fontSize: FontSize.s14,
       ),
 
       // Labels
       labelLarge: getMediumStyle(
-        color: ColorManager.darkGrey,
+        color: AppColors.textPrimary,
         fontSize: FontSize.s14,
       ),
       labelMedium: getMediumStyle(
-        color: ColorManager.grey1,
-        fontSize: FontSize.s12,
+        color: AppColors.textSecondary,
+        fontSize: FontSize.s13,
       ),
       labelSmall: getMediumStyle(
-        color: ColorManager.grey,
+        color: AppColors.textSecondary,
         fontSize: FontSize.s12,
       ),
     ),
@@ -171,13 +188,13 @@ ThemeData getApplicationTheme() {
 
       // Hint style
       hintStyle: getRegularStyle(
-        color: ColorManager.grey,
+        color: AppColors.textSecondary.withValues(alpha: 0.85),
         fontSize: FontSize.s14,
       ),
 
       // Label style
       labelStyle: getMediumStyle(
-        color: ColorManager.grey1,
+        color: AppColors.textPrimary.withValues(alpha: 0.88),
         fontSize: FontSize.s14,
       ),
       floatingLabelStyle: getMediumStyle(
@@ -226,15 +243,18 @@ ThemeData getApplicationTheme() {
 
     // Dialog theme
     dialogTheme: DialogThemeData(
-      backgroundColor: Colors.white,
-      elevation: 24,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: AppColors.card,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: AppColors.textSecondary.withValues(alpha: 0.15)),
+      ),
       titleTextStyle: getBoldStyle(
         color: ColorManager.darkGrey,
         fontSize: FontSize.s20,
       ),
       contentTextStyle: getRegularStyle(
-        color: ColorManager.grey1,
+        color: AppColors.textPrimary.withValues(alpha: 0.9),
         fontSize: FontSize.s14,
       ),
     ),
@@ -242,9 +262,9 @@ ThemeData getApplicationTheme() {
     // Bottom sheet theme
     bottomSheetTheme: const BottomSheetThemeData(
       backgroundColor: Colors.white,
-      elevation: 16,
+      elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
       ),
     ),
 
@@ -300,11 +320,11 @@ ThemeData getApplicationTheme() {
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       titleTextStyle: getMediumStyle(
-        color: ColorManager.darkGrey,
+        color: AppColors.textPrimary,
         fontSize: FontSize.s16,
       ),
       subtitleTextStyle: getRegularStyle(
-        color: ColorManager.grey1,
+        color: AppColors.textSecondary,
         fontSize: FontSize.s14,
       ),
     ),
@@ -313,7 +333,7 @@ ThemeData getApplicationTheme() {
     floatingActionButtonTheme: FloatingActionButtonThemeData(
       backgroundColor: ColorManager.primary,
       foregroundColor: Colors.white,
-      elevation: 8,
+      elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
 
@@ -333,7 +353,7 @@ ThemeData getApplicationTheme() {
 
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: AppColors.card,
-      elevation: 8,
+      elevation: 0,
       indicatorColor: ColorManager.primaryWithOpacity12,
       labelTextStyle: WidgetStateProperty.all(
         getMediumStyle(color: AppColors.textSecondary, fontSize: FontSize.s12),
@@ -342,48 +362,54 @@ ThemeData getApplicationTheme() {
   );
 }
 
-// --- Dark theme: high-contrast surfaces and readable body text.
+// --- Dark theme: soft elevated surfaces and comfortable contrast.
 ThemeData getApplicationDarkTheme() {
   final scheme = ColorScheme(
     brightness: Brightness.dark,
     primary: DarkAppColors.primary,
-    onPrimary: const Color(0xFF042818),
+    onPrimary: const Color(0xFF102018),
+    primaryContainer: const Color(0xFF2A3A32),
+    onPrimaryContainer: const Color(0xFFB8E6C8),
     secondary: DarkAppColors.secondary,
     onSecondary: DarkAppColors.textPrimary,
     tertiary: DarkAppColors.accent,
-    onTertiary: const Color(0xFF1A1608),
-    error: ColorManager.error,
-    onError: Colors.white,
+    onTertiary: const Color(0xFF1E1A12),
+    error: const Color(0xFFE57373),
+    onError: const Color(0xFF1A0A0A),
     surface: DarkAppColors.card,
     onSurface: DarkAppColors.textPrimary,
     onSurfaceVariant: DarkAppColors.textSecondary,
-    outline: const Color(0xFF5A6B62),
-    outlineVariant: const Color(0xFF3D4A44),
-    shadow: const Color(0x59000000),
-    surfaceContainerHighest: const Color(0xFF1E2621),
+    outline: DarkAppColors.outline,
+    outlineVariant: DarkAppColors.outlineVariant,
+    shadow: Colors.transparent,
+    surfaceContainerHighest: DarkAppColors.surfaceElevated,
   );
 
   return ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
-    fontFamily: 'Tajawal',
+    fontFamily: FontConstants.thmanyahFamily,
+    fontFamilyFallback: FontConstants.fontFamilyFallback,
     primaryColor: DarkAppColors.primary,
     scaffoldBackgroundColor: DarkAppColors.background,
     colorScheme: scheme,
-    splashColor: DarkAppColors.primary.withValues(alpha: 0.22),
-    highlightColor: DarkAppColors.primary.withValues(alpha: 0.10),
+    splashColor: DarkAppColors.primary.withValues(alpha: 0.14),
+    highlightColor: DarkAppColors.primary.withValues(alpha: 0.08),
     cardTheme: CardThemeData(
       color: scheme.surface,
-      shadowColor: Colors.black.withValues(alpha: 0.55),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      shadowColor: Colors.transparent,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: scheme.outline.withValues(alpha: 0.45)),
+      ),
       margin: const EdgeInsets.all(8),
     ),
     appBarTheme: AppBarTheme(
-      backgroundColor: DarkAppColors.background,
+      backgroundColor: DarkAppColors.surfaceElevated,
       elevation: 0,
-      scrolledUnderElevation: 1,
-      shadowColor: Colors.black.withValues(alpha: 0.4),
+      scrolledUnderElevation: 0,
+      shadowColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
       titleTextStyle: getBoldStyle(
         fontSize: FontSize.s20,
@@ -395,23 +421,41 @@ ThemeData getApplicationDarkTheme() {
     ),
     dialogTheme: DialogThemeData(
       backgroundColor: scheme.surface,
-      elevation: 24,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: scheme.outline.withValues(alpha: 0.25)),
+      ),
       titleTextStyle: getBoldStyle(
         color: scheme.onSurface,
         fontSize: FontSize.s20,
       ),
       contentTextStyle: getRegularStyle(
-        color: scheme.onSurfaceVariant,
+        color: scheme.onSurface.withValues(alpha: 0.9),
         fontSize: FontSize.s14,
       ),
     ),
     bottomSheetTheme: BottomSheetThemeData(
       backgroundColor: scheme.surface,
-      elevation: 16,
+      elevation: 0,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
       ),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        backgroundColor: scheme.primary,
+        foregroundColor: scheme.onPrimary,
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    ),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: scheme.primary,
+      foregroundColor: scheme.onPrimary,
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
@@ -442,11 +486,11 @@ ThemeData getApplicationDarkTheme() {
       fillColor: scheme.surfaceContainerHighest,
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       hintStyle: getRegularStyle(
-        color: scheme.onSurfaceVariant,
+        color: scheme.onSurface.withValues(alpha: 0.72),
         fontSize: FontSize.s14,
       ),
       labelStyle: getMediumStyle(
-        color: scheme.onSurfaceVariant,
+        color: scheme.onSurface.withValues(alpha: 0.88),
         fontSize: FontSize.s14,
       ),
       floatingLabelStyle: getMediumStyle(
@@ -454,16 +498,16 @@ ThemeData getApplicationDarkTheme() {
         fontSize: FontSize.s12,
       ),
       enabledBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: scheme.outline.withValues(alpha: 0.85)),
-        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: scheme.outline.withValues(alpha: 0.55)),
+        borderRadius: BorderRadius.circular(12),
       ),
       focusedBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: scheme.primary, width: 2),
-        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: scheme.primary, width: 1.5),
+        borderRadius: BorderRadius.circular(12),
       ),
       errorBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: ColorManager.error, width: 1),
-        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: scheme.error.withValues(alpha: 0.85)),
+        borderRadius: BorderRadius.circular(12),
       ),
     ),
     snackBarTheme: SnackBarThemeData(
@@ -476,30 +520,30 @@ ThemeData getApplicationDarkTheme() {
       behavior: SnackBarBehavior.floating,
     ),
     dividerTheme: DividerThemeData(
-      color: scheme.outlineVariant.withValues(alpha: 0.6),
-      thickness: 1,
+      color: scheme.outline.withValues(alpha: 0.35),
+      thickness: 0.5,
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: scheme.surface.withValues(alpha: 0.96),
+      backgroundColor: DarkAppColors.surfaceElevated,
       elevation: 0,
-      indicatorColor: scheme.primary.withValues(alpha: 0.22),
+      indicatorColor: scheme.primary.withValues(alpha: 0.18),
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         final selected = states.contains(WidgetState.selected);
         return getMediumStyle(
-          color: selected ? scheme.onSurface : scheme.onSurfaceVariant,
-          fontSize: FontSize.s12,
+          color: selected ? scheme.onSurface : scheme.textMuted,
+          fontSize: FontSize.s13,
         );
       }),
     ),
     listTileTheme: ListTileThemeData(
-      iconColor: scheme.onSurfaceVariant,
+      iconColor: scheme.textMuted,
       textColor: scheme.onSurface,
       titleTextStyle: getMediumStyle(
         color: scheme.onSurface,
         fontSize: FontSize.s16,
       ),
       subtitleTextStyle: getRegularStyle(
-        color: scheme.onSurfaceVariant,
+        color: scheme.textMuted,
         fontSize: FontSize.s14,
       ),
     ),
@@ -509,12 +553,12 @@ ThemeData getApplicationDarkTheme() {
         fontSize: FontSize.s20,
       ),
       headlineMedium: getBoldStyle(
-        color: scheme.onSurfaceVariant,
+        color: scheme.onSurface,
         fontSize: FontSize.s14,
       ),
       headlineSmall: getBoldStyle(
         color: scheme.onSurface,
-        fontSize: FontSize.s14,
+        fontSize: FontSize.s16,
       ),
       titleLarge: getSemiBoldStyle(
         color: scheme.onSurface,
@@ -524,29 +568,32 @@ ThemeData getApplicationDarkTheme() {
         color: scheme.onSurface,
         fontSize: FontSize.s16,
       ),
-      titleSmall: getMediumStyle(color: scheme.primary, fontSize: FontSize.s14),
+      titleSmall: getMediumStyle(
+        color: scheme.onSurface.withValues(alpha: 0.88),
+        fontSize: FontSize.s14,
+      ),
       bodyLarge: getRegularStyle(
         color: scheme.onSurface,
         fontSize: FontSize.s16,
       ),
       bodyMedium: getRegularStyle(
-        color: scheme.onSurfaceVariant,
+        color: scheme.onSurface.withValues(alpha: 0.92),
         fontSize: FontSize.s14,
       ),
       bodySmall: getRegularStyle(
-        color: scheme.onSurfaceVariant,
-        fontSize: FontSize.s12,
+        color: scheme.textMuted,
+        fontSize: FontSize.s14,
       ),
       labelLarge: getMediumStyle(
         color: scheme.onSurface,
         fontSize: FontSize.s14,
       ),
       labelMedium: getMediumStyle(
-        color: scheme.onSurfaceVariant,
-        fontSize: FontSize.s12,
+        color: scheme.textMuted,
+        fontSize: FontSize.s13,
       ),
       labelSmall: getMediumStyle(
-        color: scheme.onSurfaceVariant,
+        color: scheme.textMuted,
         fontSize: FontSize.s12,
       ),
     ),

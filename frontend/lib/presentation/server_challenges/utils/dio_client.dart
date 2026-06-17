@@ -7,6 +7,7 @@ import 'package:mudabbir/constants/hive_constants.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/hive_service.dart';
 import 'package:mudabbir/service/routing_service/auth_notifier.dart';
+import 'package:mudabbir/service/security/auth_token_secure_store.dart';
 
 class DioClient {
   static String get baseUrl => ApiConstants.apiV1Base;
@@ -43,9 +44,18 @@ class DioClient {
 // Auth Interceptor - Adds Bearer token to all requests
 class _AuthInterceptor extends Interceptor {
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    final token = getIt<HiveService>().getValue(HiveConstants.savedToken);
-    if (token is String && token.isNotEmpty) {
+  void onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
+    String? token = await getIt<AuthTokenSecureStore>().readToken();
+    if (token == null || token.isEmpty) {
+      final hiveToken = getIt<HiveService>().getValue(HiveConstants.savedToken);
+      if (hiveToken is String) {
+        token = hiveToken;
+      }
+    }
+    if (token != null && token.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $token';
     }
 

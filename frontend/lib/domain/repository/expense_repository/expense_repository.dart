@@ -2,12 +2,16 @@ import 'package:dartz/dartz.dart';
 import 'package:mudabbir/data/local/database_helper.dart';
 import 'package:mudabbir/data/network/failure.dart';
 import 'package:mudabbir/domain/models/expense_transaction.dart';
+import 'package:mudabbir/domain/services/financial_aggregator.dart';
+import 'package:mudabbir/domain/services/sync_policies.dart';
 import 'package:mudabbir/presentation/resources/expense_strings.dart';
 import 'package:mudabbir/service/getit_init.dart';
+import 'package:sqflite/sqflite.dart';
 
 /// CRUD and filters for local transactions with budget linkage.
 class ExpenseRepository {
   final DbHelper _db = getIt<DbHelper>();
+  final FinancialAggregator _aggregator = FinancialAggregator();
 
   /// Lists transactions with optional month/category/type/recurring filters.
   Future<Either<Failure, List<ExpenseTransaction>>> getTransactions({
@@ -44,6 +48,7 @@ class ExpenseRepository {
           't.category_id',
           't.is_recurring',
           't.recurrence_interval',
+          't.updated_at',
           'a.name AS account_name',
           'c.name AS category_name',
         ],
@@ -64,7 +69,17 @@ class ExpenseRepository {
   }
 
   Future<Either<Failure, List<Map<String, dynamic>>>> getExpenseCategories() async {
-    final result = await _db.queryRow('categories', 'type = ?', ['expense']);
+    return getCategoriesByType('expense');
+  }
+
+  Future<Either<Failure, List<Map<String, dynamic>>>> getIncomeCategories() async {
+    return getCategoriesByType('income');
+  }
+
+  Future<Either<Failure, List<Map<String, dynamic>>>> getCategoriesByType(
+    String type,
+  ) async {
+    final result = await _db.queryRow('categories', 'type = ?', [type]);
     return result.fold(
       (_) => const Right([]),
       Right.new,
@@ -79,22 +94,8 @@ class ExpenseRepository {
     );
   }
 
-  Future<double> getAccountBalance() async {
-    final result = await _db.queryRow('transactions', '1 = ?', [1]);
-    return result.fold((_) => 0.0, (rows) {
-      var balance = 0.0;
-      for (final row in rows) {
-        final amount = (row['amount'] as num?)?.toDouble() ?? 0;
-        final txType = row['type']?.toString() ?? '';
-        if (txType == 'income') {
-          balance += amount;
-        } else if (txType == 'expense') {
-          balance -= amount;
-        }
-      }
-      return balance;
-    });
-  }
+  Future<double> getAccountBalance({int? accountId}) =>
+      _aggregator.ledgerBalance(accountId: accountId);
 
   Future<BudgetSnapshot?> getBudgetSnapshot({
     required int accountId,
@@ -115,8 +116,7 @@ class ExpenseRepository {
         table: 'transactions',
         columns: ['SUM(amount) as total'],
         where:
-            'type = ? AND account_id = ? AND date BETWEEN ? AND ?' +
-            (excludeTransactionId != null ? ' AND id != ?' : ''),
+            'type = ? AND account_id = ? AND date BETWEEN ? AND ?${excludeTransactionId != null ? ' AND id != ?' : ''}',
         whereArgs: excludeTransactionId != null
             ? [
                 'expense',
@@ -152,7 +152,9 @@ class ExpenseRepository {
       }
 
       if (transaction.type == 'expense') {
-        final balance = await getAccountBalance();
+        final balance = await getAccountBalance(
+          accountId: transaction.accountId,
+        );
         if (transaction.amount > balance) {
           return Left(
             ValidationFailure(ExpenseStrings.insufficientBalance),
@@ -175,7 +177,11 @@ class ExpenseRepository {
         }
       }
 
-      final id = await _db.insert('transactions', transaction.toInsertMap());
+      final id = await _db.insert(
+        'transactions',
+        transaction.toInsertMap(touchUpdatedAt: DateTime.now()),
+      );
+      await _aggregator.syncAccountBalanceColumn();
 
       if (transaction.isRecurring &&
           transaction.recurrenceInterval == 'monthly') {
@@ -211,7 +217,9 @@ class ExpenseRepository {
       }
 
       if (transaction.type == 'expense') {
-        final balance = await getAccountBalance();
+        final balance = await getAccountBalance(
+          accountId: transaction.accountId,
+        );
         final oldRows = await _db.queryRow('transactions', 'id = ?', [
           transaction.id,
         ]);
@@ -245,10 +253,11 @@ class ExpenseRepository {
 
       await _db.update(
         'transactions',
-        transaction.toInsertMap(),
+        transaction.toInsertMap(touchUpdatedAt: DateTime.now()),
         'id = ?',
         [transaction.id],
       );
+      await _aggregator.syncAccountBalanceColumn();
 
       final budgetAfter = transaction.type == 'expense'
           ? await getBudgetSnapshot(
@@ -272,6 +281,9 @@ class ExpenseRepository {
   Future<Either<Failure, bool>> deleteTransaction(int id) async {
     try {
       final affected = await _db.delete('transactions', 'id = ?', [id]);
+      if (affected > 0) {
+        await _aggregator.syncAccountBalanceColumn();
+      }
       return Right(affected > 0);
     } catch (e) {
       return Left(UnknownFailure(ExpenseStrings.deleteFailed));
@@ -297,23 +309,64 @@ class ExpenseRepository {
     );
   }
 
-  /// Merges server expenses into local SQLite (keeps statistics/analysis in sync).
   Future<void> mergeServerExpenses(List<ExpenseTransaction> items) async {
     for (final tx in items) {
-      if (tx.type != 'expense') continue;
       await _db.insertOrReplace('transactions', {
         ...tx.toInsertMap(),
         'id': tx.id,
+        if (tx.updatedAt != null) 'updated_at': tx.updatedAt,
       });
     }
+    await _aggregator.syncAccountBalanceColumn();
   }
 
   /// Replaces a locally assigned id with the server id after offline create sync.
   Future<void> replaceLocalId(int localId, ExpenseTransaction serverTx) async {
-    await _db.delete('transactions', 'id = ?', [localId]);
-    await _db.insertOrReplace('transactions', {
-      ...serverTx.toInsertMap(),
-      'id': serverTx.id,
+    final db = await _db.database;
+    await db.transaction((txn) async {
+      await txn.delete(
+        'transactions',
+        where: 'id = ?',
+        whereArgs: [localId],
+      );
+      await txn.insert(
+        'transactions',
+        {
+          ...serverTx.toInsertMap(),
+          'id': serverTx.id,
+          if (serverTx.updatedAt != null) 'updated_at': serverTx.updatedAt,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
     });
+    await _aggregator.syncAccountBalanceColumn();
+  }
+
+  /// Deletes synced rows missing from the server snapshot (keeps pending ids).
+  Future<void> pruneExceptServerIds(
+    Set<int> serverIds,
+    Set<int> protectedIds,
+  ) async {
+    final rowsResult = await _db.queryAllRows('transactions');
+    await rowsResult.fold((_) async {}, (rows) async {
+      final localIds = rows.map((r) => (r['id'] as num).toInt());
+      final toRemove = idsToPrune(
+        localIds: localIds,
+        serverIds: serverIds,
+        protectedIds: protectedIds,
+      );
+      for (final id in toRemove) {
+        await _db.delete('transactions', 'id = ?', [id]);
+      }
+    });
+    await _aggregator.syncAccountBalanceColumn();
+  }
+
+  Future<List<int>> listTransactionIds() async {
+    final rowsResult = await _db.queryAllRows('transactions');
+    return rowsResult.fold(
+      (_) => <int>[],
+      (rows) => rows.map((r) => (r['id'] as num).toInt()).toList(),
+    );
   }
 }

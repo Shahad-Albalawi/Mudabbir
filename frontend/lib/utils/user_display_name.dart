@@ -17,6 +17,8 @@ class UserDisplayName {
     if (lower == 'preview' || lower == 'demo') return '';
     // Arabic «معاينة» / «معاينه» and common variants
     if (t.contains('معاين')) return '';
+    // Normalize common spellings for the app owner display name
+    if (t == 'شهاد' || t == 'شاهد') return 'شهد';
     return t;
   }
 }

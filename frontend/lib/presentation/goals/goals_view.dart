@@ -1,14 +1,17 @@
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mudabbir/domain/models/savings_goal.dart';
 import 'package:mudabbir/presentation/goals/goals_viewmodel.dart';
-import 'package:mudabbir/presentation/resources/color_manager.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/goal_strings.dart';
 import 'package:mudabbir/presentation/resources/server_challenge_strings.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
+import 'package:mudabbir/presentation/widgets/app_card.dart';
 import 'package:mudabbir/presentation/widgets/ios_empty_state.dart';
+import 'package:mudabbir/presentation/widgets/ios_loading_widget.dart';
 import 'package:mudabbir/service/gamification/celebration_service.dart';
 import 'package:mudabbir/service/gamification/confetti_widget.dart';
 import 'package:mudabbir/service/gamification/journey_progress_map.dart';
@@ -47,7 +50,7 @@ class _GoalViewState extends ConsumerState<GoalView> {
             children: [
               Text(
                 AppStrings.goalLine(goal.name),
-                style: TextStyle(color: scheme.onSurfaceVariant),
+                style: TextStyle(color: scheme.textMuted),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -139,18 +142,19 @@ class _GoalViewState extends ConsumerState<GoalView> {
     );
   }
 
-  Color _statusColor(GoalTrackStatus status) {
+  Color _statusColor(BuildContext context, GoalTrackStatus status) {
+    final scheme = Theme.of(context).colorScheme;
     switch (status) {
       case GoalTrackStatus.onTrack:
-        return ColorManager.success;
+        return scheme.success;
       case GoalTrackStatus.behind:
-        return ColorManager.warning;
+        return scheme.warning;
       case GoalTrackStatus.overdue:
-        return ColorManager.error;
+        return scheme.error;
       case GoalTrackStatus.completed:
-        return ColorManager.primary;
+        return scheme.primary;
       case GoalTrackStatus.noData:
-        return ColorManager.grey;
+        return scheme.textMuted;
     }
   }
 
@@ -182,7 +186,7 @@ class _GoalViewState extends ConsumerState<GoalView> {
         child: Builder(
           builder: (context) {
             if (goalState.isLoading) {
-              return const Center(child: CircularProgressIndicator());
+              return const Center(child: IOSLoadingWidget(size: 56));
             }
 
             if (goalState.goals.isEmpty) {
@@ -196,7 +200,7 @@ class _GoalViewState extends ConsumerState<GoalView> {
                     HapticService.medium();
                     GoalPopup().show(context, ref);
                   },
-                  iconColor: ColorManager.primary,
+                  iconColor: scheme.primary,
                 ),
               );
             }
@@ -216,35 +220,31 @@ class _GoalViewState extends ConsumerState<GoalView> {
                     ],
                   ),
                 Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(AppLayout.pageGutter),
                   child: SizedBox(
                     width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: ColorManager.primary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
+                    height: 52,
+                    child: FilledButton.icon(
                       onPressed: () {
                         HapticService.medium();
                         getIt<PopupService>().showAddGoalPopup(context, ref);
                       },
-                      icon: const Icon(Icons.add, color: Colors.white),
+                      icon: const Icon(Icons.add_rounded),
                       label: Text(
                         AppStrings.addNewGoal,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ),
                   ),
                 ),
                 Expanded(
                   child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppLayout.pageGutter,
+                      0,
+                      AppLayout.pageGutter,
+                      AppLayout.bottomNavClearance,
+                    ),
                     itemCount: goalState.goals.length,
                     itemBuilder: (_, i) => _goalCard(
                       context,
@@ -268,36 +268,22 @@ class _GoalViewState extends ConsumerState<GoalView> {
   ) {
     final scheme = Theme.of(context).colorScheme;
     final progress = goal.progressPercent / 100;
-    final statusColor = _statusColor(goal.eta.status);
+    final statusColor = _statusColor(context, goal.eta.status);
 
-    return GestureDetector(
+    return AppCard(
+      margin: const EdgeInsets.only(bottom: 14),
       onTap: goal.isCompleted
           ? null
           : () {
               HapticService.light();
               _showContributionDialog(goal);
             },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 14),
-        decoration: BoxDecoration(
-          color: scheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
+      child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  _goalImage(goal),
+                  _goalImage(context, goal),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -316,7 +302,7 @@ class _GoalViewState extends ConsumerState<GoalView> {
                           GoalStrings.typeLabel(goal.type),
                           style: TextStyle(
                             fontSize: 12,
-                            color: scheme.onSurfaceVariant,
+                            color: scheme.textMuted,
                           ),
                         ),
                       ],
@@ -340,9 +326,9 @@ class _GoalViewState extends ConsumerState<GoalView> {
                   ),
                   IconButton(
                     onPressed: () => viewmodel.deleteGoal(goal.id),
-                    icon: const Icon(
-                      Icons.delete_outline_rounded,
-                      color: ColorManager.error,
+                    icon: Icon(
+                      CupertinoIcons.delete,
+                      color: scheme.error,
                       size: 20,
                     ),
                   ),
@@ -357,14 +343,14 @@ class _GoalViewState extends ConsumerState<GoalView> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: ColorManager.primary,
+                      color: scheme.primary,
                     ),
                   ),
                   Text(
                     '${AppStrings.fromAmount} ${GoalStrings.formatAmount(goal.target)}',
                     style: TextStyle(
                       fontSize: 13,
-                      color: scheme.onSurfaceVariant,
+                      color: scheme.textMuted,
                     ),
                   ),
                 ],
@@ -392,8 +378,8 @@ class _GoalViewState extends ConsumerState<GoalView> {
               JourneyProgressMap(
                 progress: progress,
                 goalName: goal.name,
-                primaryColor: ColorManager.primary,
-                secondaryColor: ColorManager.darkPrimary,
+                primaryColor: scheme.primary,
+                secondaryColor: scheme.primary.withValues(alpha: 0.65),
               ),
               const SizedBox(height: 12),
               _infoRow(
@@ -424,18 +410,17 @@ class _GoalViewState extends ConsumerState<GoalView> {
                   GoalStrings.contributeHint,
                   style: TextStyle(
                     fontSize: 11,
-                    color: ColorManager.primary.withValues(alpha: 0.75),
+                    color: scheme.primary.withValues(alpha: 0.75),
                   ),
                 ),
               ],
             ],
           ),
-        ),
-      ),
     );
   }
 
-  Widget _goalImage(SavingsGoal goal) {
+  Widget _goalImage(BuildContext context, SavingsGoal goal) {
+    final scheme = Theme.of(context).colorScheme;
     final path = goal.imagePath;
     if (path != null && path.isNotEmpty && File(path).existsSync()) {
       return ClipRRect(
@@ -452,10 +437,10 @@ class _GoalViewState extends ConsumerState<GoalView> {
       width: 52,
       height: 52,
       decoration: BoxDecoration(
-        color: ColorManager.primary.withValues(alpha: 0.1),
+        color: scheme.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Icon(Icons.flag_outlined, color: ColorManager.primary),
+      child: Icon(Icons.flag_outlined, color: scheme.primary),
     );
   }
 
@@ -468,11 +453,11 @@ class _GoalViewState extends ConsumerState<GoalView> {
     final scheme = Theme.of(context).colorScheme;
     return Row(
       children: [
-        Icon(icon, size: 16, color: scheme.onSurfaceVariant),
+        Icon(icon, size: 16, color: scheme.textMuted),
         const SizedBox(width: 8),
         Text(
           '$label: ',
-          style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+          style: TextStyle(fontSize: 12, color: scheme.textMuted),
         ),
         Expanded(
           child: Text(

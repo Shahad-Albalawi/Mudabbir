@@ -6,6 +6,7 @@ class LocalDatabase {
   static final LocalDatabase instance = LocalDatabase._privateConstructor();
 
   static Database? _database;
+  String? _currentUserId;
 
   Future<Database> get database async {
     if (_database == null) {
@@ -20,11 +21,15 @@ class LocalDatabase {
     if (db != null) {
       await db.close();
       _database = null;
+      _currentUserId = null;
     }
   }
 
   /// Initialize DB after registration/login with a unique identifier like an email.
   Future<void> initForUser(String userIdentifier) async {
+    if (_currentUserId == userIdentifier && _database != null) {
+      return;
+    }
     await close();
     final dbName =
         '${userIdentifier.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_')}_finance.db';
@@ -32,7 +37,7 @@ class LocalDatabase {
 
     _database = await openDatabase(
       path,
-      version: 5,
+      version: 6,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
       onOpen: (db) async {
@@ -40,6 +45,7 @@ class LocalDatabase {
         await _createAuditTables(db);
       },
     );
+    _currentUserId = userIdentifier;
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -73,6 +79,11 @@ class LocalDatabase {
           FOREIGN KEY (goal_id) REFERENCES goals(id) ON DELETE CASCADE
         )
       ''');
+    }
+    if (oldVersion < 6) {
+      await db.execute(
+        'ALTER TABLE transactions ADD COLUMN updated_at TEXT',
+      );
     }
   }
 
@@ -146,6 +157,7 @@ class LocalDatabase {
       category_id INTEGER NOT NULL,
       is_recurring INTEGER NOT NULL DEFAULT 0,
       recurrence_interval TEXT,
+      updated_at TEXT,
       FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE,
       FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT
     )

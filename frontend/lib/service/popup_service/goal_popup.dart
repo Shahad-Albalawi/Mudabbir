@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mudabbir/presentation/goals/goals_viewmodel.dart';
-import 'package:mudabbir/presentation/resources/color_manager.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/goal_strings.dart';
+import 'package:mudabbir/presentation/widgets/ios_dialog_style.dart';
 import 'package:mudabbir/service/popup_service/popup_widgets.dart';
 
 class GoalPopup {
@@ -33,17 +34,12 @@ class GoalPopup {
       builder: (_) => StatefulBuilder(
         builder: (context, setLocalState) {
           return Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            elevation: 24,
+            shape: IOSDialogStyle.dialogShape(),
+            elevation: 0,
             child: Container(
               width: MediaQuery.of(context).size.width * 0.9,
               constraints: const BoxConstraints(maxWidth: 400, maxHeight: 700),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                color: Theme.of(context).colorScheme.surface,
-              ),
+              decoration: IOSDialogStyle.surfaceDecoration(context),
               child: Form(
                 key: formKey,
                 child: Column(
@@ -72,18 +68,21 @@ class GoalPopup {
                                   width: 96,
                                   height: 96,
                                   decoration: BoxDecoration(
-                                    color: ColorManager.primary
-                                        .withValues(alpha: 0.08),
-                                    borderRadius: BorderRadius.circular(16),
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .surfaceContainerHighest,
+                                    borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: ColorManager.primary
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .outline
                                           .withValues(alpha: 0.25),
                                     ),
                                   ),
                                   child: imagePath != null
                                       ? ClipRRect(
                                           borderRadius:
-                                              BorderRadius.circular(15),
+                                              BorderRadius.circular(11),
                                           child: Image.file(
                                             File(imagePath!),
                                             fit: BoxFit.cover,
@@ -95,14 +94,20 @@ class GoalPopup {
                                           children: [
                                             Icon(
                                               Icons.add_a_photo_outlined,
-                                              color: ColorManager.primary,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .textMuted,
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
                                               GoalStrings.pickImage,
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                color: ColorManager.primary,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .textMuted,
                                               ),
                                             ),
                                           ],
@@ -111,7 +116,7 @@ class GoalPopup {
                               ),
                             ),
                             const SizedBox(height: 20),
-                            _section(GoalStrings.goalName),
+                            _section(context,GoalStrings.goalName),
                             const SizedBox(height: 8),
                             PopupWidgets.textField(
                               controller: nameCtrl,
@@ -122,7 +127,7 @@ class GoalPopup {
                                   : null,
                             ),
                             const SizedBox(height: 16),
-                            _section(GoalStrings.targetAmount),
+                            _section(context,GoalStrings.targetAmount),
                             const SizedBox(height: 8),
                             PopupWidgets.textField(
                               controller: targetCtrl,
@@ -140,7 +145,7 @@ class GoalPopup {
                               },
                             ),
                             const SizedBox(height: 16),
-                            _section(GoalStrings.currentAmount),
+                            _section(context,GoalStrings.currentAmount),
                             const SizedBox(height: 8),
                             PopupWidgets.textField(
                               controller: currentCtrl,
@@ -156,7 +161,7 @@ class GoalPopup {
                               },
                             ),
                             const SizedBox(height: 16),
-                            _section(GoalStrings.goalType),
+                            _section(context,GoalStrings.goalType),
                             const SizedBox(height: 8),
                             PopupWidgets.dropdownField<String>(
                               value: selectedType,
@@ -169,7 +174,7 @@ class GoalPopup {
                                   : null,
                             ),
                             const SizedBox(height: 16),
-                            _section(GoalStrings.goalPeriod),
+                            _section(context,GoalStrings.goalPeriod),
                             const SizedBox(height: 8),
                             Row(
                               children: [
@@ -267,64 +272,15 @@ class GoalPopup {
   }
 
   Widget _header(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-        gradient: LinearGradient(
-          colors: [
-            ColorManager.primary,
-            ColorManager.primary.withValues(alpha: 0.85),
-          ],
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.flag_outlined, color: Colors.white),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  GoalStrings.createTitle,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                Text(
-                  GoalStrings.createSubtitle,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.85),
-                      ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return IOSDialogStyle.header(
+      context,
+      title: GoalStrings.createTitle,
+      subtitle: GoalStrings.createSubtitle,
+      icon: Icons.flag_outlined,
     );
   }
 
-  Widget _section(String title) {
-    return Text(
-      title,
-      style: TextStyle(
-        fontWeight: FontWeight.w600,
-        color: ColorManager.primary,
-        fontSize: 13,
-      ),
-    );
+  Widget _section(BuildContext context, String title) {
+    return IOSDialogStyle.sectionLabel(context, title);
   }
 }

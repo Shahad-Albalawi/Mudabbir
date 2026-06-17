@@ -1,4 +1,5 @@
 import 'package:mudabbir/domain/models/savings_goal.dart';
+import 'package:mudabbir/presentation/resources/currency_formatter.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 
 /// Bilingual strings for savings goals (Feature D).
@@ -7,8 +8,7 @@ class GoalStrings {
 
   static bool get _e => AppStrings.isEnglishLocale;
 
-  static String formatAmount(double value) =>
-      '${value.toStringAsFixed(0)} ${_e ? 'SAR' : '﷼'}';
+  static String formatAmount(double value) => AppCurrency.format(value);
 
   static String get createTitle => _e ? 'Create goal' : 'إنشاء هدف';
   static String get createSubtitle =>

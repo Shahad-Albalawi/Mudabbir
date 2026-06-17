@@ -121,4 +121,8 @@ class ChallengeHiveCache {
       }
     }
   }
+
+  Future<void> clearAll() async {
+    await box.clear();
+  }
 }

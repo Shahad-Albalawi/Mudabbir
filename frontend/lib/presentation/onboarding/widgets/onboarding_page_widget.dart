@@ -1,6 +1,6 @@
-import 'package:mudabbir/presentation/onboarding/onboarding_viewmodel.dart';
-import 'package:mudabbir/presentation/resources/color_manager.dart';
 import 'package:flutter/material.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
+import 'package:mudabbir/presentation/onboarding/onboarding_viewmodel.dart';
 
 class OnboardingPageWidget extends StatefulWidget {
   final SliderObject sliderObject;
@@ -35,7 +35,6 @@ class _OnboardingPageWidgetState extends State<OnboardingPageWidget>
       duration: const Duration(milliseconds: 1000),
     );
 
-    // Staggered animations for content
     _titleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _contentController,
@@ -54,7 +53,6 @@ class _OnboardingPageWidgetState extends State<OnboardingPageWidget>
       CurvedAnimation(parent: _imageController, curve: Curves.elasticOut),
     );
 
-    // Slide animations
     _titleSlideAnimation =
         Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(
           CurvedAnimation(
@@ -71,7 +69,6 @@ class _OnboardingPageWidgetState extends State<OnboardingPageWidget>
           ),
         );
 
-    // Start animations
     _contentController.forward();
     Future.delayed(const Duration(milliseconds: 400), () {
       _imageController.forward();
@@ -87,18 +84,17 @@ class _OnboardingPageWidgetState extends State<OnboardingPageWidget>
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
       child: Column(
         children: [
           const SizedBox(height: 40),
-
-          // Title with animation
           SlideTransition(
             position: _titleSlideAnimation,
             child: FadeTransition(
               opacity: _titleAnimation,
-              child: Container(
+              child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
                   widget.sliderObject.title,
@@ -107,20 +103,18 @@ class _OnboardingPageWidgetState extends State<OnboardingPageWidget>
                     fontWeight: FontWeight.bold,
                     height: 1.2,
                     letterSpacing: -0.5,
+                    color: scheme.onSurface,
                   ),
                 ),
               ),
             ),
           ),
-
           const SizedBox(height: 16),
-
-          // Subtitle with animation
           SlideTransition(
             position: _subtitleSlideAnimation,
             child: FadeTransition(
               opacity: _subtitleAnimation,
-              child: Container(
+              child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Text(
                   widget.sliderObject.subTitle,
@@ -128,16 +122,13 @@ class _OnboardingPageWidgetState extends State<OnboardingPageWidget>
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w400,
                     height: 1.4,
-                    color: Colors.black,
+                    color: scheme.textMuted,
                   ),
                 ),
               ),
             ),
           ),
-
           const SizedBox(height: 60),
-
-          // Image with advanced animation
           Expanded(
             child: Center(
               child: AnimatedBuilder(
@@ -145,44 +136,31 @@ class _OnboardingPageWidgetState extends State<OnboardingPageWidget>
                 builder: (context, child) {
                   return Transform.scale(
                     scale: _imageAnimation.value,
-                    child: Transform.rotate(
-                      angle: (1 - _imageAnimation.value) * 0.1,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: ColorManager.shadowLight,
-                              blurRadius: 30,
-                              offset: const Offset(0, 15),
+                    child: widget.sliderObject.icon != null
+                        ? Container(
+                            width: 160,
+                            height: 160,
+                            decoration: BoxDecoration(
+                              color: scheme.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: scheme.outline.withValues(alpha: 0.25),
+                              ),
                             ),
-                          ],
-                        ),
-                        child: widget.sliderObject.icon != null
-                            ? Container(
-                                width: 160,
-                                height: 160,
-                                decoration: BoxDecoration(
-                                  color: ColorManager.primaryWithOpacity10,
-                                  borderRadius: BorderRadius.circular(24),
-                                ),
-                                child: Center(
-                                  child: Icon(
-                                    widget.sliderObject.icon,
-                                    size: 80,
-                                    color: ColorManager.primary,
-                                  ),
-                                ),
-                              )
-                            : const SizedBox.shrink(),
-                      ),
-                    ),
+                            child: Center(
+                              child: Icon(
+                                widget.sliderObject.icon,
+                                size: 80,
+                                color: scheme.primary,
+                              ),
+                            ),
+                          )
+                        : const SizedBox.shrink(),
                   );
                 },
               ),
             ),
           ),
-
           const SizedBox(height: 40),
         ],
       ),

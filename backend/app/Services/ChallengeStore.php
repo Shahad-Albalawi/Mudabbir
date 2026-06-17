@@ -2,33 +2,43 @@
 
 namespace App\Services;
 
+use App\Services\Concerns\UsesJsonStorePath;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\File;
 
 class ChallengeStore
 {
+    use UsesJsonStorePath;
+
     /** @var string */
     private $path;
 
     public function __construct()
     {
-        $this->path = storage_path('app/challenges.json');
+        $this->path = $this->jsonStorePath('challenges.json');
     }
 
-    public function all(): array
+    public function all(int $userId): array
     {
         $data = $this->read();
+
+        $visible = array_values(array_filter(
+            $data['challenges'],
+            function (array $challenge) use ($userId): bool {
+                return $this->userCanAccess($challenge, $userId);
+            }
+        ));
 
         return array_values(array_map(function (array $challenge): array {
             return $this->normalizeChallenge($challenge);
-        }, $data['challenges']));
+        }, $visible));
     }
 
-    public function find(int $id): ?array
+    public function find(int $id, int $userId): ?array
     {
         $data = $this->read();
         foreach ($data['challenges'] as $challenge) {
-            if ((int) $challenge['id'] === $id) {
+            if ((int) $challenge['id'] === $id && $this->userCanAccess($challenge, $userId)) {
                 return $this->normalizeChallenge($challenge);
             }
         }
@@ -36,32 +46,36 @@ class ChallengeStore
         return null;
     }
 
-    public function create(array $payload): array
+    /**
+     * @param  array{id: int, name: string, email: string}  $creator
+     */
+    public function create(array $payload, array $creator): array
     {
         $data = $this->read();
         $now = Carbon::now()->toISOString();
         $id = (int) $data['next_challenge_id'];
         $data['next_challenge_id'] = $id + 1;
 
-        $creator = [
-            'id' => 1,
-            'name' => 'Mudabbir User',
-            'email' => 'owner@mudabbir.local',
-        ];
+        $creatorId = (int) $creator['id'];
 
         $challenge = [
             'id' => $id,
+            'user_id' => $creatorId,
             'name' => (string) $payload['name'],
             'amount' => (float) $payload['amount'],
             'start_date' => (string) $payload['start_date'],
             'end_date' => (string) $payload['end_date'],
             'achieved' => false,
-            'creator_id' => $creator['id'],
-            'creator' => $creator,
+            'creator_id' => $creatorId,
+            'creator' => [
+                'id' => $creatorId,
+                'name' => (string) $creator['name'],
+                'email' => (string) $creator['email'],
+            ],
             'participants' => [[
-                'id' => $creator['id'],
-                'name' => $creator['name'],
-                'email' => $creator['email'],
+                'id' => $creatorId,
+                'name' => (string) $creator['name'],
+                'email' => (string) $creator['email'],
                 'status' => 'accepted',
                 'target_amount' => (float) $payload['amount'],
                 'achieved' => false,
@@ -81,11 +95,11 @@ class ChallengeStore
         return $challenge;
     }
 
-    public function update(int $id, array $updates): ?array
+    public function update(int $id, array $updates, int $userId): ?array
     {
         $data = $this->read();
         foreach ($data['challenges'] as $idx => $challenge) {
-            if ((int) $challenge['id'] !== $id) {
+            if ((int) $challenge['id'] !== $id || ! $this->isCreator($challenge, $userId)) {
                 continue;
             }
 
@@ -105,14 +119,14 @@ class ChallengeStore
         return null;
     }
 
-    public function delete(int $id): bool
+    public function delete(int $id, int $userId): bool
     {
         $data = $this->read();
         $before = count($data['challenges']);
         $data['challenges'] = array_values(array_filter(
             $data['challenges'],
-            function (array $challenge) use ($id): bool {
-                return (int) $challenge['id'] !== $id;
+            function (array $challenge) use ($id, $userId): bool {
+                return ! ((int) $challenge['id'] === $id && $this->isCreator($challenge, $userId));
             }
         ));
         $after = count($data['challenges']);
@@ -126,11 +140,11 @@ class ChallengeStore
         return true;
     }
 
-    public function invite(int $id, string $email): ?array
+    public function invite(int $id, string $email, int $actingUserId): ?array
     {
         $data = $this->read();
         foreach ($data['challenges'] as $idx => $challenge) {
-            if ((int) $challenge['id'] !== $id) {
+            if ((int) $challenge['id'] !== $id || ! $this->isCreator($challenge, $actingUserId)) {
                 continue;
             }
 
@@ -166,18 +180,23 @@ class ChallengeStore
         return null;
     }
 
-    public function removeParticipant(int $id, int $userId): ?array
+    public function removeParticipant(int $id, int $participantId, int $actingUserId): ?array
     {
         $data = $this->read();
         foreach ($data['challenges'] as $idx => $challenge) {
-            if ((int) $challenge['id'] !== $id) {
+            if ((int) $challenge['id'] !== $id || ! $this->userCanAccess($challenge, $actingUserId)) {
                 continue;
+            }
+
+            if (! $this->isCreator($challenge, $actingUserId) && $participantId !== $actingUserId) {
+                return null;
             }
 
             $challenge['participants'] = array_values(array_filter(
                 $challenge['participants'],
-                function (array $participant) use ($challenge, $userId): bool {
-                    return (int) $participant['id'] !== $userId || (int) $participant['id'] === (int) $challenge['creator_id'];
+                function (array $participant) use ($challenge, $participantId): bool {
+                    return (int) $participant['id'] !== $participantId
+                        || (int) $participant['id'] === (int) $challenge['creator_id'];
                 }
             ));
             $challenge['updated_at'] = Carbon::now()->toISOString();
@@ -190,11 +209,11 @@ class ChallengeStore
         return null;
     }
 
-    public function toggleStatus(int $id): ?array
+    public function toggleStatus(int $id, int $userId): ?array
     {
         $data = $this->read();
         foreach ($data['challenges'] as $idx => $challenge) {
-            if ((int) $challenge['id'] !== $id) {
+            if ((int) $challenge['id'] !== $id || ! $this->isCreator($challenge, $userId)) {
                 continue;
             }
 
@@ -209,7 +228,7 @@ class ChallengeStore
         return null;
     }
 
-    public function respond(int $id, string $status): ?array
+    public function respond(int $id, string $status, int $userId, string $userEmail): ?array
     {
         $data = $this->read();
         foreach ($data['challenges'] as $idx => $challenge) {
@@ -218,37 +237,48 @@ class ChallengeStore
             }
 
             foreach ($challenge['participants'] as $pIdx => $participant) {
-                if ((int) $participant['id'] === (int) $challenge['creator_id']) {
+                $matchesUser = (int) $participant['id'] === $userId
+                    || strtolower((string) $participant['email']) === strtolower($userEmail);
+
+                if (! $matchesUser || (string) ($participant['status'] ?? '') !== 'pending') {
                     continue;
                 }
-                if ((string) $participant['status'] === 'pending') {
-                    $participant['status'] = $status;
-                    $challenge['participants'][$pIdx] = $participant;
-                    $challenge['updated_at'] = Carbon::now()->toISOString();
-                    $data['challenges'][$idx] = $challenge;
-                    $this->write($data);
 
-                    return $challenge;
-                }
+                $participant['id'] = $userId;
+                $participant['status'] = $status;
+                $challenge['participants'][$pIdx] = $participant;
+                $challenge['updated_at'] = Carbon::now()->toISOString();
+                $data['challenges'][$idx] = $challenge;
+                $this->write($data);
+
+                return $challenge;
             }
 
-            return $challenge;
+            return null;
         }
 
         return null;
     }
 
-    public function pendingInvitations(): array
+    public function pendingInvitations(int $userId, string $userEmail): array
     {
-        return array_values(array_filter($this->all(), function (array $challenge): bool {
-            foreach ($challenge['participants'] as $participant) {
-                if ((int) $participant['id'] !== (int) $challenge['creator_id'] && (string) $participant['status'] === 'pending') {
-                    return true;
+        $email = strtolower($userEmail);
+        $data = $this->read();
+        $results = [];
+
+        foreach ($data['challenges'] as $challenge) {
+            foreach ($challenge['participants'] ?? [] as $participant) {
+                $matchesUser = (int) ($participant['id'] ?? 0) === $userId
+                    || strtolower((string) ($participant['email'] ?? '')) === $email;
+
+                if ($matchesUser && (string) ($participant['status'] ?? '') === 'pending') {
+                    $results[] = $this->normalizeChallenge($challenge);
+                    break;
                 }
             }
+        }
 
-            return false;
-        }));
+        return array_values($results);
     }
 
     public function templates(): array
@@ -297,7 +327,10 @@ class ChallengeStore
         ];
     }
 
-    public function createFromTemplate(string $templateId): ?array
+    /**
+     * @param  array{id: int, name: string, email: string}  $creator
+     */
+    public function createFromTemplate(string $templateId, array $creator): ?array
     {
         $template = null;
         foreach ($this->templates() as $item) {
@@ -319,14 +352,18 @@ class ChallengeStore
             'amount' => (float) $template['amount'],
             'start_date' => $start,
             'end_date' => $end,
-        ]);
+        ], $creator);
     }
 
     /**
      * @return array{challenge: array, meta: array}|null
      */
-    public function checkIn(int $id, int $userId = 1): ?array
+    public function checkIn(int $id, int $userId): ?array
     {
+        if (! $this->find($id, $userId)) {
+            return null;
+        }
+
         $data = $this->read();
         foreach ($data['challenges'] as $idx => $challenge) {
             if ((int) $challenge['id'] !== $id) {
@@ -404,6 +441,10 @@ class ChallengeStore
 
     public function recordProgress(int $id, int $userId, float $amount): ?array
     {
+        if (! $this->find($id, $userId)) {
+            return null;
+        }
+
         $data = $this->read();
         foreach ($data['challenges'] as $idx => $challenge) {
             if ((int) $challenge['id'] !== $id) {
@@ -443,9 +484,9 @@ class ChallengeStore
         return null;
     }
 
-    public function leaderboard(int $id): ?array
+    public function leaderboard(int $id, int $userId): ?array
     {
-        $challenge = $this->find($id);
+        $challenge = $this->find($id, $userId);
         if (! $challenge) {
             return null;
         }
@@ -489,6 +530,28 @@ class ChallengeStore
         ];
     }
 
+    private function userCanAccess(array $challenge, int $userId): bool
+    {
+        if ($this->isCreator($challenge, $userId)) {
+            return true;
+        }
+
+        foreach ($challenge['participants'] ?? [] as $participant) {
+            if ((int) ($participant['id'] ?? 0) === $userId) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function isCreator(array $challenge, int $userId): bool
+    {
+        $ownerId = (int) ($challenge['user_id'] ?? $challenge['creator_id'] ?? 0);
+
+        return $ownerId === $userId;
+    }
+
     private function normalizeParticipant(array $participant): array
     {
         $badges = $participant['badges'] ?? [];
@@ -504,6 +567,7 @@ class ChallengeStore
 
     private function normalizeChallenge(array $challenge): array
     {
+        $challenge['user_id'] = (int) ($challenge['user_id'] ?? $challenge['creator_id'] ?? 0);
         $challenge['participants'] = array_values(array_map(function (array $participant): array {
             return $this->normalizeParticipant($participant);
         }, $challenge['participants'] ?? []));
@@ -515,37 +579,9 @@ class ChallengeStore
     {
         if (! File::exists($this->path)) {
             $seed = [
-                'next_challenge_id' => 2,
-                'next_user_id' => 2,
-                'challenges' => [[
-                    'id' => 1,
-                    'name' => 'تحدي ادخار 30 يوم',
-                    'amount' => 1000.0,
-                    'start_date' => Carbon::now()->startOfMonth()->toDateString(),
-                    'end_date' => Carbon::now()->endOfMonth()->toDateString(),
-                    'achieved' => false,
-                    'creator_id' => 1,
-                    'creator' => [
-                        'id' => 1,
-                        'name' => 'Mudabbir User',
-                        'email' => 'owner@mudabbir.local',
-                    ],
-                    'participants' => [[
-                        'id' => 1,
-                        'name' => 'Mudabbir User',
-                        'email' => 'owner@mudabbir.local',
-                        'status' => 'accepted',
-                        'target_amount' => 1000.0,
-                        'achieved' => false,
-                        'current_progress' => 0.0,
-                        'streak_days' => 0,
-                        'longest_streak' => 0,
-                        'last_check_in' => null,
-                        'badges' => [],
-                    ]],
-                    'created_at' => Carbon::now()->toISOString(),
-                    'updated_at' => Carbon::now()->toISOString(),
-                ]],
+                'next_challenge_id' => 1,
+                'next_user_id' => 1000,
+                'challenges' => [],
             ];
             $this->write($seed);
 
@@ -556,7 +592,7 @@ class ChallengeStore
         if (! is_array($decoded) || ! isset($decoded['challenges'])) {
             return [
                 'next_challenge_id' => 1,
-                'next_user_id' => 1,
+                'next_user_id' => 1000,
                 'challenges' => [],
             ];
         }

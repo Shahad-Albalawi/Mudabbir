@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/navigation_service.dart';
@@ -102,7 +103,9 @@ class PopupWidgets {
         if (i is Map<String, dynamic>) {
           final raw = i['name']?.toString() ?? '';
           final display = formatItemLabel != null ? formatItemLabel(raw) : raw;
-          return DropdownMenuItem<T>(value: i['id'] as T, child: Text(display));
+          final id = i['id'];
+          final parsed = id is int ? id : (id as num).toInt();
+          return DropdownMenuItem<T>(value: parsed as T, child: Text(display));
         }
         final v = i as T;
         final text = itemLabel != null ? itemLabel(v) : v.toString();
@@ -113,24 +116,28 @@ class PopupWidgets {
     );
   }
 
-  static Widget dialogTitle(String text, String type) => Row(
-    children: [
-      Icon(
-        type == 'income'
-            ? Icons.add_circle
-            : type == 'expense'
-            ? Icons.remove_circle
-            : Icons.flag,
-        color: type == 'income'
-            ? Colors.green
-            : type == 'expense'
-            ? Colors.red
-            : const Color(0xFF1F7A54),
-      ),
-      const SizedBox(width: 8),
-      Text(text),
-    ],
-  );
+  static Widget dialogTitle(BuildContext context, String text, String type) {
+    final scheme = Theme.of(context).colorScheme;
+    final color = type == 'income'
+        ? scheme.success
+        : type == 'expense'
+        ? scheme.error
+        : scheme.primary;
+    return Row(
+      children: [
+        Icon(
+          type == 'income'
+              ? Icons.add_circle
+              : type == 'expense'
+              ? Icons.remove_circle
+              : Icons.flag,
+          color: color,
+        ),
+        const SizedBox(width: 8),
+        Text(text),
+      ],
+    );
+  }
 
   static void showSuccessSnackBar(BuildContext ctx, String msg) =>
       getIt<NavigationService>().showSuccessSnackbar(

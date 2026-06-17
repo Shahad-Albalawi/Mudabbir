@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mudabbir/presentation/resources/color_manager.dart';
 import 'package:mudabbir/presentation/resources/server_challenge_strings.dart';
@@ -56,7 +58,7 @@ class _ChallengesListScreenState extends ConsumerState<ChallengesListScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.message),
-            backgroundColor: const Color(0xFF4CAF50),
+            behavior: SnackBarBehavior.floating,
           ),
         );
         ref.read(challengeOperationProvider.notifier).reset();
@@ -64,32 +66,26 @@ class _ChallengesListScreenState extends ConsumerState<ChallengesListScreen>
     });
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              ColorManager.primary,
-              ColorManager.primary.withValues(alpha: 0.8),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildAppBar(context),
-              _buildTabBar(),
-              Expanded(
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF8F9FA),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(32),
-                      topRight: Radius.circular(32),
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildAppBar(context),
+            _buildTabBar(),
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  border: Border(
+                    top: BorderSide(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .outline
+                          .withValues(alpha: 0.15),
                     ),
                   ),
-                  child: Column(
+                ),
+                child: Column(
                     children: [
                       if (challengeState is ChallengeLoaded &&
                           challengeState.isOffline)
@@ -112,8 +108,7 @@ class _ChallengesListScreenState extends ConsumerState<ChallengesListScreen>
                   ),
                 ),
               ),
-            ],
-          ),
+          ],
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -125,7 +120,7 @@ class _ChallengesListScreenState extends ConsumerState<ChallengesListScreen>
   }
 
   Widget _buildAppBar(BuildContext context) {
-    // Watch pending invitations count
+    final scheme = Theme.of(context).colorScheme;
     final pendingState = ref.watch(pendingInvitationsProvider);
     int pendingCount = 0;
     if (pendingState is ChallengeLoaded) {
@@ -133,25 +128,26 @@ class _ChallengesListScreenState extends ConsumerState<ChallengesListScreen>
     }
 
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Row(
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+            icon: Icon(CupertinoIcons.back, color: scheme.onSurface),
           ),
-          const SizedBox(width: 8),
-          Text(
-            ServerChallengeStrings.listTitle,
-            style: getBoldStyle(fontSize: FontSize.s24, color: Colors.white),
+          Expanded(
+            child: Text(
+              ServerChallengeStrings.listTitle,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
-          const Spacer(),
-          // Pending invitations button
           Stack(
             children: [
               IconButton(
                 onPressed: () => _navigateToPendingInvitations(context),
-                icon: const Icon(Icons.notifications, color: Colors.white),
+                icon: Icon(CupertinoIcons.bell, color: scheme.onSurface),
               ),
               if (pendingCount > 0)
                 Positioned(
@@ -160,7 +156,7 @@ class _ChallengesListScreenState extends ConsumerState<ChallengesListScreen>
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: ColorManager.error,
+                      color: scheme.error,
                       shape: BoxShape.circle,
                     ),
                     constraints: const BoxConstraints(
@@ -169,8 +165,8 @@ class _ChallengesListScreenState extends ConsumerState<ChallengesListScreen>
                     ),
                     child: Text(
                       '$pendingCount',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: scheme.onError,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                       ),
@@ -183,7 +179,7 @@ class _ChallengesListScreenState extends ConsumerState<ChallengesListScreen>
           IconButton(
             onPressed: () =>
                 ref.read(challengesProvider.notifier).refreshChallenges(),
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: Icon(CupertinoIcons.refresh, color: scheme.onSurface),
           ),
         ],
       ),
@@ -191,20 +187,22 @@ class _ChallengesListScreenState extends ConsumerState<ChallengesListScreen>
   }
 
   Widget _buildTabBar() {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(16),
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: scheme.outline.withValues(alpha: 0.2)),
       ),
       child: TabBar(
         controller: _tabController,
         indicator: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          color: scheme.primary.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(8),
         ),
-        labelColor: ColorManager.primary,
-        unselectedLabelColor: Colors.white.withValues(alpha: 0.7),
+        labelColor: scheme.primary,
+        unselectedLabelColor: scheme.textMuted,
         // labelStyle: getMediumStyle(fontSize: FontSize.s14),
         // unselectedLabelStyle: getMediumStyle(fontSize: FontSize.s12),
         labelPadding: const EdgeInsets.symmetric(horizontal: 8),

@@ -1,11 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:mudabbir/presentation/resources/color_manager.dart';
-import 'package:mudabbir/presentation/resources/ios_style_constants.dart';
-import 'package:mudabbir/presentation/resources/app_theme_extensions.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
 
-/// iOS-style empty state with icon, title, subtitle, and optional CTA.
-class IOSEmptyState extends StatefulWidget {
+/// iOS-style empty state — minimal, no bounce animation.
+class IOSEmptyState extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
@@ -24,97 +22,45 @@ class IOSEmptyState extends StatefulWidget {
   });
 
   @override
-  State<IOSEmptyState> createState() => _IOSEmptyStateState();
-}
-
-class _IOSEmptyStateState extends State<IOSEmptyState>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-    _scaleAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final color = widget.iconColor ?? ColorManager.primary;
-    final scheme = context.appColors;
+    final scheme = Theme.of(context).colorScheme;
+    final color = iconColor ?? scheme.textMuted;
 
-    return ScaleTransition(
-      scale: _scaleAnimation,
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 96,
-              height: 96,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(
-                  IOSStyleConstants.radiusXLarge,
-                ),
-              ),
-              child: Icon(widget.icon, size: 48, color: color),
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 44, color: color.withValues(alpha: 0.85)),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
             ),
-            const SizedBox(height: 24),
-            Text(
-              widget.title,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: scheme.onSurface,
-              ),
-              textAlign: TextAlign.center,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: scheme.textMuted,
             ),
-            const SizedBox(height: 8),
-            Text(
-              widget.subtitle,
-              style: TextStyle(fontSize: 15, color: scheme.onSurfaceVariant),
-              textAlign: TextAlign.center,
-            ),
-            if (widget.buttonLabel != null && widget.onPressed != null) ...[
-              const SizedBox(height: 24),
-              CupertinoButton(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                color: ColorManager.primary,
-                borderRadius: BorderRadius.circular(
-                  IOSStyleConstants.radiusMedium,
-                ),
-                onPressed: widget.onPressed,
-                child: Text(
-                  widget.buttonLabel!,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                ),
+            textAlign: TextAlign.center,
+          ),
+          if (buttonLabel != null && onPressed != null) ...[
+            const SizedBox(height: 20),
+            SizedBox(
+              height: AppLayout.listRowHeight,
+              child: CupertinoButton.filled(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                borderRadius: BorderRadius.circular(AppLayout.chipRadius),
+                onPressed: onPressed,
+                child: Text(buttonLabel!),
               ),
-            ],
+            ),
           ],
-        ),
+        ],
       ),
     );
   }

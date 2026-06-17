@@ -1,3 +1,4 @@
+import 'package:mudabbir/presentation/resources/currency_formatter.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 
 /// Bilingual strings for expense tracking screens.
@@ -6,8 +7,7 @@ class ExpenseStrings {
 
   static bool get _e => AppStrings.isEnglishLocale;
 
-  static String formatAmount(double value) =>
-      '${value.toStringAsFixed(0)} ${_e ? 'SAR' : '﷼'}';
+  static String formatAmount(double value) => AppCurrency.format(value);
 
   static String get title => _e ? 'Expenses' : 'المصروفات';
   static String get addExpense => _e ? 'Add expense' : 'إضافة مصروف';
@@ -58,12 +58,12 @@ class ExpenseStrings {
       ? 'Amount exceeds available balance.'
       : 'المبلغ أكبر من الرصيد المتاح.';
   static String budgetExceeded(double remaining) => _e
-      ? 'This expense exceeds the remaining budget (${remaining.toStringAsFixed(0)} SAR).'
-      : 'هذا المصروف يتجاوز المتبقي من الميزانية (${remaining.toStringAsFixed(0)} ﷼).';
+      ? 'This expense exceeds the remaining budget (${AppCurrency.format(remaining)}).'
+      : 'هذا المصروف يتجاوز المتبقي من الميزانية (${AppCurrency.format(remaining)}).';
   static String budgetLinked(double spent, double budget, double remaining) =>
       _e
-      ? 'Budget link: spent ${spent.toStringAsFixed(0)} / ${budget.toStringAsFixed(0)} SAR — remaining ${remaining.toStringAsFixed(0)} SAR.'
-      : 'ربط الميزانية: صرفت ${spent.toStringAsFixed(0)} / ${budget.toStringAsFixed(0)} ﷼ — المتبقي ${remaining.toStringAsFixed(0)} ﷼.';
+      ? 'Budget link: spent ${AppCurrency.format(spent)} / ${AppCurrency.format(budget)} — remaining ${AppCurrency.format(remaining)}.'
+      : 'ربط الميزانية: صرفت ${AppCurrency.format(spent)} / ${AppCurrency.format(budget)} — المتبقي ${AppCurrency.format(remaining)}.';
   static String get viewAllExpenses =>
       _e ? 'View all expenses' : 'عرض كل المصروفات';
   static String get totalFiltered =>

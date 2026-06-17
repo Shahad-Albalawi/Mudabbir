@@ -5,10 +5,12 @@ import 'package:mudabbir/data/local/database_helper.dart';
 import 'package:mudabbir/data/local/empty.dart';
 import 'package:mudabbir/data/network/failure.dart';
 import 'package:mudabbir/domain/models/savings_goal.dart';
+import 'package:mudabbir/domain/services/sync_policies.dart';
 import 'package:mudabbir/presentation/resources/goal_strings.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:sqflite/sqflite.dart';
 
 class GoalWriteResult {
   final SavingsGoal goal;
@@ -265,7 +267,74 @@ class GoalsRepository {
   }
 
   Future<void> replaceLocalGoalId(int localId, SavingsGoal serverGoal) async {
-    await _db.delete('goals', 'id = ?', [localId]);
-    await mergeServerGoals([serverGoal]);
+    final db = await _db.database;
+    await db.transaction((txn) async {
+      await txn.delete(
+        'goal_contributions',
+        where: 'goal_id = ?',
+        whereArgs: [localId],
+      );
+      await txn.delete(
+        'goals',
+        where: 'id = ?',
+        whereArgs: [localId],
+      );
+      await txn.insert(
+        'goals',
+        {
+          'id': serverGoal.id,
+          'name': serverGoal.name,
+          'target': serverGoal.target,
+          'current_amount': serverGoal.currentAmount,
+          'type': serverGoal.type,
+          'start_date': _isoDate(serverGoal.startDate),
+          'end_date': _isoDate(serverGoal.endDate),
+          'image_path': serverGoal.imagePath,
+          'is_completed': serverGoal.isCompleted ? 1 : 0,
+          'completed_at': serverGoal.completedAt?.toIso8601String(),
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      for (final c in serverGoal.contributions) {
+        await txn.insert(
+          'goal_contributions',
+          {
+            'id': c.id,
+            'goal_id': c.goalId,
+            'amount': c.amount,
+            'contributed_at': c.contributedAt.toIso8601String(),
+            'note': c.note,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
+  }
+
+  Future<void> pruneExceptServerIds(
+    Set<int> serverIds,
+    Set<int> protectedIds,
+  ) async {
+    final rowsResult = await _db.queryAllRows('goals');
+    await rowsResult.fold((_) async {}, (rows) async {
+      final localIds = rows.map((r) => (r['id'] as num).toInt());
+      final toRemove = idsToPrune(
+        localIds: localIds,
+        serverIds: serverIds,
+        protectedIds: protectedIds,
+      );
+      for (final id in toRemove) {
+        await _db.delete('goal_contributions', 'goal_id = ?', [id]);
+        await _db.delete('goals', 'id = ?', [id]);
+      }
+    });
+  }
+
+  Future<List<int>> listGoalIds() async {
+    final rowsResult = await _db.queryAllRows('goals');
+    return rowsResult.fold(
+      (_) => <int>[],
+      (rows) => rows.map((r) => (r['id'] as num).toInt()).toList(),
+    );
   }
 }

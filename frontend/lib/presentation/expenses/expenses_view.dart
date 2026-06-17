@@ -1,11 +1,13 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mudabbir/domain/models/expense_transaction.dart';
 import 'package:mudabbir/presentation/expenses/expenses_viewmodel.dart';
 import 'package:mudabbir/presentation/expenses/widgets/expense_form_sheet.dart';
-import 'package:mudabbir/presentation/resources/color_manager.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/entity_localizations.dart';
 import 'package:mudabbir/presentation/resources/expense_strings.dart';
 import 'package:mudabbir/presentation/resources/server_challenge_strings.dart';
+import 'package:mudabbir/presentation/widgets/app_card.dart';
 import 'package:mudabbir/presentation/widgets/ios_empty_state.dart';
 import 'package:mudabbir/presentation/widgets/ios_loading_widget.dart';
 import 'package:stacked/stacked.dart';
@@ -16,19 +18,21 @@ class ExpensesView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return ViewModelBuilder<ExpensesViewModel>.reactive(
       viewModelBuilder: () => ExpensesViewModel(),
       onViewModelReady: (model) => model.initialize(),
       builder: (context, model, child) {
         return Scaffold(
-          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+          backgroundColor: scheme.surfaceContainerHighest,
           appBar: AppBar(
             title: Text(ExpenseStrings.title),
             actions: [
               IconButton(
                 tooltip: ExpenseStrings.addExpense,
                 onPressed: () => _openForm(context, model),
-                icon: const Icon(Icons.add_rounded),
+                icon: const Icon(CupertinoIcons.add),
               ),
             ],
           ),
@@ -39,10 +43,16 @@ class ExpensesView extends StatelessWidget {
                     _FiltersBar(model: model),
                     if (model.isOffline)
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppLayout.pageGutter,
+                        ),
                         child: Row(
                           children: [
-                            const Icon(Icons.cloud_off_outlined, size: 18),
+                            Icon(
+                              CupertinoIcons.cloud,
+                              size: 18,
+                              color: scheme.textMuted,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -60,16 +70,16 @@ class ExpensesView extends StatelessWidget {
                     if (model.errorMessage != null)
                       _MessageBanner(
                         text: model.errorMessage!,
-                        color: ColorManager.error,
+                        color: scheme.error,
                       ),
                     if (model.successMessage != null)
                       _MessageBanner(
                         text: model.successMessage!,
-                        color: ColorManager.success,
+                        color: scheme.success,
                       ),
                     Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
+                        horizontal: AppLayout.pageGutter,
                         vertical: 8,
                       ),
                       child: Row(
@@ -83,8 +93,8 @@ class ExpensesView extends StatelessWidget {
                             ExpenseStrings.formatAmount(model.filteredTotal),
                             style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(
-                                  color: ColorManager.primary,
-                                  fontWeight: FontWeight.bold,
+                                  color: scheme.primary,
+                                  fontWeight: FontWeight.w600,
                                 ),
                           ),
                         ],
@@ -93,17 +103,22 @@ class ExpensesView extends StatelessWidget {
                     Expanded(
                       child: model.expenses.isEmpty
                           ? IOSEmptyState(
-                              icon: Icons.receipt_long_rounded,
+                              icon: CupertinoIcons.doc_text,
                               title: ExpenseStrings.emptyTitle,
                               subtitle: ExpenseStrings.emptySubtitle,
                               buttonLabel: ExpenseStrings.addExpense,
                               onPressed: () => _openForm(context, model),
                             )
                           : ListView.separated(
-                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                              padding: const EdgeInsets.fromLTRB(
+                                AppLayout.pageGutter,
+                                8,
+                                AppLayout.pageGutter,
+                                24,
+                              ),
                               itemCount: model.expenses.length,
                               separatorBuilder: (_, __) =>
-                                  const SizedBox(height: 10),
+                                  const SizedBox(height: 8),
                               itemBuilder: (context, index) {
                                 final item = model.expenses[index];
                                 return _ExpenseTile(
@@ -124,11 +139,6 @@ class ExpensesView extends StatelessWidget {
                     ),
                   ],
                 ),
-          floatingActionButton: FloatingActionButton(
-            backgroundColor: ColorManager.primary,
-            onPressed: () => _openForm(context, model),
-            child: const Icon(Icons.add, color: Colors.white),
-          ),
         );
       },
     );
@@ -144,7 +154,7 @@ class ExpensesView extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
       ),
       builder: (_) => ExpenseFormSheet(
         model: model,
@@ -168,7 +178,7 @@ class ExpensesView extends StatelessWidget {
             onPressed: () => Navigator.pop(ctx, false),
             child: Text(ExpenseStrings.cancel),
           ),
-          ElevatedButton(
+          FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(ExpenseStrings.deleteExpense),
           ),
@@ -189,7 +199,12 @@ class _FiltersBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: const EdgeInsets.fromLTRB(
+        AppLayout.pageGutter,
+        12,
+        AppLayout.pageGutter,
+        4,
+      ),
       child: Row(
         children: [
           _MonthPicker(model: model),
@@ -250,7 +265,7 @@ class _MonthPicker extends StatelessWidget {
           model.setMonth(key);
         }
       },
-      icon: const Icon(Icons.calendar_month_rounded, size: 18),
+      icon: const Icon(CupertinoIcons.calendar, size: 18),
       label: Text('${ExpenseStrings.filterMonth}: $label'),
     );
   }
@@ -270,72 +285,67 @@ class _ExpenseTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: scheme.surface,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: onEdit,
-        borderRadius: BorderRadius.circular(14),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: ColorManager.error.withValues(alpha: 0.12),
-                child: const Icon(Icons.trending_down, color: ColorManager.error),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.categoryName,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${item.date} • ${item.accountName}',
-                      style: TextStyle(
-                        color: scheme.onSurfaceVariant,
-                        fontSize: 12,
-                      ),
-                    ),
-                    if (item.notes != null && item.notes!.isNotEmpty)
-                      Text(
-                        item.notes!,
-                        style: TextStyle(
-                          color: scheme.onSurfaceVariant,
-                          fontSize: 12,
-                        ),
-                      ),
-                    if (item.isRecurring)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Chip(
-                          label: Text(ExpenseStrings.recurringBadge),
-                          visualDensity: VisualDensity.compact,
-                          backgroundColor:
-                              ColorManager.primaryWithOpacity08,
-                        ),
-                      ),
-                  ],
+    return AppCard(
+      margin: EdgeInsets.zero,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      onTap: onEdit,
+      child: Row(
+        children: [
+          Icon(CupertinoIcons.arrow_down, size: 20, color: scheme.error),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.categoryName,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              Text(
-                ExpenseStrings.formatAmount(item.amount),
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: ColorManager.error,
+                const SizedBox(height: 2),
+                Text(
+                  '${item.date} • ${item.accountName}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: scheme.textMuted,
+                  ),
                 ),
-              ),
-              IconButton(
-                onPressed: onDelete,
-                icon: const Icon(Icons.delete_outline_rounded),
-              ),
-            ],
+                if (item.notes != null && item.notes!.isNotEmpty)
+                  Text(
+                    item.notes!,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: scheme.textMuted,
+                    ),
+                  ),
+                if (item.isRecurring)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      ExpenseStrings.recurringBadge,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: scheme.primary,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
-        ),
+          Text(
+            ExpenseStrings.formatAmount(item.amount),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: scheme.error,
+            ),
+          ),
+          IconButton(
+            onPressed: onDelete,
+            icon: Icon(
+              CupertinoIcons.delete,
+              size: 20,
+              color: scheme.textMuted,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -350,12 +360,15 @@ class _MessageBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppLayout.pageGutter,
+        vertical: 6,
+      ),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppLayout.chipRadius),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Text(text),
     );

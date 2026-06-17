@@ -8,7 +8,9 @@ class ChallengesApiTest extends TestCase
 {
     public function test_challenges_index_returns_success_shape(): void
     {
-        $response = $this->getJson('/api/challenges');
+        $auth = $this->registerUser('challenges@example.com');
+
+        $response = $this->withApiAuth($auth)->getJson('/api/challenges');
 
         $response->assertStatus(200)->assertJsonStructure([
             'success',
@@ -18,19 +20,30 @@ class ChallengesApiTest extends TestCase
 
     public function test_invite_and_pending_invitations_work(): void
     {
-        $inviteResponse = $this->postJson('/api/challenges/1/invite', [
+        $owner = $this->registerUser('owner@example.com');
+        $create = $this->withApiAuth($owner)->postJson('/api/challenges/from-template', [
+            'template_id' => 'no_extra_week',
+        ]);
+        $create->assertStatus(201);
+        $id = (int) $create->json('data.id');
+
+        $inviteResponse = $this->withApiAuth($owner)->postJson("/api/challenges/{$id}/invite", [
             'email' => 'friend@example.com',
         ]);
 
         $inviteResponse->assertStatus(200)->assertJsonPath('success', true);
 
-        $pendingResponse = $this->getJson('/api/challenges/invitations/pending');
+        $invitee = $this->registerUser('friend@example.com');
+        $pendingResponse = $this->withApiAuth($invitee)->getJson('/api/challenges/invitations/pending');
         $pendingResponse->assertStatus(200)->assertJsonPath('success', true);
+        $this->assertNotEmpty($pendingResponse->json('data'));
     }
 
     public function test_templates_endpoint_returns_arabic_presets(): void
     {
-        $response = $this->getJson('/api/challenges/templates');
+        $auth = $this->registerUser('templates@example.com');
+
+        $response = $this->withApiAuth($auth)->getJson('/api/challenges/templates');
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
@@ -45,28 +58,27 @@ class ChallengesApiTest extends TestCase
 
     public function test_check_in_and_leaderboard_work(): void
     {
-        $create = $this->postJson('/api/challenges/from-template', [
+        $auth = $this->registerUser('checkin@example.com');
+
+        $create = $this->withApiAuth($auth)->postJson('/api/challenges/from-template', [
             'template_id' => 'no_extra_week',
         ]);
         $create->assertStatus(201);
         $id = (int) $create->json('data.id');
 
-        $checkIn = $this->postJson("/api/challenges/{$id}/check-in", [
-            'user_id' => 1,
-        ]);
+        $checkIn = $this->withApiAuth($auth)->postJson("/api/challenges/{$id}/check-in");
         $checkIn->assertStatus(200)
             ->assertJsonPath('success', true)
             ->assertJsonPath('meta.already_checked_in', false);
 
-        $progress = $this->postJson("/api/challenges/{$id}/progress", [
-            'user_id' => 1,
+        $progress = $this->withApiAuth($auth)->postJson("/api/challenges/{$id}/progress", [
             'amount' => 250,
         ]);
         $progress->assertStatus(200)
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.participants.0.current_progress', 250);
 
-        $leaderboard = $this->getJson("/api/challenges/{$id}/leaderboard");
+        $leaderboard = $this->withApiAuth($auth)->getJson("/api/challenges/{$id}/leaderboard");
         $leaderboard->assertStatus(200)
             ->assertJsonPath('success', true)
             ->assertJsonStructure([

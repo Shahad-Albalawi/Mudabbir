@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 
 /// Service to handle all celebration animations and effects
@@ -216,7 +217,7 @@ class _MilestoneDialogState extends State<MilestoneDialog>
               // Message
               Text(
                 info.message,
-                style: TextStyle(fontSize: 16, color: scheme.onSurfaceVariant),
+                style: TextStyle(fontSize: 16, color: scheme.textMuted),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),

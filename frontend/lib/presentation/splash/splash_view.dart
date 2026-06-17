@@ -1,10 +1,9 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:mudabbir/presentation/resources/color_manager.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
+import 'package:mudabbir/presentation/widgets/app_brand_logo.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 
-/// iOS-style splash screen with modern logo.
-/// Shows app icon, name, and subtle branding.
+/// Flat splash — iOS launch screen style.
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
 
@@ -15,24 +14,18 @@ class SplashView extends StatefulWidget {
 class _SplashViewState extends State<SplashView>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
     _controller.forward();
   }
 
@@ -51,63 +44,28 @@ class _SplashViewState extends State<SplashView>
         child: Center(
           child: FadeTransition(
             opacity: _fadeAnimation,
-            child: ScaleTransition(
-              scale: _scaleAnimation,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Logo container - iOS Wallet style
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          ColorManager.primary,
-                          ColorManager.lightPrimary,
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: [
-                        BoxShadow(
-                          color: ColorManager.primary.withValues(alpha: 0.4),
-                          blurRadius: 24,
-                          offset: const Offset(0, 12),
-                        ),
-                      ],
-                    ),
-                    child: const Center(
-                      child: Icon(
-                        CupertinoIcons.creditcard_fill,
-                        color: Colors.white,
-                        size: 56,
-                      ),
-                    ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const AppBrandLogo(height: 72),
+                const SizedBox(height: 20),
+                Text(
+                  AppStrings.title,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.3,
+                    color: scheme.onSurface,
                   ),
-                  const SizedBox(height: 28),
-                  // App name
-                  Text(
-                    AppStrings.title,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: scheme.primary,
-                      letterSpacing: -0.5,
-                    ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  AppStrings.loginSubtitle,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: scheme.textMuted,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    AppStrings.splashTagline,
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: scheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           ),
         ),

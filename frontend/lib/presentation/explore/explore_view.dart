@@ -1,161 +1,75 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mudabbir/constants/hive_constants.dart';
+import 'package:mudabbir/presentation/expenses/expenses_view.dart';
 import 'package:mudabbir/presentation/home/home_viewmodel.dart';
 import 'package:mudabbir/presentation/home/widgets/add_container.dart';
 import 'package:mudabbir/presentation/home/widgets/summary_widget.dart';
-import 'package:mudabbir/presentation/expenses/expenses_view.dart';
 import 'package:mudabbir/presentation/invite/invite_view.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/expense_strings.dart';
-import 'package:mudabbir/presentation/resources/color_manager.dart';
-import 'package:mudabbir/presentation/resources/ios_style_constants.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
-import 'package:mudabbir/presentation/resources/values_manager.dart';
-import 'package:mudabbir/presentation/widgets/ios_pressable.dart';
+import 'package:mudabbir/presentation/widgets/app_action_tile.dart';
+import 'package:mudabbir/presentation/widgets/app_brand_logo.dart';
+import 'package:mudabbir/presentation/widgets/app_section_header.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/haptic_service.dart';
+import 'package:mudabbir/service/hive_service.dart';
 import 'package:mudabbir/service/language/app_language_controller.dart';
 import 'package:mudabbir/service/navigation_service.dart';
 import 'package:mudabbir/service/theme/app_theme_controller.dart';
+import 'package:mudabbir/utils/user_display_name.dart';
 
 /// Main explore/home tab with financial summary and quick actions.
 class ExploreView extends ConsumerWidget {
   const ExploreView({super.key});
 
-  static const double _horizontalPadding = AppPadding.p16;
-  static const double _sectionSpacing = AppSize.s16;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final homeViewModel = ref.read(homeProvider.notifier);
+    final userName = UserDisplayName.fromSavedUserInfo(
+      getIt<HiveService>().getValue(HiveConstants.savedUserInfo),
+    );
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.only(top: AppSize.s20, bottom: AppSize.s100),
+      padding: const EdgeInsets.only(
+        top: 12,
+        bottom: AppLayout.bottomNavClearance,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildWelcomeSection(context),
-          const SizedBox(height: _sectionSpacing),
+          _WelcomeHeader(
+            userName: userName,
+            onThemeTap: () => _showThemePicker(context),
+            onLanguageTap: () => _showLanguagePicker(context),
+          ),
+          const SizedBox(height: AppLayout.sectionGap),
           const SummaryWidget(),
-          const SizedBox(height: _sectionSpacing),
+          const SizedBox(height: AppLayout.sectionGap),
           const AddContainer(),
-          const SizedBox(height: _sectionSpacing),
-          _buildStatCard(
-            context: context,
+          const SizedBox(height: AppLayout.sectionGap),
+          AppActionTile(
             title: ExpenseStrings.viewAllExpenses,
-            icon: Icons.receipt_long_outlined,
-            isPrimary: false,
-            onTap: () {
-              HapticService.light();
-              getIt<NavigationService>().navigate(const ExpensesView());
-            },
+            icon: Icons.receipt_long_rounded,
+            onTap: () =>
+                getIt<NavigationService>().navigate(const ExpensesView()),
           ),
-          const SizedBox(height: _sectionSpacing),
-          _buildInviteBanner(context),
-          const SizedBox(height: _sectionSpacing),
-          _buildSectionTitle(context, AppStrings.yourStat),
-          const SizedBox(height: AppSize.s12),
-          _buildStatCard(
-            context: context,
+          const SizedBox(height: AppLayout.sectionGap),
+          AppActionTile(
+            title: AppStrings.inviteFriend,
+            icon: Icons.ios_share_outlined,
+            onTap: () =>
+                getIt<NavigationService>().navigate(InviteView()),
+          ),
+          const SizedBox(height: AppLayout.sectionGap),
+          AppSectionHeader(title: AppStrings.yourStat),
+          const SizedBox(height: 12),
+          AppActionTile(
             title: AppStrings.statisticsString,
-            icon: CupertinoIcons.chart_bar_fill,
-            isPrimary: true,
+            icon: CupertinoIcons.chart_bar,
             onTap: () => homeViewModel.changeNavBar(1),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInviteBanner(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
-      child: IOSPressable(
-        onTap: () {
-          HapticService.light();
-          getIt<NavigationService>().navigate(InviteView());
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppPadding.p20,
-            vertical: AppPadding.p16,
-          ),
-          decoration: BoxDecoration(
-            color: ColorManager.primaryWithOpacity10,
-            borderRadius: BorderRadius.circular(IOSStyleConstants.radiusXLarge),
-            border: Border.all(
-              color: ColorManager.primary.withValues(alpha: 0.3),
-              width: 1.5,
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.share_rounded, color: ColorManager.primary, size: 22),
-              const SizedBox(width: AppSize.s8),
-              Text(
-                AppStrings.inviteFriend,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: ColorManager.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildWelcomeSection(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  AppStrings.homeText1,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 22,
-                  ),
-                ),
-                const SizedBox(height: AppSize.s4),
-                Text(
-                  AppStrings.homeText2,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.72),
-                    fontSize: 15,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            tooltip: AppStrings.themeModeTooltip,
-            onPressed: () async {
-              HapticService.light();
-              await _showThemePicker(context);
-            },
-            icon: Icon(
-              CupertinoIcons.moon_stars_fill,
-              color: ColorManager.primary,
-            ),
-          ),
-          IconButton(
-            tooltip: AppStrings.languageTooltip,
-            onPressed: () async {
-              HapticService.light();
-              await _showLanguagePicker(context);
-            },
-            icon: Icon(CupertinoIcons.globe, color: ColorManager.primary),
           ),
         ],
       ),
@@ -165,6 +79,7 @@ class ExploreView extends ConsumerWidget {
   Future<void> _showThemePicker(BuildContext context) async {
     final controller = getIt<AppThemeController>();
     final current = controller.themeMode;
+    final scheme = Theme.of(context).colorScheme;
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -173,34 +88,34 @@ class ExploreView extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ListTile(
-                leading: const Icon(Icons.brightness_auto),
-                title: Text(AppStrings.themeSystem),
-                trailing: current == ThemeMode.system
-                    ? const Icon(Icons.check, color: ColorManager.primary)
-                    : null,
+              _sheetTile(
+                ctx,
+                icon: Icons.brightness_auto,
+                label: AppStrings.themeSystem,
+                selected: current == ThemeMode.system,
+                scheme: scheme,
                 onTap: () async {
                   await controller.setThemeMode(ThemeMode.system);
                   if (ctx.mounted) Navigator.pop(ctx);
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.light_mode_rounded),
-                title: Text(AppStrings.themeLight),
-                trailing: current == ThemeMode.light
-                    ? const Icon(Icons.check, color: ColorManager.primary)
-                    : null,
+              _sheetTile(
+                ctx,
+                icon: Icons.light_mode_rounded,
+                label: AppStrings.themeLight,
+                selected: current == ThemeMode.light,
+                scheme: scheme,
                 onTap: () async {
                   await controller.setThemeMode(ThemeMode.light);
                   if (ctx.mounted) Navigator.pop(ctx);
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.dark_mode_rounded),
-                title: Text(AppStrings.themeDark),
-                trailing: current == ThemeMode.dark
-                    ? const Icon(Icons.check, color: ColorManager.primary)
-                    : null,
+              _sheetTile(
+                ctx,
+                icon: Icons.dark_mode_rounded,
+                label: AppStrings.themeDark,
+                selected: current == ThemeMode.dark,
+                scheme: scheme,
                 onTap: () async {
                   await controller.setThemeMode(ThemeMode.dark);
                   if (ctx.mounted) Navigator.pop(ctx);
@@ -216,6 +131,7 @@ class ExploreView extends ConsumerWidget {
   Future<void> _showLanguagePicker(BuildContext context) async {
     final controller = getIt<AppLanguageController>();
     final current = controller.locale.languageCode;
+    final scheme = Theme.of(context).colorScheme;
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -224,23 +140,23 @@ class ExploreView extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ListTile(
-                leading: const Icon(Icons.translate),
-                title: Text(AppStrings.languageArabicOption),
-                trailing: current == 'ar'
-                    ? const Icon(Icons.check, color: ColorManager.primary)
-                    : null,
+              _sheetTile(
+                ctx,
+                icon: Icons.translate,
+                label: AppStrings.languageArabicOption,
+                selected: current == 'ar',
+                scheme: scheme,
                 onTap: () async {
                   await controller.setLocale('ar');
                   if (ctx.mounted) Navigator.pop(ctx);
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.translate),
-                title: Text(AppStrings.languageEnglishOption),
-                trailing: current == 'en'
-                    ? const Icon(Icons.check, color: ColorManager.primary)
-                    : null,
+              _sheetTile(
+                ctx,
+                icon: Icons.translate,
+                label: AppStrings.languageEnglishOption,
+                selected: current == 'en',
+                scheme: scheme,
                 onTap: () async {
                   await controller.setLocale('en');
                   if (ctx.mounted) Navigator.pop(ctx);
@@ -253,89 +169,110 @@ class ExploreView extends ConsumerWidget {
     );
   }
 
-  Widget _buildSectionTitle(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.bold,
-          color: Theme.of(context).colorScheme.onSurface,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatCard({
-    required BuildContext context,
-    required String title,
+  Widget _sheetTile(
+    BuildContext ctx, {
     required IconData icon,
-    required bool isPrimary,
+    required String label,
+    required bool selected,
+    required ColorScheme scheme,
     required VoidCallback onTap,
   }) {
+    return ListTile(
+      leading: Icon(icon, color: scheme.primary),
+      title: Text(label),
+      trailing: selected
+          ? Icon(Icons.check_circle_rounded, color: scheme.primary)
+          : null,
+      onTap: onTap,
+    );
+  }
+}
+
+class _WelcomeHeader extends StatelessWidget {
+  final String userName;
+  final VoidCallback onThemeTap;
+  final VoidCallback onLanguageTap;
+
+  const _WelcomeHeader({
+    required this.userName,
+    required this.onThemeTap,
+    required this.onLanguageTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final greeting = userName.isEmpty
+        ? AppStrings.homeText1
+        : AppStrings.homeText1;
+    final namePart = userName.isEmpty ? null : userName;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
-      child: IOSPressable(
-        onTap: () {
-          HapticService.light();
-          onTap();
-        },
-        child: Container(
-          decoration: BoxDecoration(
-            color: isPrimary ? ColorManager.primary : ColorManager.white,
-            borderRadius: BorderRadius.circular(IOSStyleConstants.radiusXLarge),
-            boxShadow: [
-              BoxShadow(
-                color: isPrimary
-                    ? ColorManager.primary.withValues(alpha: 0.2)
-                    : ColorManager.shadowLight,
-                blurRadius: IOSStyleConstants.shadowBlur,
-                offset: const Offset(0, 4),
-              ),
-            ],
+      padding: const EdgeInsets.symmetric(horizontal: AppLayout.pageGutter),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
+        decoration: BoxDecoration(
+          color: scheme.homeBannerFill,
+          borderRadius: BorderRadius.circular(AppLayout.cardRadius),
+          border: Border.all(
+            color: scheme.homeGreen.withValues(alpha: 0.22),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(AppPadding.p16),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: isPrimary
-                        ? Colors.white.withValues(alpha: 0.2)
-                        : ColorManager.primaryWithOpacity10,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 28,
-                    color: isPrimary
-                        ? ColorManager.white
-                        : ColorManager.primary,
-                  ),
-                ),
-                const SizedBox(width: AppSize.s16),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: isPrimary
-                          ? ColorManager.white
-                          : ColorManager.textPrimary,
-                      fontWeight: FontWeight.w500,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const AppBrandLogo(height: 44),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  RichText(
+                    text: TextSpan(
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        height: 1.25,
+                        color: scheme.onSurface,
+                      ),
+                      children: [
+                        TextSpan(text: '$greeting${namePart != null ? '، ' : ''}'),
+                        if (namePart != null)
+                          TextSpan(
+                            text: namePart,
+                            style: TextStyle(color: scheme.homeGreen),
+                          ),
+                      ],
                     ),
                   ),
-                ),
-                Icon(
-                  CupertinoIcons.chevron_right,
-                  size: 18,
-                  color: isPrimary
-                      ? ColorManager.white.withValues(alpha: 0.9)
-                      : ColorManager.grey,
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Text(
+                    AppStrings.homeText2,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: scheme.textMuted,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+            IconButton(
+              tooltip: AppStrings.themeModeTooltip,
+              onPressed: () {
+                HapticService.light();
+                onThemeTap();
+              },
+              icon: Icon(Icons.brightness_6_outlined, size: 20, color: scheme.homeGreen),
+            ),
+            IconButton(
+              tooltip: AppStrings.languageTooltip,
+              onPressed: () {
+                HapticService.light();
+                onLanguageTap();
+              },
+              icon: Icon(Icons.language_outlined, size: 20, color: scheme.homeGreen),
+            ),
+          ],
         ),
       ),
     );

@@ -2,7 +2,15 @@ import 'package:mudabbir/presentation/resources/font_manager.dart';
 import 'package:flutter/material.dart';
 
 TextStyle _getStyle(double fontSize, FontWeight fontWeight, Color color) {
-  return TextStyle(fontSize: fontSize, fontWeight: fontWeight, color: color);
+  return TextStyle(
+    fontFamily: FontConstants.thmanyahFamily,
+    fontFamilyFallback: FontConstants.fontFamilyFallback,
+    fontSize: fontSize,
+    fontWeight: fontWeight,
+    color: color,
+    height: 1.4,
+    letterSpacing: 0.15,
+  );
 }
 
 // regular style

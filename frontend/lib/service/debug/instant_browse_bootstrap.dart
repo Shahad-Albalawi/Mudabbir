@@ -41,12 +41,12 @@ class InstantBrowseBootstrap {
 
     // Guest SQLite + neutral demo labels (no real person / PII).
     await hive.setValue(HiveConstants.savedUserInfo, {
-      HiveConstants.userInfoLocalDbKey: 'guest_user',
-      'name': 'مستخدم تجريبي',
-      'email': 'guest@example.com',
+      HiveConstants.userInfoLocalDbKey: 'shahad_user',
+      'name': 'شهد',
+      'email': 'demo@mudabbir.app',
     });
 
-    await LocalDatabase.instance.initForUser('guest_user');
+    await LocalDatabase.instance.initForUser('shahad_user');
     if (AppFlags.enableDemoSeed) {
       await DemoSeedService.forceReapplyGuestDemoData();
     }

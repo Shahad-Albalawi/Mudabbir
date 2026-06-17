@@ -15,6 +15,9 @@ class BehavioralStrings {
       ? 'Based on this month\'s spending patterns'
       : 'مبني على أنماط إنفاقك هذا الشهر';
 
+  static String get viewDetailsLabel =>
+      _en ? 'View full analysis' : 'عرض التحليل الكامل';
+
   static String get monthComparisonTitle =>
       _en ? 'Month-over-month comparison' : 'مقارنة بالأشهر السابقة';
 

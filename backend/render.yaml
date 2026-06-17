@@ -10,5 +10,5 @@ services:
       && touch database/database.sqlite
       && php artisan migrate --force
     startCommand: php artisan config:clear && php artisan serve --host 0.0.0.0 --port $PORT
-    healthCheckPath: /api/challenges
+    healthCheckPath: /api/health
     autoDeploy: true

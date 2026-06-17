@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 
-/// App font family (Tajawal for Arabic support).
+/// App font — Thmanyah (خط ثمانية) for Arabic and English UI text.
 class FontConstants {
-  static const String fontFamily = 'Tajawal';
+  static const String thmanyahFamily = 'Thmanyah';
+  /// Rare glyph fallback only; primary UI is always Thmanyah.
+  static const String fallbackFamily = 'Tajawal';
+  static const String fontFamily = thmanyahFamily;
+
+  static const List<String> fontFamilyFallback = [fallbackFamily];
 }
 
 class FontWeightManager {
@@ -17,6 +22,7 @@ class FontWeightManager {
 // font sizes now
 class FontSize {
   static const double s12 = 12.0;
+  static const double s13 = 13.0;
   static const double s14 = 14.0;
   static const double s16 = 16.0;
   static const double s17 = 17.0;

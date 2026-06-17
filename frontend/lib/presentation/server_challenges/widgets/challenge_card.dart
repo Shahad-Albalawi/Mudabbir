@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mudabbir/presentation/resources/color_manager.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/server_challenge_strings.dart';
 import 'package:mudabbir/presentation/resources/font_manager.dart';
 import 'package:mudabbir/presentation/resources/styles_manager.dart';
@@ -16,27 +16,36 @@ class ChallengeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
+      color: scheme.surface,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppLayout.cardRadius),
+        side: BorderSide(
+          color: scheme.outline.withValues(alpha: 0.3),
+        ),
+      ),
       child: InkWell(
         onTap: () => _navigateToDetail(),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppLayout.cardRadius),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(),
+              _buildHeader(scheme),
               const SizedBox(height: 12),
-              _buildAmountRow(),
+              _buildAmountRow(scheme),
               const SizedBox(height: 8),
-              _buildDateInfo(),
+              _buildDateInfo(scheme),
               if (challenge.isActive || challenge.isUpcoming) ...[
                 const SizedBox(height: 16),
-                _buildProgress(),
+                _buildProgress(scheme),
               ],
               const SizedBox(height: 16),
-              _buildFooter(),
+              _buildFooter(scheme),
             ],
           ),
         ),
@@ -44,7 +53,7 @@ class ChallengeCard extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(ColorScheme scheme) {
     return Row(
       children: [
         Expanded(
@@ -52,20 +61,20 @@ class ChallengeCard extends StatelessWidget {
             challenge.name,
             style: getSemiBoldStyle(
               fontSize: FontSize.s18,
-              color: ColorManager.darkGrey,
+              color: scheme.onSurface,
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
         ),
         const SizedBox(width: 12),
-        _buildStatusBadge(),
+        _buildStatusBadge(scheme),
       ],
     );
   }
 
-  Widget _buildStatusBadge() {
-    final (color, icon, text) = _getStatusInfo();
+  Widget _buildStatusBadge(ColorScheme scheme) {
+    final (color, icon, text) = _getStatusInfo(scheme);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -87,62 +96,62 @@ class ChallengeCard extends StatelessWidget {
     );
   }
 
-  (Color, IconData, String) _getStatusInfo() {
+  (Color, IconData, String) _getStatusInfo(ColorScheme scheme) {
     if (challenge.achieved) {
       return (
-        const Color(0xFF4CAF50),
+        scheme.success,
         Icons.check_circle,
         ServerChallengeStrings.cardCompleted,
       );
     } else if (challenge.isExpired) {
       return (
-        ColorManager.error,
+        scheme.error,
         Icons.cancel,
         ServerChallengeStrings.cardExpired,
       );
     } else if (challenge.isActive) {
       return (
-        ColorManager.primary,
+        scheme.primary,
         Icons.trending_up,
         ServerChallengeStrings.cardActive,
       );
     } else {
       return (
-        const Color(0xFFFF9800),
+        scheme.warning,
         Icons.schedule,
         ServerChallengeStrings.cardUpcoming,
       );
     }
   }
 
-  Widget _buildDateInfo() {
+  Widget _buildDateInfo(ColorScheme scheme) {
     final dateFormat = DateFormat('MMM d, yyyy');
 
     return Row(
       children: [
-        Icon(Icons.calendar_today, size: 16, color: ColorManager.grey1),
+        Icon(Icons.calendar_today, size: 16, color: scheme.textMuted),
         const SizedBox(width: 8),
         Text(
           '${dateFormat.format(challenge.startDate)} - ${dateFormat.format(challenge.endDate)}',
           style: getRegularStyle(
             fontSize: FontSize.s14,
-            color: ColorManager.grey1,
+            color: scheme.textMuted,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildAmountRow() {
+  Widget _buildAmountRow(ColorScheme scheme) {
     return Row(
       children: [
-        Icon(Icons.attach_money, size: 16, color: ColorManager.primary),
+        Icon(Icons.attach_money, size: 16, color: scheme.primary),
         const SizedBox(width: 8),
         Text(
           ServerChallengeStrings.goalAmount(challenge.amount),
           style: getBoldStyle(
             fontSize: FontSize.s16,
-            color: ColorManager.primary,
+            color: scheme.primary,
           ),
         ),
         const Spacer(),
@@ -150,7 +159,7 @@ class ChallengeCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+              color: scheme.success.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
@@ -159,7 +168,7 @@ class ChallengeCard extends StatelessWidget {
               ),
               style: getMediumStyle(
                 fontSize: FontSize.s12,
-                color: const Color(0xFF4CAF50),
+                color: scheme.success,
               ),
             ),
           ),
@@ -167,7 +176,7 @@ class ChallengeCard extends StatelessWidget {
     );
   }
 
-  Widget _buildProgress() {
+  Widget _buildProgress(ColorScheme scheme) {
     final daysRemaining = challenge.daysRemaining;
     final progress = challenge.progress;
 
@@ -183,14 +192,14 @@ class ChallengeCard extends StatelessWidget {
                   : ServerChallengeStrings.daysRemaining(daysRemaining),
               style: getMediumStyle(
                 fontSize: FontSize.s12,
-                color: ColorManager.grey1,
+                color: scheme.textMuted,
               ),
             ),
             Text(
               '${(progress * 100).toInt()}%',
               style: getBoldStyle(
                 fontSize: FontSize.s12,
-                color: ColorManager.primary,
+                color: scheme.primary,
               ),
             ),
           ],
@@ -201,11 +210,9 @@ class ChallengeCard extends StatelessWidget {
           child: LinearProgressIndicator(
             value: progress,
             minHeight: 8,
-            backgroundColor: ColorManager.grey.withValues(alpha: 0.2),
+            backgroundColor: scheme.outline.withValues(alpha: 0.2),
             valueColor: AlwaysStoppedAnimation<Color>(
-              challenge.isUpcoming
-                  ? const Color(0xFFFF9800)
-                  : ColorManager.primary,
+              challenge.isUpcoming ? scheme.warning : scheme.primary,
             ),
           ),
         ),
@@ -213,18 +220,18 @@ class ChallengeCard extends StatelessWidget {
     );
   }
 
-  Widget _buildFooter() {
+  Widget _buildFooter(ColorScheme scheme) {
     return Row(
       children: [
-        _buildParticipantsInfo(),
+        _buildParticipantsInfo(scheme),
         const Spacer(),
         if (challenge.participants.length > 1)
-          Icon(Icons.group, size: 16, color: ColorManager.grey1),
+          Icon(Icons.group, size: 16, color: scheme.textMuted),
       ],
     );
   }
 
-  Widget _buildParticipantsInfo() {
+  Widget _buildParticipantsInfo(ColorScheme scheme) {
     final participantCount = challenge.participants.length;
 
     if (participantCount == 0) {
@@ -233,20 +240,20 @@ class ChallengeCard extends StatelessWidget {
 
     return Row(
       children: [
-        _buildAvatarStack(),
+        _buildAvatarStack(scheme),
         const SizedBox(width: 8),
         Text(
           ServerChallengeStrings.participantCount(participantCount),
           style: getMediumStyle(
             fontSize: FontSize.s12,
-            color: ColorManager.grey1,
+            color: scheme.textMuted,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildAvatarStack() {
+  Widget _buildAvatarStack(ColorScheme scheme) {
     final displayParticipants = challenge.participants
         .take(3)
         .toList(); // Show max 3 avatars
@@ -260,54 +267,54 @@ class ChallengeCard extends StatelessWidget {
           for (int i = 0; i < displayParticipants.length; i++)
             Positioned(
               left: i * 20.0,
-              child: _buildAvatar(displayParticipants[i].name),
+              child: _buildAvatar(scheme, displayParticipants[i].name),
             ),
           if (remaining > 0)
             Positioned(
               left: displayParticipants.length * 20.0,
-              child: _buildRemainingAvatar(remaining),
+              child: _buildRemainingAvatar(scheme, remaining),
             ),
         ],
       ),
     );
   }
 
-  Widget _buildAvatar(String name) {
+  Widget _buildAvatar(ColorScheme scheme, String name) {
     return Container(
       width: 32,
       height: 32,
       decoration: BoxDecoration(
-        color: ColorManager.primary.withValues(alpha: 0.2),
+        color: scheme.primary.withValues(alpha: 0.2),
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 2),
+        border: Border.all(color: scheme.surface, width: 2),
       ),
       child: Center(
         child: Text(
           name.isNotEmpty ? name[0].toUpperCase() : '?',
           style: getMediumStyle(
             fontSize: FontSize.s12,
-            color: ColorManager.primary,
+            color: scheme.primary,
           ),
         ),
       ),
     );
   }
 
-  Widget _buildRemainingAvatar(int count) {
+  Widget _buildRemainingAvatar(ColorScheme scheme, int count) {
     return Container(
       width: 32,
       height: 32,
       decoration: BoxDecoration(
-        color: ColorManager.grey.withValues(alpha: 0.3),
+        color: scheme.surfaceContainerHighest,
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 2),
+        border: Border.all(color: scheme.surface, width: 2),
       ),
       child: Center(
         child: Text(
           '+$count',
           style: getMediumStyle(
             fontSize: FontSize.s12,
-            color: ColorManager.darkGrey,
+            color: scheme.textMuted,
           ),
         ),
       ),

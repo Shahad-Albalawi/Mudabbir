@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 /// Remote API configuration.
 ///
 /// **Release APK:** URL is set in `frontend/config/release.json` and applied via
@@ -12,7 +14,7 @@
 /// `flutter run --dart-define=USE_LOCAL_API=true`
 class ApiConstants {
   static const String _prodBaseUrl =
-      'https://gemini-api-s-challenges-uvxa39.laravel.cloud';
+      'https://laravel-main-nb0wjv.free.laravel.cloud';
   static const String _androidEmulatorLocalBaseUrl = 'http://10.0.2.2:8000';
 
   static String get baseUrl {
@@ -22,7 +24,13 @@ class ApiConstants {
       'USE_LOCAL_API',
       defaultValue: false,
     );
-    if (useLocalApi) return _androidEmulatorLocalBaseUrl;
+    const forceProd = bool.fromEnvironment(
+      'FORCE_PROD_API',
+      defaultValue: false,
+    );
+    if (useLocalApi || (kDebugMode && !forceProd)) {
+      return _androidEmulatorLocalBaseUrl;
+    }
     return _prodBaseUrl;
   }
 

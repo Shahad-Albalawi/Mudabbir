@@ -300,6 +300,7 @@ class AppStrings {
 
   static String get snackSuccessTitle => _isEnglish ? 'Success' : 'نجاح';
   static String get snackErrorTitle => _isEnglish ? 'Error' : 'خطأ';
+  static String get retry => _isEnglish ? 'Try again' : 'إعادة المحاولة';
 
   // Goals dialog
   static String get goalsAddAmountTitle =>

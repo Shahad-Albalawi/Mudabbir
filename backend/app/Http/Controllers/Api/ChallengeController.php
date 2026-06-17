@@ -17,14 +17,17 @@ class ChallengeController extends Controller
         $this->store = $store;
     }
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        return response()->json(['success' => true, 'data' => $this->store->all()]);
+        $userId = (int) $request->user()->id;
+
+        return response()->json(['success' => true, 'data' => $this->store->all($userId)]);
     }
 
-    public function show(int $id): JsonResponse
+    public function show(Request $request, int $id): JsonResponse
     {
-        $challenge = $this->store->find($id);
+        $userId = (int) $request->user()->id;
+        $challenge = $this->store->find($id, $userId);
         if (! $challenge) {
             return response()->json(['success' => false, 'message' => 'Challenge not found'], 404);
         }
@@ -41,7 +44,12 @@ class ChallengeController extends Controller
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
         ]);
 
-        return response()->json(['success' => true, 'data' => $this->store->create($payload)], 201);
+        $user = $request->user();
+
+        return response()->json([
+            'success' => true,
+            'data' => $this->store->create($payload, $this->creatorFromUser($user)),
+        ], 201);
     }
 
     public function update(Request $request, int $id): JsonResponse
@@ -53,7 +61,8 @@ class ChallengeController extends Controller
             'end_date' => ['sometimes', 'date'],
         ]);
 
-        $challenge = $this->store->update($id, $payload);
+        $userId = (int) $request->user()->id;
+        $challenge = $this->store->update($id, $payload, $userId);
         if (! $challenge) {
             return response()->json(['success' => false, 'message' => 'Challenge not found'], 404);
         }
@@ -61,9 +70,10 @@ class ChallengeController extends Controller
         return response()->json(['success' => true, 'data' => $challenge]);
     }
 
-    public function destroy(int $id): JsonResponse
+    public function destroy(Request $request, int $id): JsonResponse
     {
-        if (! $this->store->delete($id)) {
+        $userId = (int) $request->user()->id;
+        if (! $this->store->delete($id, $userId)) {
             return response()->json(['success' => false, 'message' => 'Challenge not found'], 404);
         }
 
@@ -75,7 +85,9 @@ class ChallengeController extends Controller
         $payload = $request->validate([
             'email' => ['required', 'email'],
         ]);
-        $challenge = $this->store->invite($id, (string) $payload['email']);
+
+        $userId = (int) $request->user()->id;
+        $challenge = $this->store->invite($id, (string) $payload['email'], $userId);
         if (! $challenge) {
             return response()->json(['success' => false, 'message' => 'Challenge not found'], 404);
         }
@@ -83,9 +95,10 @@ class ChallengeController extends Controller
         return response()->json(['success' => true, 'data' => $challenge]);
     }
 
-    public function removeParticipant(int $id, int $userId): JsonResponse
+    public function removeParticipant(Request $request, int $id, int $userId): JsonResponse
     {
-        $challenge = $this->store->removeParticipant($id, $userId);
+        $actingUserId = (int) $request->user()->id;
+        $challenge = $this->store->removeParticipant($id, $userId, $actingUserId);
         if (! $challenge) {
             return response()->json(['success' => false, 'message' => 'Challenge not found'], 404);
         }
@@ -93,9 +106,10 @@ class ChallengeController extends Controller
         return response()->json(['success' => true, 'data' => $challenge]);
     }
 
-    public function toggleStatus(int $id): JsonResponse
+    public function toggleStatus(Request $request, int $id): JsonResponse
     {
-        $challenge = $this->store->toggleStatus($id);
+        $userId = (int) $request->user()->id;
+        $challenge = $this->store->toggleStatus($id, $userId);
         if (! $challenge) {
             return response()->json(['success' => false, 'message' => 'Challenge not found'], 404);
         }
@@ -109,7 +123,13 @@ class ChallengeController extends Controller
             'status' => ['required', 'in:accepted,rejected'],
         ]);
 
-        $challenge = $this->store->respond($id, (string) $payload['status']);
+        $user = $request->user();
+        $challenge = $this->store->respond(
+            $id,
+            (string) $payload['status'],
+            (int) $user->id,
+            (string) $user->email
+        );
         if (! $challenge) {
             return response()->json(['success' => false, 'message' => 'Challenge not found'], 404);
         }
@@ -117,9 +137,14 @@ class ChallengeController extends Controller
         return response()->json(['success' => true, 'data' => $challenge]);
     }
 
-    public function pendingInvitations(): JsonResponse
+    public function pendingInvitations(Request $request): JsonResponse
     {
-        return response()->json(['success' => true, 'data' => $this->store->pendingInvitations()]);
+        $user = $request->user();
+
+        return response()->json([
+            'success' => true,
+            'data' => $this->store->pendingInvitations((int) $user->id, (string) $user->email),
+        ]);
     }
 
     public function templates(): JsonResponse
@@ -133,7 +158,10 @@ class ChallengeController extends Controller
             'template_id' => ['required', 'string', 'max:64'],
         ]);
 
-        $challenge = $this->store->createFromTemplate((string) $payload['template_id']);
+        $challenge = $this->store->createFromTemplate(
+            (string) $payload['template_id'],
+            $this->creatorFromUser($request->user())
+        );
         if (! $challenge) {
             return response()->json(['success' => false, 'message' => 'Template not found'], 404);
         }
@@ -143,11 +171,7 @@ class ChallengeController extends Controller
 
     public function checkIn(Request $request, int $id): JsonResponse
     {
-        $payload = $request->validate([
-            'user_id' => ['sometimes', 'integer', 'min:1'],
-        ]);
-
-        $userId = (int) ($payload['user_id'] ?? 1);
+        $userId = (int) $request->user()->id;
         $result = $this->store->checkIn($id, $userId);
         if (! $result) {
             return response()->json(['success' => false, 'message' => 'Challenge or participant not found'], 404);
@@ -163,11 +187,10 @@ class ChallengeController extends Controller
     public function recordProgress(Request $request, int $id): JsonResponse
     {
         $payload = $request->validate([
-            'user_id' => ['sometimes', 'integer', 'min:1'],
             'amount' => ['required', 'numeric', 'min:0.01'],
         ]);
 
-        $userId = (int) ($payload['user_id'] ?? 1);
+        $userId = (int) $request->user()->id;
         $challenge = $this->store->recordProgress($id, $userId, (float) $payload['amount']);
         if (! $challenge) {
             return response()->json(['success' => false, 'message' => 'Challenge or participant not found'], 404);
@@ -176,13 +199,26 @@ class ChallengeController extends Controller
         return response()->json(['success' => true, 'data' => $challenge]);
     }
 
-    public function leaderboard(int $id): JsonResponse
+    public function leaderboard(Request $request, int $id): JsonResponse
     {
-        $board = $this->store->leaderboard($id);
+        $userId = (int) $request->user()->id;
+        $board = $this->store->leaderboard($id, $userId);
         if (! $board) {
             return response()->json(['success' => false, 'message' => 'Challenge not found'], 404);
         }
 
         return response()->json(['success' => true, 'data' => $board]);
+    }
+
+    /**
+     * @return array{id: int, name: string, email: string}
+     */
+    private function creatorFromUser($user): array
+    {
+        return [
+            'id' => (int) $user->id,
+            'name' => (string) $user->name,
+            'email' => (string) $user->email,
+        ];
     }
 }

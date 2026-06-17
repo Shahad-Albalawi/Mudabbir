@@ -1,37 +1,30 @@
 import 'package:flutter/material.dart';
 
-/// Vivid but readable palette — stronger saturation on mobile, iOS-friendly contrast.
+/// Classic neutral palette — clean whites and restrained green.
 class AppColors {
   AppColors._();
 
-  /// Primary — saturated forest green
-  static const Color primary = Color(0xFF1F7A54);
-
-  /// Supporting tint (cards / chips)
-  static const Color secondary = Color(0xFFB8D9C8);
-
-  /// App background (slightly cool mint-gray)
-  static const Color background = Color(0xFFE8F0EB);
-
+  static const Color primary = Color(0xFF2D6A4F);
+  static const Color secondary = Color(0xFFE8EDEA);
+  static const Color background = Color(0xFFF7F7F5);
   static const Color card = Color(0xFFFFFFFF);
-
-  static const Color textPrimary = Color(0xFF14231C);
-
-  static const Color textSecondary = Color(0xFF4D5C54);
-
-  /// Warm gold accent
-  static const Color accent = Color(0xFFC49A3A);
+  static const Color textPrimary = Color(0xFF1A1A1A);
+  static const Color textSecondary = Color(0xFF4A4A4A);
+  static const Color accent = Color(0xFF8B7355);
 }
 
-/// Dark mode — high contrast text on deep surfaces (fixes low legibility).
 class DarkAppColors {
   DarkAppColors._();
 
-  static const Color primary = Color(0xFF4BE39A);
-  static const Color secondary = Color(0xFF3D5248);
-  static const Color background = Color(0xFF0C100E);
-  static const Color card = Color(0xFF151C18);
-  static const Color textPrimary = Color(0xFFF4FBF7);
-  static const Color textSecondary = Color(0xFFC5D1CA);
-  static const Color accent = Color(0xFFE8D18A);
+  /// iOS-style elevated dark — soft contrast, easy on the eyes.
+  static const Color primary = Color(0xFF6EAD8A);
+  static const Color secondary = Color(0xFF2A302D);
+  static const Color background = Color(0xFF141615);
+  static const Color card = Color(0xFF222624);
+  static const Color surfaceElevated = Color(0xFF1A1D1B);
+  static const Color textPrimary = Color(0xFFF8FAF9);
+  static const Color textSecondary = Color(0xFFDCE6E0);
+  static const Color accent = Color(0xFFC4B08A);
+  static const Color outline = Color(0xFF3A403D);
+  static const Color outlineVariant = Color(0xFF2E3431);
 }

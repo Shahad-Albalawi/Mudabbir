@@ -1,8 +1,9 @@
-import 'dart:ui';
-
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mudabbir/presentation/resources/strings_manager.dart';
 
+/// Flat app bar — iOS navigation bar style.
 class ModernGradientAppBar extends StatelessWidget
     implements PreferredSizeWidget {
   final Widget title;
@@ -18,98 +19,49 @@ class ModernGradientAppBar extends StatelessWidget
     required this.title,
     this.actions,
     this.leading,
-    this.centerTitle = true,
+    this.centerTitle = false,
     this.showBackButton = true,
     this.onBackPressed,
-    this.height = 56,
+    this.height = 44,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surfaceColor = isDark
-        ? const Color(0xFF202723).withValues(alpha: 0.92)
-        : const Color(0xFFF8FAF7).withValues(alpha: 0.92);
-    final iconFg = Theme.of(context).colorScheme.onSurface;
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = scheme.brightness == Brightness.dark;
 
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          height: preferredSize.height + MediaQuery.of(context).padding.top,
-          decoration: BoxDecoration(
-            color: surfaceColor,
-            border: Border(
-              bottom: BorderSide(
-                color: iconFg.withValues(alpha: isDark ? 0.14 : 0.10),
-                width: 0.7,
-              ),
-            ),
-          ),
-          child: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            toolbarHeight: height,
-            centerTitle: centerTitle,
-            systemOverlayStyle: isDark
-                ? SystemUiOverlayStyle.light
-                : SystemUiOverlayStyle.dark,
-
-            // Leading widget
-            leading:
-                leading ??
-                (showBackButton && Navigator.of(context).canPop()
-                    ? IconButton(
-                        icon: Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: iconFg,
-                          size: 20,
-                        ),
-                        onPressed:
-                            onBackPressed ?? () => Navigator.of(context).pop(),
-                        style: IconButton.styleFrom(
-                          backgroundColor: iconFg.withValues(alpha: 0.08),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      )
-                    : null),
-
-            // Title
-            title: title,
-
-            // Actions
-            actions: actions?.map((action) {
-              if (action is IconButton) {
-                return Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  child: IconButton(
-                    icon: action.icon,
-                    onPressed: action.onPressed,
-                    color: iconFg,
-                    iconSize: 22,
-                    style: IconButton.styleFrom(
-                      backgroundColor: iconFg.withValues(alpha: 0.08),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                );
-              }
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                child: action,
-              );
-            }).toList(),
-          ),
+    return AppBar(
+      backgroundColor: isDark ? scheme.surfaceContainerHighest : scheme.surface,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      toolbarHeight: height,
+      centerTitle: centerTitle,
+      systemOverlayStyle: isDark
+          ? SystemUiOverlayStyle.light
+          : SystemUiOverlayStyle.dark,
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(0.5),
+        child: Divider(
+          height: 0.5,
+          color: scheme.outline.withValues(alpha: isDark ? 0.35 : 0.2),
         ),
       ),
+      leading: leading ??
+          (showBackButton && Navigator.of(context).canPop()
+              ? IconButton(
+                  icon: const Icon(CupertinoIcons.back, size: 22),
+                  onPressed:
+                      onBackPressed ?? () => Navigator.of(context).pop(),
+                )
+              : null),
+      title: title,
+      titleTextStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
+        fontWeight: FontWeight.w600,
+      ),
+      actions: actions,
     );
   }
 
   @override
-  Size get preferredSize => Size.fromHeight(height + 8);
+  Size get preferredSize => Size.fromHeight(height);
 }

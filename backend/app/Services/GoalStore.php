@@ -2,33 +2,43 @@
 
 namespace App\Services;
 
+use App\Services\Concerns\UsesJsonStorePath;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\File;
 
 class GoalStore
 {
+    use UsesJsonStorePath;
+
     /** @var string */
     private $path;
 
     public function __construct()
     {
-        $this->path = storage_path('app/goals.json');
+        $this->path = $this->jsonStorePath('goals.json');
     }
 
-    public function all(): array
+    public function all(int $userId): array
     {
         $data = $this->read();
+
+        $owned = array_values(array_filter(
+            $data['goals'],
+            function (array $goal) use ($userId): bool {
+                return (int) ($goal['user_id'] ?? 0) === $userId;
+            }
+        ));
 
         return array_values(array_map(function (array $goal): array {
             return $this->normalizeGoal($goal);
-        }, $data['goals']));
+        }, $owned));
     }
 
-    public function find(int $id): ?array
+    public function find(int $id, int $userId): ?array
     {
         $data = $this->read();
         foreach ($data['goals'] as $goal) {
-            if ((int) $goal['id'] === $id) {
+            if ((int) $goal['id'] === $id && (int) ($goal['user_id'] ?? 0) === $userId) {
                 return $this->normalizeGoal($goal);
             }
         }
@@ -36,7 +46,7 @@ class GoalStore
         return null;
     }
 
-    public function create(array $payload): array
+    public function create(array $payload, int $userId): array
     {
         $data = $this->read();
         $id = (int) $data['next_goal_id'];
@@ -62,6 +72,7 @@ class GoalStore
 
         $goal = $this->normalizeGoal([
             'id' => $id,
+            'user_id' => $userId,
             'name' => (string) $payload['name'],
             'target' => $target,
             'current_amount' => min($current, $target),
@@ -82,11 +93,11 @@ class GoalStore
         return $goal;
     }
 
-    public function addContribution(int $goalId, array $payload): ?array
+    public function addContribution(int $goalId, array $payload, int $userId): ?array
     {
         $data = $this->read();
         foreach ($data['goals'] as $idx => $goal) {
-            if ((int) $goal['id'] !== $goalId) {
+            if ((int) $goal['id'] !== $goalId || (int) ($goal['user_id'] ?? 0) !== $userId) {
                 continue;
             }
 
@@ -95,6 +106,12 @@ class GoalStore
             }
 
             $amount = (float) $payload['amount'];
+            $remaining = max(0.0, (float) $goal['target'] - (float) $goal['current_amount']);
+            $applied = min($amount, $remaining);
+            if ($applied <= 0) {
+                return $this->normalizeGoal($goal);
+            }
+
             $contribId = (int) $data['next_contribution_id'];
             $data['next_contribution_id'] = $contribId + 1;
 
@@ -102,13 +119,13 @@ class GoalStore
             $contributions[] = [
                 'id' => $contribId,
                 'goal_id' => $goalId,
-                'amount' => $amount,
+                'amount' => $applied,
                 'contributed_at' => Carbon::now()->toISOString(),
                 'note' => $payload['note'] ?? null,
             ];
 
             $newAmount = min(
-                (float) $goal['current_amount'] + $amount,
+                (float) $goal['current_amount'] + $applied,
                 (float) $goal['target']
             );
             $reached = $newAmount >= (float) $goal['target'];
@@ -128,14 +145,14 @@ class GoalStore
         return null;
     }
 
-    public function delete(int $id): bool
+    public function delete(int $id, int $userId): bool
     {
         $data = $this->read();
         $before = count($data['goals']);
         $data['goals'] = array_values(array_filter(
             $data['goals'],
-            function (array $goal) use ($id): bool {
-                return (int) $goal['id'] !== $id;
+            function (array $goal) use ($id, $userId): bool {
+                return ! ((int) $goal['id'] === $id && (int) ($goal['user_id'] ?? 0) === $userId);
             }
         ));
 
@@ -163,6 +180,7 @@ class GoalStore
 
         return [
             'id' => (int) $goal['id'],
+            'user_id' => (int) ($goal['user_id'] ?? 0),
             'name' => (string) $goal['name'],
             'target' => (float) $goal['target'],
             'current_amount' => (float) ($goal['current_amount'] ?? 0),

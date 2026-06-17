@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/color_manager.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 
@@ -184,7 +185,7 @@ class ProgressIndicatorWithMessage extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: scheme.onSurfaceVariant,
+                  color: scheme.textMuted,
                 ),
               ),
             ),

@@ -8,12 +8,20 @@ class ApiException implements Exception {
   final String message;
   final int? statusCode;
   final dynamic errors;
+  final dynamic conflictData;
 
-  ApiException({required this.message, this.statusCode, this.errors});
+  ApiException({
+    required this.message,
+    this.statusCode,
+    this.errors,
+    this.conflictData,
+  });
 
   String get userMessage => ApiExceptionLocalizations.display(message);
 
   bool get isNetworkError => statusCode == null;
+
+  bool get isConflict => statusCode == 409;
 
   factory ApiException.fromDioError(DioException error) {
     switch (error.type) {
@@ -77,6 +85,16 @@ class ApiException implements Exception {
     if (data is Map<String, dynamic>) {
       final message = data['message'] as String?;
       final errors = data['errors'];
+      final conflict = data['conflict'] == true;
+      final payload = data['data'];
+
+      if (conflict && payload != null) {
+        return ApiException(
+          message: message ?? 'Server has a newer version.',
+          statusCode: statusCode,
+          conflictData: payload,
+        );
+      }
 
       if (errors != null) {
         return ApiException(

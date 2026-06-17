@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mudabbir/domain/models/expense_transaction.dart';
 import 'package:mudabbir/presentation/expenses/expenses_viewmodel.dart';
-import 'package:mudabbir/presentation/resources/color_manager.dart';
 import 'package:mudabbir/presentation/resources/entity_localizations.dart';
 import 'package:mudabbir/presentation/resources/expense_strings.dart';
-import 'package:mudabbir/presentation/home/home_viewmodel.dart';
+import 'package:mudabbir/service/financial_refresh.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Bottom sheet for creating or editing an expense.
@@ -115,7 +114,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<int>(
-                  value: _accountId,
+                  initialValue: _accountId,
                   decoration:
                       InputDecoration(labelText: ExpenseStrings.account),
                   items: widget.model.accounts
@@ -132,7 +131,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<int>(
-                  value: _categoryId,
+                  initialValue: _categoryId,
                   decoration:
                       InputDecoration(labelText: ExpenseStrings.category),
                   items: widget.model.categories
@@ -164,7 +163,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                 ElevatedButton(
                   onPressed: _saving ? null : _save,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: ColorManager.primary,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Colors.white,
                   ),
                   child: _saving
@@ -214,7 +213,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
 
     if (!mounted) return;
     if (message != null) {
-      await ref.read(homeProvider.notifier).reload();
+      await FinancialRefresh.refreshAll(ref);
       if (mounted) Navigator.pop(context);
     }
   }

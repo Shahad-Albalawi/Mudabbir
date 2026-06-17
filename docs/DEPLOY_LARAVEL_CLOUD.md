@@ -1,0 +1,134 @@
+# نشر Mudabbir على Laravel Cloud (الخيار أ)
+
+دليل استعادة السيرفر الإنتاجي على `*.laravel.cloud` بعد خطأ **530 / 1016**.
+
+---
+
+## لماذا يظهر 530؟
+
+الاسم `gemini-api-s-challenges-uvxa39.laravel.cloud` يصل إلى **Cloudflare**، لكن **بيئة Laravel Cloud الأصلية** (origin) متوقفة أو محذوفة أو فشل نشرها. إعادة النشر من لوحة التحكم تحل المشكلة في أغلب الحالات.
+
+---
+
+## 1) الدخول إلى Laravel Cloud
+
+1. افتح [cloud.laravel.com](https://cloud.laravel.com) وسجّل الدخول.
+2. ابحث عن التطبيق المرتبط بـ `gemini-api-s-challenges` أو أنشئ تطبيقاً جديداً.
+3. افتح بيئة **production** (أو أنشئ بيئة جديدة).
+
+> **ملاحظة:** إذا حُذفت البيئة القديمة، سيُنشأ رابط `*.laravel.cloud` **جديد**. حدّثه في `frontend/config/release.json` بعد النشر.
+
+---
+
+## 2) ربط المستودع
+
+| الإعداد | القيمة |
+|---------|--------|
+| المستودع | GitHub/GitLab الذي يحتوي المشروع |
+| الفرع | `main` (أو فرع الإنتاج عندك) |
+| **Root directory** | `backend` |
+
+مهم: المشروع monorepo — مجلد Laravel هو `backend/` وليس الجذر.
+
+---
+
+## 3) أوامر البناء والنشر (Deployments)
+
+### Build commands
+
+```bash
+composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+php artisan config:cache
+php artisan route:cache
+```
+
+### Deploy commands
+
+```bash
+php artisan migrate --force
+```
+
+لا تشغّل `php artisan storage:link` على Laravel Cloud (لا يُحفظ بين النشرات). ملفات JSON للمصروفات/الأهداف/التحديات تُخزَّن في `storage/app/` — على القرص المؤقت؛ للإنتاج الجاد يُفضّل لاحقاً قاعدة بيانات أو Object Storage.
+
+---
+
+## 4) متغيرات البيئة (Environment)
+
+أضف في **Settings → Environment variables**:
+
+| المتغير | مثال / ملاحظة |
+|---------|----------------|
+| `APP_NAME` | `Mudabbir` |
+| `APP_ENV` | `production` |
+| `APP_DEBUG` | `false` |
+| `APP_URL` | `https://gemini-api-s-challenges-uvxa39.laravel.cloud` (أو الرابط الجديد) |
+| `APP_KEY` | انسخ من `php artisan key:generate --show` محلياً |
+| `LOG_LEVEL` | `warning` |
+| `DB_CONNECTION` | `sqlite` للبداية، أو `mysql` إذا أرفقت **Database** من Laravel Cloud |
+| `AI_PROVIDER` | `openai` أو `gemini` |
+| `OPENAI_API_KEY` | مفتاحك (للشات بوت) |
+| `GEMINI_API_KEY` | اختياري |
+
+بعد Sanctum (المرحلة 1): المستخدمون وجلسات API تحتاج **قاعدة بيانات دائمة**. للإنتاج يُنصح بإرفاق **Laravel Cloud Database** (MySQL) وتشغيل `migrate --force`.
+
+---
+
+## 5) النشر
+
+1. من صفحة البيئة اضغط **Deploy** (أو **Save & Deploy** بعد حفظ الإعدادات).
+2. انتظر اكتمال البناء (أقل من 15 دقيقة).
+3. تأكد أن الحالة **Running** وليست **Stopped** — إن كانت متوقفة: القائمة `...` → **Restart**.
+
+---
+
+## 6) التحقق
+
+من جذر المستودع:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/check-production-api.ps1 `
+  -ApiBaseUrl "https://gemini-api-s-challenges-uvxa39.laravel.cloud"
+```
+
+المتوقع:
+
+- `GET /api/health` → **200** و `{ "success": true, "status": "ok" }`
+- `POST /api/register` → **201** (مستخدم جديد)
+
+اختبار يدوي:
+
+```powershell
+curl.exe -sS "https://YOUR-URL.laravel.cloud/api/health"
+```
+
+---
+
+## 7) ربط تطبيق Flutter
+
+إذا بقي نفس الرابط — لا تغيير. إذا تغيّر الرابط:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/build-release-apk.ps1 `
+  -ApiBaseUrl "https://YOUR-NEW-URL.laravel.cloud"
+```
+
+أو عدّل `frontend/config/release.json` يدوياً.
+
+---
+
+## 8) استكشاف الأخطاء
+
+| العرض | الإجراء |
+|-------|---------|
+| 530 / 1016 بعد النشر | تأكد أن النشر نجح وأن البيئة **Running**؛ أعد Deploy |
+| 500 على `/api/health` | راجع سجلات البيئة في Laravel Cloud؛ غالباً `APP_KEY` ناقص أو `migrate` فشل |
+| 401 على `/api/expenses` | طبيعي بدون توكن — سجّل دخول من التطبيق أولاً |
+| البيانات تختفي بعد إعادة النشر | JSON + sqlite على قرص مؤقت — أرفق Database دائمة |
+
+---
+
+## مراجع
+
+- [Laravel Cloud — Deployments](https://cloud.laravel.com/docs/deployments)
+- [Laravel Cloud — Environments](https://cloud.laravel.com/docs/environments)
+- تشخيص 530: `docs/PRODUCTION_API.md`

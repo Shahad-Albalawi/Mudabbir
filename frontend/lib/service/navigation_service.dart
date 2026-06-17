@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
 
 enum SnackbarType { success, error, warning, info }
 
 class _SnackbarConfig {
-  final Color backgroundColor;
+  final Color accentColor;
   final Color textColor;
   final IconData icon;
 
   const _SnackbarConfig({
-    required this.backgroundColor,
+    required this.accentColor,
     required this.textColor,
     required this.icon,
   });
@@ -21,9 +22,13 @@ class NavigationService {
     return navigatorKey.currentState!.push(_animatedRoute(widget));
   }
 
-  Future<dynamic> navigateReplacment(Widget widget) {
+  Future<dynamic> navigateReplacement(Widget widget) {
     return navigatorKey.currentState!.pushReplacement(_animatedRoute(widget));
   }
+
+  @Deprecated('Use navigateReplacement')
+  Future<dynamic> navigateReplacment(Widget widget) =>
+      navigateReplacement(widget);
 
   Route _animatedRoute(Widget page) {
     return PageRouteBuilder(
@@ -81,7 +86,8 @@ class NavigationService {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
     // Get theme configuration
-    final config = _getSnackbarConfig(type);
+    final scheme = Theme.of(context).colorScheme;
+    final config = _getSnackbarConfig(scheme, type);
 
     final snackBar = SnackBar(
       duration: duration,
@@ -92,20 +98,16 @@ class NavigationService {
       content: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: config.backgroundColor,
+          color: scheme.surface,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          border: Border.all(
+            color: config.accentColor.withValues(alpha: 0.35),
+          ),
         ),
         child: Row(
           children: [
             // Icon
-            Icon(config.icon, color: config.textColor, size: 24),
+            Icon(config.icon, color: config.accentColor, size: 24),
             const SizedBox(width: 12),
 
             // Content
@@ -186,30 +188,30 @@ class NavigationService {
   }
 
   // Helper method to get configuration based on type
-  _SnackbarConfig _getSnackbarConfig(SnackbarType type) {
+  _SnackbarConfig _getSnackbarConfig(ColorScheme scheme, SnackbarType type) {
     switch (type) {
       case SnackbarType.success:
-        return const _SnackbarConfig(
-          backgroundColor: Color(0xFF10B981),
-          textColor: Colors.white,
+        return _SnackbarConfig(
+          accentColor: scheme.success,
+          textColor: scheme.onSurface,
           icon: Icons.check_circle_rounded,
         );
       case SnackbarType.error:
-        return const _SnackbarConfig(
-          backgroundColor: Color(0xFFEF4444),
-          textColor: Colors.white,
+        return _SnackbarConfig(
+          accentColor: scheme.error,
+          textColor: scheme.onSurface,
           icon: Icons.error_rounded,
         );
       case SnackbarType.warning:
-        return const _SnackbarConfig(
-          backgroundColor: Color(0xFFF59E0B),
-          textColor: Colors.white,
+        return _SnackbarConfig(
+          accentColor: scheme.warning,
+          textColor: scheme.onSurface,
           icon: Icons.warning_rounded,
         );
       case SnackbarType.info:
-        return const _SnackbarConfig(
-          backgroundColor: Color(0xFF3B82F6),
-          textColor: Colors.white,
+        return _SnackbarConfig(
+          accentColor: scheme.primary,
+          textColor: scheme.onSurface,
           icon: Icons.info_rounded,
         );
     }

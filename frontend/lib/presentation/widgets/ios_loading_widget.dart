@@ -1,33 +1,24 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
-import 'package:mudabbir/presentation/resources/color_manager.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
 
-/// iOS-style loading indicator.
-/// Uses Lottie when asset exists, otherwise CupertinoActivityIndicator.
+/// iOS-style loading indicator used app-wide.
 class IOSLoadingWidget extends StatelessWidget {
   final double size;
-  final bool useLottie;
 
-  const IOSLoadingWidget({super.key, this.size = 48, this.useLottie = true});
+  const IOSLoadingWidget({super.key, this.size = 48});
 
   @override
   Widget build(BuildContext context) {
-    if (useLottie) {
-      return SizedBox(
-        width: size,
-        height: size,
-        child: Lottie.asset('assets/lottie/loading.json', fit: BoxFit.contain),
-      );
-    }
+    final scheme = Theme.of(context).colorScheme;
     return CupertinoActivityIndicator(
-      radius: size / 2,
-      color: ColorManager.primary,
+      radius: size / 2.8,
+      color: scheme.primary,
     );
   }
 }
 
-/// Full-screen loading with optional message
+/// Full-screen loading with optional message.
 class IOSLoadingScreen extends StatelessWidget {
   final String? message;
 
@@ -45,7 +36,7 @@ class IOSLoadingScreen extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               message!,
-              style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 14),
+              style: TextStyle(color: scheme.textMuted, fontSize: 14),
             ),
           ],
         ],

@@ -74,4 +74,8 @@ class GoalHiveCache {
   Future<void> setPendingOps(List<Map<String, dynamic>> ops) async {
     await box.put(pendingOpsKey, ops);
   }
+
+  Future<void> clearAll() async {
+    await box.clear();
+  }
 }

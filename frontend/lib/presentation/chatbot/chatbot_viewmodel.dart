@@ -7,12 +7,17 @@ import 'package:mudabbir/data/local/database_helper.dart';
 import 'package:mudabbir/constants/api_constants.dart';
 import 'package:mudabbir/presentation/resources/chatbot_llm_prompt.dart';
 import 'package:mudabbir/presentation/resources/chatbot_ui_strings.dart';
+import 'package:mudabbir/domain/services/financial_aggregator.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/service/chatbot/chatbot_api_result.dart';
 import 'package:mudabbir/service/chatbot/chatbot_local_fallback.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/utils/dev_log.dart';
+import 'package:mudabbir/constants/hive_constants.dart';
+import 'package:mudabbir/service/hive_service.dart';
+import 'package:mudabbir/service/reporting/financial_report_builder.dart';
 import 'package:mudabbir/service/reporting/financial_report_service.dart';
+import 'package:mudabbir/utils/user_display_name.dart';
 import 'package:stacked/stacked.dart';
 import 'package:http/http.dart' as http;
 import 'chatbot_view.dart';
@@ -701,6 +706,7 @@ class ChatbotViewModel extends BaseViewModel {
     double monthlyIncome = 0;
     double monthlyExpense = 0;
     double previousExpense = 0;
+    double ledgerBalance = 0;
 
     for (final item in tx) {
       if (item is! Map) continue;
@@ -708,6 +714,11 @@ class ChatbotViewModel extends BaseViewModel {
       if (date == null) continue;
       final amount = double.tryParse((item['amount'] ?? '0').toString()) ?? 0;
       final type = (item['type'] ?? '').toString().toLowerCase();
+      if (type == 'income') {
+        ledgerBalance += amount;
+      } else if (type == 'expense') {
+        ledgerBalance -= amount;
+      }
       if (date.year == currentMonth.year && date.month == currentMonth.month) {
         if (type == 'income') monthlyIncome += amount;
         if (type == 'expense') monthlyExpense += amount;
@@ -755,6 +766,7 @@ class ChatbotViewModel extends BaseViewModel {
       'monthly_income': monthlyIncome,
       'monthly_expense': monthlyExpense,
       'monthly_balance': monthlyBalance,
+      'ledger_balance': ledgerBalance,
       'score': score,
       'alerts': alerts,
     };
@@ -841,16 +853,16 @@ class ChatbotViewModel extends BaseViewModel {
       final contextData = await _getAllDatabaseContext();
       final insights = _buildFinancialInsights(contextData);
       final categoryBreakdown = _buildCategoryExpenseBreakdown(contextData);
-      await _reportService.shareMonthlyReport(
-        income: (insights['monthly_income'] as num?)?.toDouble() ?? 0,
-        expense: (insights['monthly_expense'] as num?)?.toDouble() ?? 0,
-        balance: (insights['monthly_balance'] as num?)?.toDouble() ?? 0,
-        healthScore: (insights['score'] as int?) ?? 0,
-        alerts: (insights['alerts'] as List<dynamic>)
-            .map((e) => e.toString())
-            .toList(),
-        categoryBreakdown: categoryBreakdown,
+      final userName = UserDisplayName.fromSavedUserInfo(
+        getIt<HiveService>().getValue(HiveConstants.savedUserInfo),
       );
+      final reportData = FinancialReportBuilder.fromContext(
+        contextData: contextData,
+        insights: insights,
+        categoryBreakdown: categoryBreakdown,
+        userName: userName,
+      );
+      await _reportService.shareMonthlyReport(reportData);
       messages.add(ChatMessage(text: ChatbotUi.pdfOk, isUser: false));
     } catch (_) {
       messages.add(ChatMessage(text: ChatbotUi.pdfFail, isUser: false));
@@ -1154,9 +1166,18 @@ class ChatbotViewModel extends BaseViewModel {
     try {
       // Get accounts
       final accountsResult = await _dbHelper.queryAllRows('accounts');
-      accountsResult.fold(
-        (empty) => context['accounts'] = [],
-        (data) => context['accounts'] = data,
+      final aggregator = FinancialAggregator();
+      context['accounts'] = await accountsResult.fold(
+        (_) async => <Map<String, dynamic>>[],
+        (data) async {
+          final enriched = <Map<String, dynamic>>[];
+          for (final row in data) {
+            final id = row['id'] as int;
+            final balance = await aggregator.ledgerBalance(accountId: id);
+            enriched.add({...row, 'balance': balance});
+          }
+          return enriched;
+        },
       );
 
       // Get categories

@@ -232,7 +232,8 @@ class BehavioralAnalysisEngine {
     }
 
     if (raw.currentMonthTransactionCount >= 8) {
-      final dailyAvg = raw.currentMonthTransactionCount / 30.0;
+      final daysElapsed = DateTime.now().day.clamp(1, 31);
+      final dailyAvg = raw.currentMonthTransactionCount / daysElapsed;
       if (dailyAvg >= 1.5) {
         anomalies.add(
           SpendingAnomaly(

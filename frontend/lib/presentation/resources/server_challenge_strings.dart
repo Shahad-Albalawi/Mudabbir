@@ -1,3 +1,4 @@
+import 'package:mudabbir/presentation/resources/currency_formatter.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 
 /// Bilingual copy for server challenges, invite share, and local challenge popup.
@@ -117,7 +118,7 @@ class ServerChallengeStrings {
   static String localCreateFailed(Object e) =>
       _e ? 'Could not create challenge: $e' : 'فشل في إنشاء التحدي: $e';
 
-  /// Stored in local DB (matches existing [ChallengesView] keys).
+  /// Stored in local SQLite for offline challenge progress keys.
   static const String statusActiveKey = 'نشط';
   static const String statusCompletedKey = 'مكتمل';
   static const String statusCancelledKey = 'ملغي';
@@ -388,8 +389,7 @@ class ServerChallengeStrings {
   static String get templateCreated =>
       _e ? 'Challenge started from template' : 'تم بدء التحدي من القالب';
 
-  static String formatAmount(double amount) =>
-      '${amount.toStringAsFixed(0)} ${_e ? 'SAR' : '﷼'}';
+  static String formatAmount(double amount) => AppCurrency.format(amount);
 
   static String get offlineBanner => _e
       ? 'Offline — showing saved data. Changes will sync when you reconnect.'

@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:mudabbir/constants/app_flags.dart';
 import 'package:mudabbir/constants/hive_constants.dart';
+import 'package:mudabbir/data/local/challenge_hive_cache.dart';
+import 'package:mudabbir/data/local/expense_hive_cache.dart';
+import 'package:mudabbir/data/local/goal_hive_cache.dart';
 import 'package:mudabbir/data/local/local_database.dart';
 import 'package:mudabbir/service/debug/demo_seed_service.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/hive_service.dart';
 import 'package:mudabbir/service/security/auth_token_secure_store.dart';
 import 'package:mudabbir/utils/dev_log.dart';
+import 'package:mudabbir/utils/local_db_user_id.dart';
 
 class AuthNotifier extends ChangeNotifier {
   final HiveService _hiveService = getIt<HiveService>();
@@ -40,7 +44,7 @@ class AuthNotifier extends ChangeNotifier {
       // Initialize the database for the existing user session.
       final user = _hiveService.getValue(HiveConstants.savedUserInfo);
       if (user != null && user is Map) {
-        await LocalDatabase.instance.initForUser(user['name']);
+        await LocalDatabase.instance.initForUser(resolveLocalDbUserId(user));
         if (AppFlags.enableDemoSeed) {
           await DemoSeedService.seedIfDatabaseEmpty();
         }
@@ -49,7 +53,10 @@ class AuthNotifier extends ChangeNotifier {
     } else {
       _isLoggedIn = false;
       if (AppFlags.allowGuestHome) {
-        await LocalDatabase.instance.initForUser('guest_user');
+        final guestUser = resolveLocalDbUserId(
+          _hiveService.getValue(HiveConstants.savedUserInfo),
+        );
+        await LocalDatabase.instance.initForUser(guestUser);
         if (AppFlags.enableDemoSeed) {
           await DemoSeedService.seedIfDatabaseEmpty();
         }
@@ -71,11 +78,12 @@ class AuthNotifier extends ChangeNotifier {
       await getIt<AuthTokenSecureStore>().writeToken(token);
 
       // 2. Initialize the database for the new user session.
-      await LocalDatabase.instance.initForUser(user['name']);
+      final dbUserId = resolveLocalDbUserId(user);
+      await LocalDatabase.instance.initForUser(dbUserId);
       if (AppFlags.enableDemoSeed) {
         await DemoSeedService.seedIfDatabaseEmpty();
       }
-      devLog('Database initialized for new user: ${user['name']}');
+      devLog('Database initialized for new user: $dbUserId');
 
       // 3. Update the state.
       _isLoggedIn = true;
@@ -102,6 +110,10 @@ class AuthNotifier extends ChangeNotifier {
     await _hiveService.deleteValue(HiveConstants.savedToken);
     await _hiveService.deleteValue(HiveConstants.savedUserInfo);
     await getIt<AuthTokenSecureStore>().clearToken();
+
+    await getIt<ExpenseHiveCache>().clearAll();
+    await getIt<GoalHiveCache>().clearAll();
+    await getIt<ChallengeHiveCache>().clearAll();
 
     // 2. Guest DB for offline home, or close DB when login is required.
     if (AppFlags.allowGuestHome) {

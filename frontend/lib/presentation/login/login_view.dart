@@ -10,7 +10,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mudabbir/service/routing_service/auth_notifier.dart';
 import 'package:mudabbir/utils/dev_log.dart';
-import '../resources/color_manager.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
+import 'package:mudabbir/presentation/widgets/app_card.dart';
 import '../resources/strings_manager.dart';
 
 class LoginView extends ConsumerWidget {
@@ -74,83 +75,36 @@ class LoginView extends ConsumerWidget {
     return Scaffold(
       backgroundColor: scheme.surfaceContainerHighest,
       body: SafeArea(
-        child: Stack(
-          children: [
-            _buildModernBackground(context),
-            Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 20,
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            child: Column(
+              children: [
+                Icon(
+                  CupertinoIcons.creditcard,
+                  size: 48,
+                  color: scheme.primary,
                 ),
-                child: Column(
-                  children: [
-                    // App Logo/Icon
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 40),
-                      child: Column(
-                        children: [
-                          Container(
-                            width: 92,
-                            height: 92,
-                            decoration: BoxDecoration(
-                              color: scheme.primary.withValues(alpha: 0.14),
-                              borderRadius: BorderRadius.circular(28),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: scheme.primary.withValues(alpha: 0.12),
-                                  blurRadius: 18,
-                                  offset: const Offset(0, 10),
-                                ),
-                              ],
-                            ),
-                            child: const Center(
-                              child: Icon(
-                                CupertinoIcons.creditcard_fill,
-                                color: ColorManager.primary,
-                                size: 48,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          Text(
-                            AppStrings.loginWelcome,
-                            style: TextStyle(
-                              fontSize: 30,
-                              fontWeight: FontWeight.w800,
-                              color: scheme.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            AppStrings.loginSubtitle,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: scheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // Login Form Card
-                    Container(
-                      padding: const EdgeInsets.all(28),
-                      decoration: BoxDecoration(
-                        color: scheme.surface,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: scheme.outline.withValues(alpha: 0.25),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.06),
-                            blurRadius: 24,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: Form(
+                const SizedBox(height: 16),
+                Text(
+                  AppStrings.loginWelcome,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  AppStrings.loginSubtitle,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: scheme.textMuted,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                AppCard(
+                  margin: EdgeInsets.zero,
+                  padding: const EdgeInsets.all(24),
+                  child: Form(
                         key: formKey,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -175,50 +129,58 @@ class LoginView extends ConsumerWidget {
                                   decoration: InputDecoration(
                                     hintText: AppStrings.emailHint,
                                     hintStyle: TextStyle(
-                                      color: ColorManager.textSecondary
+                                      color: scheme.textMuted
                                           .withValues(alpha: 0.7),
                                     ),
                                     prefixIcon: Container(
                                       margin: const EdgeInsets.all(12),
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        color: ColorManager.primary.withValues(
+                                        color: scheme.primary.withValues(
                                           alpha: 0.1,
                                         ),
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Icon(
                                         Icons.email_outlined,
-                                        color: ColorManager.primary,
+                                        color: scheme.primary,
                                         size: 20,
                                       ),
                                     ),
                                     filled: true,
-                                    fillColor: ColorManager.background
+                                    fillColor: scheme.surfaceContainerHighest
                                         .withValues(alpha: 0.5),
                                     border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(15),
+                                      borderRadius: BorderRadius.circular(
+                                        AppLayout.chipRadius,
+                                      ),
                                       borderSide: BorderSide.none,
                                     ),
                                     enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(15),
+                                      borderRadius: BorderRadius.circular(
+                                        AppLayout.chipRadius,
+                                      ),
                                       borderSide: BorderSide(
-                                        color: ColorManager.primary.withValues(
+                                        color: scheme.primary.withValues(
                                           alpha: 0.3,
                                         ),
                                       ),
                                     ),
                                     focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(15),
+                                      borderRadius: BorderRadius.circular(
+                                        AppLayout.chipRadius,
+                                      ),
                                       borderSide: BorderSide(
-                                        color: ColorManager.primary,
+                                        color: scheme.primary,
                                         width: 2,
                                       ),
                                     ),
                                     errorBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(15),
-                                      borderSide: const BorderSide(
-                                        color: ColorManager.error,
+                                      borderRadius: BorderRadius.circular(
+                                        AppLayout.chipRadius,
+                                      ),
+                                      borderSide: BorderSide(
+                                        color: scheme.error,
                                       ),
                                     ),
                                     contentPadding: const EdgeInsets.symmetric(
@@ -262,50 +224,58 @@ class LoginView extends ConsumerWidget {
                                   decoration: InputDecoration(
                                     hintText: AppStrings.passwordHint,
                                     hintStyle: TextStyle(
-                                      color: ColorManager.textSecondary
+                                      color: scheme.textMuted
                                           .withValues(alpha: 0.7),
                                     ),
                                     prefixIcon: Container(
                                       margin: const EdgeInsets.all(12),
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        color: ColorManager.primary.withValues(
+                                        color: scheme.primary.withValues(
                                           alpha: 0.1,
                                         ),
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Icon(
                                         Icons.lock_outline,
-                                        color: ColorManager.primary,
+                                        color: scheme.primary,
                                         size: 20,
                                       ),
                                     ),
                                     filled: true,
-                                    fillColor: ColorManager.background
+                                    fillColor: scheme.surfaceContainerHighest
                                         .withValues(alpha: 0.5),
                                     border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(15),
+                                      borderRadius: BorderRadius.circular(
+                                        AppLayout.chipRadius,
+                                      ),
                                       borderSide: BorderSide.none,
                                     ),
                                     enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(15),
+                                      borderRadius: BorderRadius.circular(
+                                        AppLayout.chipRadius,
+                                      ),
                                       borderSide: BorderSide(
-                                        color: ColorManager.primary.withValues(
+                                        color: scheme.primary.withValues(
                                           alpha: 0.3,
                                         ),
                                       ),
                                     ),
                                     focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(15),
+                                      borderRadius: BorderRadius.circular(
+                                        AppLayout.chipRadius,
+                                      ),
                                       borderSide: BorderSide(
-                                        color: ColorManager.primary,
+                                        color: scheme.primary,
                                         width: 2,
                                       ),
                                     ),
                                     errorBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(15),
-                                      borderSide: const BorderSide(
-                                        color: ColorManager.error,
+                                      borderRadius: BorderRadius.circular(
+                                        AppLayout.chipRadius,
+                                      ),
+                                      borderSide: BorderSide(
+                                        color: scheme.error,
                                       ),
                                     ),
                                     contentPadding: const EdgeInsets.symmetric(
@@ -327,41 +297,20 @@ class LoginView extends ConsumerWidget {
                             ),
                             const SizedBox(height: 32),
 
-                            // Login Button
-                            Container(
-                              height: 56,
-                              decoration: BoxDecoration(
-                                color: scheme.primary,
-                                borderRadius: BorderRadius.circular(18),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: scheme.primary.withValues(
-                                      alpha: 0.24,
-                                    ),
-                                    blurRadius: 14,
-                                    offset: const Offset(0, 8),
-                                  ),
-                                ],
-                              ),
+                            SizedBox(
+                              height: 48,
                               child: loginState.isLoading
-                                  ? const Center(
-                                      child: CircularProgressIndicator(
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                              ColorManager.white,
-                                            ),
-                                      ),
-                                    )
-                                  : ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.transparent,
-                                        shadowColor: Colors.transparent,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            18,
-                                          ),
+                                  ? Center(
+                                      child: SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.5,
+                                          color: scheme.primary,
                                         ),
                                       ),
+                                    )
+                                  : FilledButton(
                                       onPressed: () async {
                                         if (formKey.currentState!.validate()) {
                                           await loginViewModel.login(
@@ -370,14 +319,7 @@ class LoginView extends ConsumerWidget {
                                           );
                                         }
                                       },
-                                      child: Text(
-                                        AppStrings.signIn,
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: ColorManager.white,
-                                        ),
-                                      ),
+                                      child: Text(AppStrings.signIn),
                                     ),
                             ),
                           ],
@@ -397,7 +339,7 @@ class LoginView extends ConsumerWidget {
                             AppStrings.noAccount,
                             style: TextStyle(
                               fontSize: 16,
-                              color: scheme.onSurfaceVariant,
+                              color: scheme.textMuted,
                             ),
                           ),
                           GestureDetector(
@@ -420,41 +362,7 @@ class LoginView extends ConsumerWidget {
                 ),
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildModernBackground(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Stack(
-      children: [
-        Positioned(
-          top: -80,
-          right: -60,
-          child: Container(
-            width: 220,
-            height: 220,
-            decoration: BoxDecoration(
-              color: scheme.primary.withValues(alpha: 0.10),
-              shape: BoxShape.circle,
-            ),
           ),
-        ),
-        Positioned(
-          bottom: -90,
-          left: -70,
-          child: Container(
-            width: 250,
-            height: 250,
-            decoration: BoxDecoration(
-              color: scheme.secondary.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

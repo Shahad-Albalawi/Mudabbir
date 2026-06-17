@@ -8,10 +8,12 @@ class ExpensesApiTest extends TestCase
 {
     public function test_expenses_crud_workflow(): void
     {
-        $index = $this->getJson('/api/expenses');
+        $auth = $this->registerUser('expenses@example.com');
+
+        $index = $this->withApiAuth($auth)->getJson('/api/expenses');
         $index->assertStatus(200)->assertJsonPath('success', true);
 
-        $create = $this->postJson('/api/expenses', [
+        $create = $this->withApiAuth($auth)->postJson('/api/expenses', [
             'amount' => 120.5,
             'date' => '2025-05-01',
             'type' => 'expense',
@@ -25,16 +27,21 @@ class ExpensesApiTest extends TestCase
         $create->assertStatus(201)->assertJsonPath('success', true);
         $id = (int) $create->json('data.id');
 
-        $show = $this->getJson("/api/expenses/{$id}");
+        $show = $this->withApiAuth($auth)->getJson("/api/expenses/{$id}");
         $show->assertStatus(200)->assertJsonPath('data.amount', 120.5);
 
-        $update = $this->putJson("/api/expenses/{$id}", [
+        $update = $this->withApiAuth($auth)->putJson("/api/expenses/{$id}", [
             'amount' => 150,
             'notes' => 'محدّث',
         ]);
         $update->assertStatus(200)->assertJsonPath('data.amount', 150);
 
-        $delete = $this->deleteJson("/api/expenses/{$id}");
+        $delete = $this->withApiAuth($auth)->deleteJson("/api/expenses/{$id}");
         $delete->assertStatus(200)->assertJsonPath('success', true);
+    }
+
+    public function test_expenses_require_authentication(): void
+    {
+        $this->getJson('/api/expenses')->assertStatus(401);
     }
 }

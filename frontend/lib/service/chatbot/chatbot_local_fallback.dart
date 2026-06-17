@@ -13,7 +13,7 @@ class ChatbotLocalFallback {
     final q = userMessage.toLowerCase();
     final income = _num(insights['monthly_income']);
     final expense = _num(insights['monthly_expense']);
-    final balance = _num(insights['monthly_balance']);
+    final balance = _num(insights['ledger_balance']);
     final score = (insights['score'] as int?) ?? 0;
     final alerts = (insights['alerts'] as List<dynamic>? ?? [])
         .map((e) => e.toString())
@@ -172,15 +172,44 @@ class ChatbotLocalFallback {
     }
 
     final amount = _num(current['amount']);
-    final remaining = amount - expense;
-    final usedPct = amount <= 0 ? 0 : ((expense / amount) * 100).clamp(0, 999);
+    final accountId = (current['account_id'] as num?)?.toInt();
+    final accountExpense = _monthlyExpenseForAccount(
+      contextData,
+      accountId: accountId,
+    );
+    final remaining = amount - accountExpense;
+    final usedPct =
+        amount <= 0 ? 0 : ((accountExpense / amount) * 100).clamp(0, 999);
 
     return ChatbotUi.localFallbackBudget(
       amount.toStringAsFixed(0),
-      expense.toStringAsFixed(0),
+      accountExpense.toStringAsFixed(0),
       remaining.toStringAsFixed(0),
       usedPct.toStringAsFixed(0),
     );
+  }
+
+  static double _monthlyExpenseForAccount(
+    Map<String, dynamic> contextData, {
+    int? accountId,
+  }) {
+    final txRaw = contextData['transactions'];
+    final tx = txRaw is List ? txRaw : const <dynamic>[];
+    final now = DateTime.now();
+    var total = 0.0;
+    for (final item in tx) {
+      if (item is! Map) continue;
+      if ((item['type'] ?? '').toString() != 'expense') continue;
+      if (accountId != null && (item['account_id'] as num?)?.toInt() != accountId) {
+        continue;
+      }
+      final date = DateTime.tryParse((item['date'] ?? '').toString());
+      if (date == null) continue;
+      if (date.year == now.year && date.month == now.month) {
+        total += _num(item['amount']);
+      }
+    }
+    return total;
   }
 
   static String _expenseSection(

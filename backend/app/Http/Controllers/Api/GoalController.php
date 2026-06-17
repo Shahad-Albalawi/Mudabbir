@@ -17,14 +17,17 @@ class GoalController extends Controller
         $this->store = $store;
     }
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        return response()->json(['success' => true, 'data' => $this->store->all()]);
+        $userId = (int) $request->user()->id;
+
+        return response()->json(['success' => true, 'data' => $this->store->all($userId)]);
     }
 
-    public function show(int $id): JsonResponse
+    public function show(Request $request, int $id): JsonResponse
     {
-        $goal = $this->store->find($id);
+        $userId = (int) $request->user()->id;
+        $goal = $this->store->find($id, $userId);
         if (! $goal) {
             return response()->json(['success' => false, 'message' => 'Goal not found'], 404);
         }
@@ -44,8 +47,10 @@ class GoalController extends Controller
             'image_path' => ['nullable', 'string'],
         ]);
 
+        $userId = (int) $request->user()->id;
+
         return response()->json(
-            ['success' => true, 'data' => $this->store->create($payload)],
+            ['success' => true, 'data' => $this->store->create($payload, $userId)],
             201
         );
     }
@@ -57,7 +62,8 @@ class GoalController extends Controller
             'note' => ['nullable', 'string'],
         ]);
 
-        $goal = $this->store->addContribution($id, $payload);
+        $userId = (int) $request->user()->id;
+        $goal = $this->store->addContribution($id, $payload, $userId);
         if (! $goal) {
             return response()->json(
                 ['success' => false, 'message' => 'Goal not found or already completed'],
@@ -68,9 +74,10 @@ class GoalController extends Controller
         return response()->json(['success' => true, 'data' => $goal]);
     }
 
-    public function destroy(int $id): JsonResponse
+    public function destroy(Request $request, int $id): JsonResponse
     {
-        if (! $this->store->delete($id)) {
+        $userId = (int) $request->user()->id;
+        if (! $this->store->delete($id, $userId)) {
             return response()->json(['success' => false, 'message' => 'Goal not found'], 404);
         }
 

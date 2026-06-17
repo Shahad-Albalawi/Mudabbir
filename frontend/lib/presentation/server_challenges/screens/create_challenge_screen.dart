@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mudabbir/presentation/resources/color_manager.dart';
 import 'package:mudabbir/presentation/resources/server_challenge_strings.dart';
@@ -57,39 +58,23 @@ class _CreateChallengeScreenState extends ConsumerState<CreateChallengeScreen> {
     final operationState = ref.watch(challengeOperationProvider);
     final isLoading = operationState is ChallengeOperationLoading;
 
+    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              ColorManager.primary,
-              ColorManager.primary.withValues(alpha: 0.8),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildAppBar(context),
-              Expanded(
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(32),
-                      topRight: Radius.circular(32),
-                    ),
-                  ),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
-                    child: Form(
+      backgroundColor: scheme.surfaceContainerHighest,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildAppBar(context),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Form(
                       key: _formKey,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildSectionTitle(
+                            context,
                             ServerChallengeStrings.sectionDetails,
                           ),
                           const SizedBox(height: 16),
@@ -98,6 +83,7 @@ class _CreateChallengeScreenState extends ConsumerState<CreateChallengeScreen> {
                           _buildAmountField(),
                           const SizedBox(height: 24),
                           _buildSectionTitle(
+                            context,
                             ServerChallengeStrings.sectionSchedule,
                           ),
                           const SizedBox(height: 16),
@@ -108,38 +94,42 @@ class _CreateChallengeScreenState extends ConsumerState<CreateChallengeScreen> {
                       ),
                     ),
                   ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildAppBar(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Row(
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+            icon: Icon(Icons.arrow_back_ios, color: scheme.onSurface, size: 18),
           ),
           const SizedBox(width: 8),
           Text(
             ServerChallengeStrings.createTitle,
-            style: getBoldStyle(fontSize: FontSize.s24, color: Colors.white),
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(BuildContext context, String title) {
     return Text(
       title,
-      style: getBoldStyle(fontSize: FontSize.s16, color: ColorManager.darkGrey),
+      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+        fontWeight: FontWeight.w600,
+        color: Theme.of(context).colorScheme.textMuted,
+      ),
     );
   }
 

@@ -46,9 +46,17 @@ class ExpenseApiService {
   ) async {
     try {
       final response = await _dioClient.dio.put('/expenses/$id', data: payload);
-      if (response.data['success'] == true) {
+      final body = response.data;
+      if (response.statusCode == 409 && body is Map<String, dynamic>) {
+        throw ApiException(
+          message: body['message'] as String? ?? 'Sync conflict',
+          statusCode: 409,
+          conflictData: body['data'],
+        );
+      }
+      if (body is Map && body['success'] == true) {
         return ExpenseTransaction.fromMap(
-          Map<String, dynamic>.from(response.data['data'] as Map),
+          Map<String, dynamic>.from(body['data'] as Map),
         );
       }
       throw ApiException(message: 'Failed to update expense');
