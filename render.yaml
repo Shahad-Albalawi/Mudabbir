@@ -1,12 +1,11 @@
-# Render Blueprint — Mudabbir API (PHP via Docker; Render has no native PHP runtime)
+# Render Blueprint — Mudabbir API (PHP via Docker)
 services:
   - type: web
     name: mudabbir-backend-api
     runtime: docker
     plan: free
-    rootDir: backend
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
     healthCheckPath: /api/health
     autoDeploy: true
     envVars:
@@ -16,6 +15,8 @@ services:
         value: false
       - key: DB_CONNECTION
         value: sqlite
+      - key: LOG_CHANNEL
+        value: stderr
       - key: LOG_LEVEL
         value: warning
       - key: APP_URL
