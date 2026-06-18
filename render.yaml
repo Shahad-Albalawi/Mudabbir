@@ -1,0 +1,9 @@
+# Docker deploy for Render (see repo-root render.yaml)
+services:
+  - type: web
+    name: mudabbir-backend-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
