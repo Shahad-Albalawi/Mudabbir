@@ -1,16 +1,9 @@
-# Used when deploying from backend/ only. Prefer repo-root render.yaml for Blueprint.
+# Docker deploy for Render (see repo-root render.yaml)
 services:
   - type: web
     name: mudabbir-backend-api
-    runtime: php
+    runtime: docker
     plan: free
-    buildCommand: >-
-      composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
-      && mkdir -p database storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
-      && touch database/database.sqlite
-      && php artisan migrate --force
-      && php artisan config:cache
-      && php artisan route:cache
-    startCommand: php artisan config:clear && php artisan serve --host 0.0.0.0 --port $PORT
+    dockerfilePath: ./Dockerfile
     healthCheckPath: /api/health
     autoDeploy: true

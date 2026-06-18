@@ -16,10 +16,10 @@
 
 1. اضغطي **New +** → **Blueprint**
 2. اختاري المستودع: **`Shahad-Albalawi/Mudabbir`**
-3. Render يقرأ `render.yaml` من جذر المستودع
-4. اضغطي **Apply** أو **Approve**
+3. **Branch:** `main` · **Blueprint Path:** `render.yaml`
+4. اضغطي **Apply**
 
-> إذا ما ظهر Blueprint: **New +** → **Web Service** → نفس المستودع → **Root Directory** = `backend` → انسخي أوامر البناء من `backend/render.yaml`.
+> Render **لا يدعم** `runtime: php`. المشروع يستخدم **Docker** (`backend/Dockerfile`).
 
 ---
 
