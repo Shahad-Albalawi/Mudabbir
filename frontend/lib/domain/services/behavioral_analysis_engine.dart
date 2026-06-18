@@ -1,4 +1,5 @@
 import 'package:mudabbir/domain/models/behavioral_snapshot.dart';
+import 'package:mudabbir/domain/services/insight_thresholds.dart';
 import 'package:mudabbir/presentation/resources/behavioral_strings.dart';
 import 'package:mudabbir/presentation/resources/entity_localizations.dart';
 import 'package:mudabbir/presentation/statistics/statistics_viewmodel.dart';
@@ -10,8 +11,8 @@ class BehavioralAnalysisEngine {
   static const double _spikeThreshold = 1.25;
   static const double _categorySpikeThreshold = 1.5;
   static const double _minCategorySpikeAmount = 100;
-  static const double _largeTxnIncomeRatio = 0.15;
-  static const double _largeTxnMinAmount = 500;
+  static const double _largeTxnIncomeRatio = InsightThresholds.largeExpenseIncomeRatio;
+  static const double _largeTxnMinAmount = InsightThresholds.largeExpenseMinAmount;
   static const double _weekendShareThreshold = 0.45;
 
   static BehavioralSnapshot build({
@@ -65,7 +66,7 @@ class BehavioralAnalysisEngine {
       score += 35;
     } else if (monthlySavingsRate >= 20) {
       score += 30;
-    } else if (monthlySavingsRate >= 10) {
+    } else if (monthlySavingsRate >= InsightThresholds.savingsRatePercentGood) {
       score += 22;
     } else if (monthlySavingsRate >= 5) {
       score += 12;
@@ -198,7 +199,7 @@ class BehavioralAnalysisEngine {
           anomalies.add(
             SpendingAnomaly(
               type: AnomalyType.largeTransaction,
-              severity: incomeRatio >= 0.25
+              severity: incomeRatio >= InsightThresholds.largeExpenseIncomeCritical
                   ? AnomalySeverity.critical
                   : AnomalySeverity.warning,
               titleKey: 'largeTransactionTitle',

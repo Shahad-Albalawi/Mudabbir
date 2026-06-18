@@ -8,7 +8,11 @@ import 'package:mudabbir/constants/api_constants.dart';
 import 'package:mudabbir/presentation/resources/chatbot_llm_prompt.dart';
 import 'package:mudabbir/presentation/resources/chatbot_ui_strings.dart';
 import 'package:mudabbir/domain/services/financial_aggregator.dart';
+import 'package:mudabbir/domain/services/health_score_calculator.dart';
+import 'package:mudabbir/domain/services/insight_thresholds.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
+import 'package:mudabbir/presentation/server_challenges/utils/dio_client.dart';
+import 'package:dio/dio.dart';
 import 'package:mudabbir/service/chatbot/chatbot_api_result.dart';
 import 'package:mudabbir/service/chatbot/chatbot_local_fallback.dart';
 import 'package:mudabbir/service/getit_init.dart';
@@ -19,7 +23,6 @@ import 'package:mudabbir/service/reporting/financial_report_builder.dart';
 import 'package:mudabbir/service/reporting/financial_report_service.dart';
 import 'package:mudabbir/utils/user_display_name.dart';
 import 'package:stacked/stacked.dart';
-import 'package:http/http.dart' as http;
 import 'chatbot_view.dart';
 
 enum ChatQuickAction { createGoal, adjustBudget, reduceCategory, exportReport }
@@ -731,23 +734,10 @@ class ChatbotViewModel extends BaseViewModel {
     }
 
     final monthlyBalance = monthlyIncome - monthlyExpense;
-    int score = 50;
-    final savingsRate = monthlyIncome <= 0
-        ? 0.0
-        : (monthlyBalance / monthlyIncome);
-    if (savingsRate >= 0.30) {
-      score += 30;
-    } else if (savingsRate >= 0.20) {
-      score += 20;
-    } else if (savingsRate >= 0.10) {
-      score += 10;
-    } else if (savingsRate < 0) {
-      score -= 25;
-    }
-    if (monthlyExpense > monthlyIncome && monthlyIncome > 0) {
-      score -= 15;
-    }
-    score = score.clamp(0, 100);
+    final score = HealthScoreCalculator.fromMonthly(
+      monthlyIncome: monthlyIncome,
+      monthlyExpense: monthlyExpense,
+    );
 
     final alerts = <String>[];
     if (monthlyIncome > 0 && monthlyExpense > monthlyIncome) {
@@ -755,7 +745,7 @@ class ChatbotViewModel extends BaseViewModel {
     }
     if (previousExpense > 0) {
       final growth = (monthlyExpense - previousExpense) / previousExpense;
-      if (growth >= 0.25) {
+      if (growth >= InsightThresholds.monthOverMonthSpendingAlert) {
         alerts.add(
           ChatbotUi.alertSpendingGrowth((growth * 100).toStringAsFixed(0)),
         );
@@ -1262,6 +1252,7 @@ class ChatbotViewModel extends BaseViewModel {
 
   Future<ChatbotApiResult> _sendToBackend(String content) async {
     Object? lastError;
+    final dio = getIt<DioClient>().dio;
 
     for (final url in _apiUrls) {
       devLog('[Chatbot API] Trying $url (timeout: ${_apiTimeout.inSeconds}s)');
@@ -1269,70 +1260,70 @@ class ChatbotViewModel extends BaseViewModel {
       for (final body in _candidatePayloads(content)) {
         try {
           final stopwatch = Stopwatch()..start();
-          final response = await http
-              .post(
-                Uri.parse(url),
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Accept': 'application/json',
-                  'User-Agent': 'MudabbirFlutter/1.0',
-                },
-                body: jsonEncode(body),
-              )
-              .timeout(
-                _apiTimeout,
-                onTimeout: () => throw TimeoutException('طلب الموارد'),
-              );
-
-          stopwatch.stop();
-          devLog(
-            '[Chatbot API] ${response.statusCode} ${stopwatch.elapsedMilliseconds}ms body=$body',
+          final response = await dio.post<List<int>>(
+            url,
+            data: body,
+            options: Options(
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'User-Agent': 'MudabbirFlutter/1.0',
+              },
+              receiveTimeout: _apiTimeout,
+              sendTimeout: _apiTimeout,
+              responseType: ResponseType.bytes,
+            ),
           );
 
-          if (response.statusCode == 200) {
-            final result = _parseApiResponse(response.bodyBytes);
+          stopwatch.stop();
+          final statusCode = response.statusCode ?? 0;
+          final bodyBytes = response.data ?? const <int>[];
+          devLog(
+            '[Chatbot API] $statusCode ${stopwatch.elapsedMilliseconds}ms body=$body',
+          );
+
+          if (statusCode == 200) {
+            final result = _parseApiResponse(bodyBytes);
             if (result.isNotEmpty) {
               return ChatbotApiResult.success(result);
             }
             return ChatbotApiResult.fallback();
           }
 
-          if (response.statusCode == 429 ||
-              _isQuotaResponse(response.statusCode, response.bodyBytes)) {
+          if (statusCode == 429 || _isQuotaResponse(statusCode, bodyBytes)) {
             return ChatbotApiResult.quotaExceeded();
           }
 
-          // If backend returns internal error with specific code like 53, map to friendly text.
-          if (response.statusCode >= 500) {
-            final serverMessage = _extractServerErrorMessage(
-              response.bodyBytes,
-            );
+          if (statusCode >= 500) {
+            final serverMessage = _extractServerErrorMessage(bodyBytes);
             if (_isQuotaMessage(serverMessage)) {
               return ChatbotApiResult.quotaExceeded();
             }
             if (serverMessage.contains('53')) {
               return ChatbotApiResult.failure(ChatbotUi.server53);
             }
-            lastError = 'HTTP ${response.statusCode}: $serverMessage';
+            lastError = 'HTTP $statusCode: $serverMessage';
             continue;
           }
 
-          // 404/405 may indicate wrong endpoint/body shape, so continue trying fallbacks.
-          if (response.statusCode == 404 ||
-              response.statusCode == 405 ||
-              response.statusCode == 422) {
-            lastError = 'HTTP ${response.statusCode}';
+          if (statusCode == 404 || statusCode == 405 || statusCode == 422) {
+            lastError = 'HTTP $statusCode';
             continue;
           }
 
-          // For other status codes, stop and return a clear code.
           return ChatbotApiResult.failure(
-            ChatbotUi.httpError(response.statusCode),
+            ChatbotUi.httpError(statusCode),
           );
-        } on TimeoutException {
-          // Timeout is likely global connectivity/latency issue; no need to keep retrying many shapes.
-          return ChatbotApiResult.fallback();
-        } on http.ClientException catch (e) {
+        } on DioException catch (e) {
+          if (e.type == DioExceptionType.connectionTimeout ||
+              e.type == DioExceptionType.receiveTimeout ||
+              e.type == DioExceptionType.sendTimeout) {
+            return ChatbotApiResult.fallback();
+          }
+          if (e.type == DioExceptionType.connectionError) {
+            lastError = e;
+            continue;
+          }
           lastError = e;
           continue;
         } on SocketException catch (e) {
@@ -1346,7 +1337,9 @@ class ChatbotViewModel extends BaseViewModel {
     }
 
     devLog('[Chatbot API] All retries failed: $lastError');
-    if (lastError is SocketException || lastError is http.ClientException) {
+    if (lastError is SocketException ||
+        (lastError is DioException &&
+            lastError.type == DioExceptionType.connectionError)) {
       return ChatbotApiResult.fallback();
     }
     return ChatbotApiResult.fallback();

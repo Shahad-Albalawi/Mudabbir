@@ -1,5 +1,7 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mudabbir/domain/models/behavioral_snapshot.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mudabbir/domain/services/health_score_calculator.dart';
+import 'package:mudabbir/domain/services/insight_thresholds.dart';
 import 'package:mudabbir/domain/repository/behavioral_analysis_repository/behavioral_analysis_repository.dart';
 import 'package:mudabbir/presentation/resources/analysis_copy.dart';
 import 'package:mudabbir/presentation/resources/entity_localizations.dart';
@@ -158,7 +160,10 @@ class AnalysisLogic {
       final spendingAnalysis = _analyzeSpending(statistics);
       final savingsAnalysis = _analyzeSavings(savingsRate);
       final categoryInsights = _analyzeCategorySpending(statistics);
-      final healthScore = _calculateHealthScore(statistics, savingsRate);
+      final healthScore = HealthScoreCalculator.fromStatistics(
+        statistics,
+        savingsRate,
+      );
       final healthRating = _getHealthRating(healthScore);
       final recommendations = _generateRecommendations(
         statistics,
@@ -220,63 +225,6 @@ class AnalysisLogic {
     return insights;
   }
 
-  static double _calculateHealthScore(
-    StatisticsState statistics,
-    double savingsRate,
-  ) {
-    double score = 0;
-
-    if (savingsRate >= 30) {
-      score += 40;
-    } else if (savingsRate >= 20) {
-      score += 35;
-    } else if (savingsRate >= 10) {
-      score += 25;
-    } else if (savingsRate >= 5) {
-      score += 15;
-    } else if (savingsRate >= 0) {
-      score += 5;
-    }
-
-    if (statistics.currentBalance >= statistics.totalIncome * 0.5) {
-      score += 30;
-    } else if (statistics.currentBalance >= statistics.totalIncome * 0.3) {
-      score += 25;
-    } else if (statistics.currentBalance >= statistics.totalIncome * 0.1) {
-      score += 15;
-    } else if (statistics.currentBalance > 0) {
-      score += 10;
-    }
-
-    final categoryCount = statistics.expenseByCategory.length;
-    if (categoryCount >= 5) {
-      score += 20;
-    } else if (categoryCount >= 3) {
-      score += 15;
-    } else if (categoryCount >= 2) {
-      score += 10;
-    } else if (categoryCount >= 1) {
-      score += 5;
-    }
-
-    if (statistics.goalsProgress.isNotEmpty) {
-      final avgProgress =
-          statistics.goalsProgress.values.fold(0.0, (a, b) => a + b) /
-          statistics.goalsProgress.length;
-      if (avgProgress >= 75) {
-        score += 10;
-      } else if (avgProgress >= 50) {
-        score += 7;
-      } else if (avgProgress >= 25) {
-        score += 5;
-      } else {
-        score += 2;
-      }
-    }
-
-    return score.clamp(0, 100);
-  }
-
   static String _getHealthRating(double score) {
     return AnalysisCopy.healthRating(score);
   }
@@ -290,7 +238,7 @@ class AnalysisLogic {
         .where((e) {
           if (statistics.totalExpense == 0) return false;
           final pct = (e.value / statistics.totalExpense) * 100;
-          return pct >= 30;
+          return pct >= InsightThresholds.highCategorySpendShare * 100;
         })
         .map((e) => EntityLocalizations.categoryName(e.key))
         .toList();

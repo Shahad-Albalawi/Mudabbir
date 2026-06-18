@@ -6,6 +6,8 @@ import 'package:mudabbir/domain/repository/home_repository/home_repository.dart'
 import 'package:mudabbir/domain/services/financial_date_utils.dart';
 import 'package:mudabbir/presentation/explore/explore_view.dart';
 import 'package:mudabbir/presentation/goals/goals_view.dart';
+import 'package:mudabbir/domain/services/health_score_calculator.dart';
+import 'package:mudabbir/domain/services/insight_thresholds.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/presentation/statistics/statistics_view.dart';
 import 'package:mudabbir/service/getit_init.dart';
@@ -107,10 +109,9 @@ class HomeViewModel extends StateNotifier<HomeState> {
       startDate: previousMonth.start,
       endDate: previousMonth.end,
     );
-    final financialHealthScore = _calculateFinancialHealthScore(
+    final financialHealthScore = HealthScoreCalculator.fromMonthly(
       monthlyIncome: monthlyIncome,
       monthlyExpense: monthlyExpense,
-      monthlyBalance: monthlyIncome - monthlyExpense,
     );
     final spendingAlerts = _buildSpendingAlerts(
       monthlyIncome: monthlyIncome,
@@ -157,41 +158,6 @@ class HomeViewModel extends StateNotifier<HomeState> {
     return average * 0.95;
   }
 
-  int _calculateFinancialHealthScore({
-    required double monthlyIncome,
-    required double monthlyExpense,
-    required double monthlyBalance,
-  }) {
-    if (monthlyIncome <= 0 && monthlyExpense <= 0) {
-      return 0;
-    }
-
-    int score = 50;
-    final savingsRate = monthlyIncome <= 0
-        ? 0.0
-        : (monthlyBalance / monthlyIncome);
-
-    if (savingsRate >= 0.30) {
-      score += 30;
-    } else if (savingsRate >= 0.20) {
-      score += 20;
-    } else if (savingsRate >= 0.10) {
-      score += 10;
-    } else if (savingsRate < 0) {
-      score -= 25;
-    }
-
-    if (monthlyExpense > monthlyIncome && monthlyIncome > 0) {
-      score -= 15;
-    }
-
-    if (monthlyExpense == 0 && monthlyIncome > 0) {
-      score += 10;
-    }
-
-    return score.clamp(0, 100);
-  }
-
   List<String> _buildSpendingAlerts({
     required double monthlyIncome,
     required double monthlyExpense,
@@ -210,7 +176,7 @@ class HomeViewModel extends StateNotifier<HomeState> {
     if (previousMonthExpense > 0) {
       final growth =
           (monthlyExpense - previousMonthExpense) / previousMonthExpense;
-      if (growth >= 0.25) {
+      if (growth >= InsightThresholds.monthOverMonthSpendingAlert) {
         final pct = (growth * 100).toStringAsFixed(0);
         alerts.add(
           AppStrings.isEnglishLocale

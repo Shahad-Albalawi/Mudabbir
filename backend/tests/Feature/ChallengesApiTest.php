@@ -85,4 +85,75 @@ class ChallengesApiTest extends TestCase
                 'data' => ['challenge_id', 'entries'],
             ]);
     }
+
+    public function test_respond_matches_invitee_by_email_not_provisional_id(): void
+    {
+        $owner = $this->registerUser('owner-respond@example.com');
+        $create = $this->withApiAuth($owner)->postJson('/api/challenges/from-template', [
+            'template_id' => 'no_extra_week',
+        ]);
+        $create->assertStatus(201);
+        $id = (int) $create->json('data.id');
+
+        $this->withApiAuth($owner)->postJson("/api/challenges/{$id}/invite", [
+            'email' => 'alice-respond@example.com',
+        ])->assertStatus(200);
+
+        $bob = $this->registerUser('bob-respond@example.com');
+        $this->withApiAuth($bob)->postJson("/api/challenges/{$id}/respond", [
+            'status' => 'accepted',
+        ])->assertStatus(404);
+
+        $alice = $this->registerUser('alice-respond@example.com');
+        $accept = $this->withApiAuth($alice)->postJson("/api/challenges/{$id}/respond", [
+            'status' => 'accepted',
+        ]);
+        $accept->assertStatus(200)->assertJsonPath('success', true);
+
+        $participants = $accept->json('data.participants');
+        $aliceParticipant = collect($participants)->firstWhere(
+            'email',
+            'alice-respond@example.com'
+        );
+        $this->assertSame('accepted', $aliceParticipant['status']);
+        $this->assertSame((int) $alice['user']['id'], $aliceParticipant['id']);
+    }
+
+    public function test_multiple_invitees_respond_independently(): void
+    {
+        $owner = $this->registerUser('owner-multi@example.com');
+        $create = $this->withApiAuth($owner)->postJson('/api/challenges/from-template', [
+            'template_id' => 'no_extra_week',
+        ]);
+        $id = (int) $create->json('data.id');
+
+        $this->withApiAuth($owner)->postJson("/api/challenges/{$id}/invite", [
+            'email' => 'first-multi@example.com',
+        ])->assertStatus(200);
+        $this->withApiAuth($owner)->postJson("/api/challenges/{$id}/invite", [
+            'email' => 'second-multi@example.com',
+        ])->assertStatus(200);
+
+        $first = $this->registerUser('first-multi@example.com');
+        $second = $this->registerUser('second-multi@example.com');
+
+        $this->withApiAuth($first)->postJson("/api/challenges/{$id}/respond", [
+            'status' => 'accepted',
+        ])->assertStatus(200);
+
+        $reject = $this->withApiAuth($second)->postJson("/api/challenges/{$id}/respond", [
+            'status' => 'rejected',
+        ]);
+        $reject->assertStatus(200);
+
+        $participants = collect($reject->json('data.participants'));
+        $this->assertSame(
+            'accepted',
+            $participants->firstWhere('email', 'first-multi@example.com')['status']
+        );
+        $this->assertSame(
+            'rejected',
+            $participants->firstWhere('email', 'second-multi@example.com')['status']
+        );
+    }
 }

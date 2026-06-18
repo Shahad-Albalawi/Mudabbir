@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  workflow_run:
+    workflows: ['Refresh composer.lock for PHP 8.5']
+    types: [completed]
 
 permissions:
   contents: write

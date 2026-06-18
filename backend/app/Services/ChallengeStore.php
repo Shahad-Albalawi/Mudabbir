@@ -237,10 +237,13 @@ class ChallengeStore
             }
 
             foreach ($challenge['participants'] as $pIdx => $participant) {
-                $matchesUser = (int) $participant['id'] === $userId
-                    || strtolower((string) $participant['email']) === strtolower($userEmail);
+                if ((string) ($participant['status'] ?? '') !== 'pending') {
+                    continue;
+                }
 
-                if (! $matchesUser || (string) ($participant['status'] ?? '') !== 'pending') {
+                // Pending invites are matched by email only: provisional participant ids
+                // from next_user_id can collide with another user's Sanctum id.
+                if (strtolower((string) ($participant['email'] ?? '')) !== strtolower($userEmail)) {
                     continue;
                 }
 

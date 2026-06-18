@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:dartz/dartz.dart';
-import 'package:http/http.dart' as http;
-import 'failure.dart';
+import 'package:dio/dio.dart';
+import 'package:mudabbir/data/network/failure.dart';
+import 'package:mudabbir/presentation/server_challenges/utils/dio_client.dart';
+import 'package:mudabbir/service/getit_init.dart';
 
 enum HttpMethod { GET, POST }
 
@@ -11,48 +14,83 @@ Future<Either<Failure, T>> requestData<T>({
   required T Function(dynamic json) parser,
   HttpMethod method = HttpMethod.GET,
   Map<String, String>? headers,
-  Map<String, dynamic>? body, // used for POST
+  Map<String, dynamic>? body,
   Duration timeout = const Duration(seconds: 10),
 }) async {
+  final dio = getIt<DioClient>().dio;
+
   try {
-    http.Response response;
+    final Response<dynamic> response;
+    final options = Options(
+      headers: headers,
+      receiveTimeout: timeout,
+      sendTimeout: timeout,
+    );
 
     if (method == HttpMethod.GET) {
-      response = await http
-          .get(Uri.parse(url), headers: headers)
-          .timeout(timeout);
+      response = await dio.get(url, options: options);
     } else if (method == HttpMethod.POST) {
-      response = await http
-          .post(
-            Uri.parse(url),
-            headers: headers ?? {'Content-Type': 'application/json'},
-            body: jsonEncode(body ?? {}),
-          )
-          .timeout(timeout);
+      response = await dio.post(
+        url,
+        data: body ?? {},
+        options: options.copyWith(
+          contentType: Headers.jsonContentType,
+          headers: {
+            ...?headers,
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
     } else {
       return Left(UnknownFailure('Unsupported HTTP method'));
     }
 
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      final data = jsonDecode(response.body);
-      return Right(parser(data));
-    } else {
-      final msg = _messageFromErrorResponse(
-        body: response.body,
-        statusCode: response.statusCode,
-        reasonPhrase: response.reasonPhrase,
-      );
-      return Left(ServerFailure(response.statusCode, msg));
+    final statusCode = response.statusCode ?? 0;
+    if (statusCode >= 200 && statusCode < 300) {
+      return Right(parser(response.data));
     }
-  } on TimeoutException catch (e) {
-    return Left(TimeoutFailure('Request timed out: ${e.message}'));
-  } on http.ClientException catch (e) {
+
+    final bodyText = _responseBodyAsString(response.data);
+    final msg = _messageFromErrorResponse(
+      body: bodyText,
+      statusCode: statusCode,
+      reasonPhrase: response.statusMessage,
+    );
+    return Left(ServerFailure(statusCode, msg));
+  } on DioException catch (e) {
+    if (e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.receiveTimeout ||
+        e.type == DioExceptionType.sendTimeout) {
+      return Left(TimeoutFailure('Request timed out: ${e.message}'));
+    }
+    if (e.type == DioExceptionType.connectionError) {
+      return Left(NetworkFailure('Network error: ${e.message}'));
+    }
+    final statusCode = e.response?.statusCode ?? 0;
+    if (statusCode > 0) {
+      final bodyText = _responseBodyAsString(e.response?.data);
+      final msg = _messageFromErrorResponse(
+        body: bodyText,
+        statusCode: statusCode,
+        reasonPhrase: e.response?.statusMessage,
+      );
+      return Left(ServerFailure(statusCode, msg));
+    }
     return Left(NetworkFailure('Network error: ${e.message}'));
   } on FormatException catch (e) {
     return Left(ParsingFailure('Parsing error: ${e.message}'));
   } catch (e) {
     return Left(UnknownFailure('Unexpected error: $e'));
   }
+}
+
+String _responseBodyAsString(dynamic data) {
+  if (data == null) return '';
+  if (data is String) return data;
+  if (data is Map || data is List) {
+    return jsonEncode(data);
+  }
+  return data.toString();
 }
 
 /// Pulls Laravel-style JSON (`message`, `errors`) so the UI is not stuck on
@@ -68,14 +106,14 @@ String _messageFromErrorResponse({
   }
 
   try {
-    final decoded = jsonDecode(trimmed);
-    if (decoded is Map<String, dynamic>) {
-      final errors = decoded['errors'];
+    final parsed = jsonDecode(trimmed);
+    if (parsed is Map<String, dynamic>) {
+      final errors = parsed['errors'];
       if (errors is Map) {
         final first = _firstValidationError(errors);
         if (first != null && first.isNotEmpty) return first;
       }
-      final msg = decoded['message'];
+      final msg = parsed['message'];
       if (msg is String && msg.trim().isNotEmpty) return msg.trim();
     }
   } catch (_) {}
