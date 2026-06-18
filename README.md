@@ -92,7 +92,7 @@ php artisan serve
 
 See `docs/DEPLOY_RENDER.md` for Render, or **`docs/DEPLOY_LARAVEL_CLOUD.md`** to restore Laravel Cloud (الخيار أ).
 
-**Production API status:** The default Laravel Cloud URL (`gemini-api-s-challenges-uvxa39.laravel.cloud`) currently returns **Cloudflare 530 / error 1016** (origin unreachable). See `docs/PRODUCTION_API.md` for diagnosis. Verify any host with `scripts/check-production-api.ps1`.
+**Production API:** `https://laravel-main-nb0wjv.laravel.cloud` (Flutter `release.json`). After deploy, verify with `scripts/check-production-api.ps1` — expect **200** on `/api/health`. If you see **530 / 1016**, redeploy on Laravel Cloud (branch `laravel-cloud`, build `bash cloud-build.sh`). See `docs/PRODUCTION_API.md`.
 
 ---
 

@@ -3,90 +3,91 @@
 Current default production host (Flutter `release.json` / `api_constants.dart`):
 
 ```text
+https://laravel-main-nb0wjv.laravel.cloud
+```
+
+> **Do not use** `*.free.laravel.cloud` — that hostname does not exist in DNS (NXDOMAIN). Laravel Cloud URLs are `https://<env>.laravel.cloud`.
+
+Legacy host (removed from the app):
+
+```text
 https://gemini-api-s-challenges-uvxa39.laravel.cloud
 ```
 
 ## Diagnosis (2026-06-17)
 
-| Check | Result |
-|-------|--------|
-| Public DNS (Cloudflare 1.1.1.1) | **OK** — `A` → `103.133.1.1`, `103.133.1.2` (Cloudflare anycast) |
-| HTTPS to `/` and `/api/login` | **FAIL** — `HTTP 530`, body `error code: 1016` |
-| `Server` header | `cloudflare` |
-| Cloudflare Tunnel on this repo | **None** — not used; Laravel Cloud proxies via Cloudflare SaaS |
-| Direct origin bypass | **Not possible** — no public origin IP; traffic must go through `*.laravel.cloud` |
+| Check | `laravel-main-nb0wjv.laravel.cloud` | `*.free.laravel.cloud` |
+|-------|--------------------------------------|-------------------------|
+| Public DNS | **OK** — Cloudflare anycast | **FAIL** — NXDOMAIN |
+| `GET /api/health` | **FAIL** — HTTP 530, `error code: 1016` | N/A |
+| `Server` header | `cloudflare` | — |
 
 ### Root cause
 
-**Cloudflare error 1016 (shown as HTTP 530)** means Cloudflare’s edge received the request for `gemini-api-s-challenges-uvxa39.laravel.cloud` but **cannot resolve or route to the Laravel Cloud origin** behind that hostname.
+**Cloudflare error 1016 (HTTP 530)** means the edge receives the request but **cannot route to the Laravel Cloud origin**. This is an infrastructure/deploy issue, not a Flutter or Laravel bug.
 
-This is **not** a Flutter or Laravel application bug. Typical causes on Laravel Cloud:
+Typical causes:
 
-1. Environment **deleted**, **paused**, or **never finished deploying**
-2. Failed / rolled-back deployment leaving a broken origin mapping
-3. Laravel Cloud internal origin hostname no longer exists (stale `*.laravel.cloud` URL in the app)
+1. Environment **stopped**, **paused**, or **never finished deploying**
+2. Failed deployment leaving a broken origin mapping
+3. Build commands typo (use `bash cloud-build.sh`, not manual `composer` with typos)
 
-The app’s DNS resolves to Cloudflare, but the **origin behind Laravel Cloud is down or misconfigured**.
+The GitHub side is ready: branch **`laravel-cloud`** is synced from `main` (backend at repo root) via `.github/workflows/laravel-cloud-branch.yml`.
 
-## Fixes (choose one)
+## Fixes
 
-### Option A — Restore Laravel Cloud (keep current URL)
+### Option A — Laravel Cloud (primary)
 
-**Step-by-step (Arabic):** see [DEPLOY_LARAVEL_CLOUD.md](./DEPLOY_LARAVEL_CLOUD.md).
+**Step-by-step (Arabic):** [DEPLOY_LARAVEL_CLOUD.md](./DEPLOY_LARAVEL_CLOUD.md)
 
 1. Sign in to [Laravel Cloud](https://cloud.laravel.com/).
-2. Open the project that owned `gemini-api-s-challenges-uvxa39`.
-3. Confirm the environment is **Running** (not paused/deleted).
-4. **Redeploy** the latest commit from `backend/`.
-5. Ensure env vars are set: `APP_KEY`, `APP_URL=https://gemini-api-s-challenges-uvxa39.laravel.cloud`, `APP_ENV=production`, `APP_DEBUG=false`.
-6. Run migrations on deploy (users + Sanctum tokens need SQLite/MySQL).
+2. Open project **laravel-main** (or the env that owns `laravel-main-nb0wjv.laravel.cloud`).
+3. **Branch:** `laravel-cloud` (not `main`).
+4. **Build:** `bash cloud-build.sh` — **Deploy:** `bash cloud-deploy.sh`.
+5. If deploy did not start after a push: **Redeploy** from the dashboard.
+6. Environment variables:
+
+   | Variable | Value |
+   |----------|--------|
+   | `APP_URL` | `https://laravel-main-nb0wjv.laravel.cloud` |
+   | `APP_KEY` | from `php artisan key:generate --show` |
+   | `APP_ENV` | `production` |
+   | `APP_DEBUG` | `false` |
+
 7. Verify:
 
    ```powershell
-   powershell -ExecutionPolicy Bypass -File scripts/check-production-api.ps1 `
-     -ApiBaseUrl "https://gemini-api-s-challenges-uvxa39.laravel.cloud"
+   curl.exe -sS "https://laravel-main-nb0wjv.laravel.cloud/api/health"
    ```
 
-   Expect `HTTP 200` on `/api/health`.
+   Expect **200** and `"status": "ok"`.
 
-If the environment was deleted, create a **new** Laravel Cloud app and update `frontend/config/release.json` with the new `*.laravel.cloud` URL.
-
-### Option B — Deploy on Render (recommended fallback)
-
-Render is already configured via `backend/render.yaml`.
-
-1. Follow [DEPLOY_RENDER.md](./DEPLOY_RENDER.md).
-2. Set `APP_KEY`, `APP_URL`, and AI keys in Render **Environment**.
-3. After deploy, note your `https://<service>.onrender.com` URL.
-4. Point Flutter at the new host:
+   Or:
 
    ```powershell
-   powershell -ExecutionPolicy Bypass -File scripts/build-release-apk.ps1 `
-     -ApiBaseUrl "https://<your-service>.onrender.com"
+   powershell -ExecutionPolicy Bypass -File scripts/check-production-api.ps1
    ```
 
-5. Run the health check script against the new URL.
+If the environment was deleted, create a new one and update `frontend/config/release.json` + `api_constants.dart`.
 
-**Note:** After Phase 1 auth, `/api/challenges` requires a Bearer token. Render health checks use **`/api/health`** (public).
+### Option B — Render (fallback)
 
-## Ongoing verification
+See [DEPLOY_RENDER.md](./DEPLOY_RENDER.md) and `backend/render.yaml`.
 
-From repo root:
+## Flutter — locked to backend
 
-```powershell
-# Default (Laravel Cloud URL in release.json)
-powershell -ExecutionPolicy Bypass -File scripts/check-production-api.ps1
+| Build | API host |
+|-------|----------|
+| **Debug** (default) | `http://10.0.2.2:8000` (local Laravel) |
+| **Release** | `https://laravel-main-nb0wjv.laravel.cloud` via `release.json` |
+| **Override** | `--dart-define=API_BASE_URL=...` or `FORCE_PROD_API=true` in debug |
 
-# Custom host
-powershell -ExecutionPolicy Bypass -File scripts/check-production-api.ps1 -ApiBaseUrl "https://your-api.example.com"
-```
+All HTTP (Dio, login, register, sync, chatbot) uses `ApiConstants.baseUrl` / `apiV1Base`. No hardcoded legacy `gemini-api-*` URLs remain in Dart sources.
 
 Success criteria:
 
 - `GET /api/health` → `200`, `{ "success": true, "status": "ok" }`
-- `POST /api/register` → `201` (with valid body)
+- `POST /api/register` → `201`
 - No `530` / `error code: 1016`
 
-## Flutter client behavior
-
-`ApiException` already maps **530** to a user-facing Arabic-friendly “server temporarily unavailable” message. Fixing production DNS/origin is required for sync, login, and challenges to work in release builds.
+`ApiException` maps **530** to a user-facing “server temporarily unavailable” message in Arabic.
