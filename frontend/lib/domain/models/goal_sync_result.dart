@@ -48,3 +48,15 @@ class GoalDeleteSyncResult {
     this.queuedOffline = false,
   });
 }
+
+class GoalUpdateSyncResult {
+  final SavingsGoal goal;
+  final bool syncedToServer;
+  final bool queuedOffline;
+
+  const GoalUpdateSyncResult({
+    required this.goal,
+    this.syncedToServer = true,
+    this.queuedOffline = false,
+  });
+}

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mudabbir/domain/models/savings_goal.dart';
 import 'package:mudabbir/presentation/goals/goals_viewmodel.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/goal_strings.dart';
@@ -256,6 +257,186 @@ class GoalPopup {
                                 );
                               },
                               child: Text(GoalStrings.createButton),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> showEdit(
+    BuildContext context,
+    WidgetRef ref,
+    SavingsGoal goal,
+  ) async {
+    if (goal.isCompleted) return;
+
+    final formKey = GlobalKey<FormState>();
+    final nameCtrl = TextEditingController(text: goal.name);
+    final targetCtrl = TextEditingController(text: goal.target.toString());
+    final startCtrl = TextEditingController(
+      text: goal.startDate.toIso8601String().split('T').first,
+    );
+    final endCtrl = TextEditingController(
+      text: goal.endDate.toIso8601String().split('T').first,
+    );
+
+    String? selectedType = goal.type;
+    String? imagePath = goal.imagePath;
+
+    final goalViewmodel = ref.read(goalViewmodelProvider.notifier);
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setLocalState) {
+          return Dialog(
+            shape: IOSDialogStyle.dialogShape(),
+            elevation: 0,
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.9,
+              constraints: const BoxConstraints(maxWidth: 400, maxHeight: 700),
+              decoration: IOSDialogStyle.surfaceDecoration(context),
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IOSDialogStyle.header(
+                      context,
+                      title: GoalStrings.editTitle,
+                      subtitle: GoalStrings.editSubtitle,
+                      icon: Icons.edit_outlined,
+                    ),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            PopupWidgets.textField(
+                              controller: nameCtrl,
+                              label: GoalStrings.goalNameHint,
+                              icon: Icons.flag_outlined,
+                              validator: (val) => val == null || val.isEmpty
+                                  ? GoalStrings.nameRequired
+                                  : null,
+                            ),
+                            const SizedBox(height: 16),
+                            PopupWidgets.textField(
+                              controller: targetCtrl,
+                              label: GoalStrings.targetAmount,
+                              icon: Icons.savings_outlined,
+                              validator: (val) {
+                                if (val == null || val.isEmpty) {
+                                  return GoalStrings.targetRequired;
+                                }
+                                final n = double.tryParse(val);
+                                if (n == null || n <= 0) {
+                                  return GoalStrings.invalidAmount;
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            PopupWidgets.dropdownField<String>(
+                              value: selectedType,
+                              label: GoalStrings.goalType,
+                              items: GoalStrings.goalTypes,
+                              onChanged: (val) =>
+                                  setLocalState(() => selectedType = val),
+                              validator: (val) => val == null
+                                  ? GoalStrings.typeRequired
+                                  : null,
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: PopupWidgets.dateField(
+                                    startCtrl,
+                                    context,
+                                    label: GoalStrings.startDate,
+                                    validator: (val) =>
+                                        val == null || val.isEmpty
+                                            ? GoalStrings.startRequired
+                                            : null,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: PopupWidgets.dateField(
+                                    endCtrl,
+                                    context,
+                                    label: GoalStrings.endDate,
+                                    validator: (val) {
+                                      if (val == null || val.isEmpty) {
+                                        return GoalStrings.endRequired;
+                                      }
+                                      final start =
+                                          DateTime.tryParse(startCtrl.text);
+                                      final end = DateTime.tryParse(val);
+                                      if (start != null &&
+                                          end != null &&
+                                          !end.isAfter(start)) {
+                                        return GoalStrings.endAfterStart;
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: Text(GoalStrings.cancel),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                if (!(formKey.currentState?.validate() ??
+                                    false)) {
+                                  return;
+                                }
+
+                                await goalViewmodel.updateGoal(
+                                  goalId: goal.id,
+                                  name: nameCtrl.text,
+                                  target: double.parse(targetCtrl.text),
+                                  type: selectedType!,
+                                  startDate: DateTime.parse(startCtrl.text),
+                                  endDate: DateTime.parse(endCtrl.text),
+                                  imageSourcePath: imagePath,
+                                );
+
+                                if (!context.mounted) return;
+                                Navigator.pop(context);
+                                PopupWidgets.showSuccessSnackBar(
+                                  context,
+                                  GoalStrings.updatedSuccess,
+                                );
+                              },
+                              child: Text(GoalStrings.saveButton),
                             ),
                           ),
                         ],

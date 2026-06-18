@@ -38,6 +38,28 @@ class GoalApiService {
     }
   }
 
+  Future<SavingsGoal> updateGoal(int id, Map<String, dynamic> payload) async {
+    try {
+      final response = await _dioClient.dio.put('/goals/$id', data: payload);
+      final body = response.data;
+      if (response.statusCode == 409 && body is Map<String, dynamic>) {
+        throw ApiException(
+          message: body['message'] as String? ?? 'Sync conflict',
+          statusCode: 409,
+          conflictData: body['data'],
+        );
+      }
+      if (body is Map && body['success'] == true) {
+        return _goalFromApi(
+          Map<String, dynamic>.from(body['data'] as Map),
+        );
+      }
+      throw ApiException(message: 'Failed to update goal');
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
   Future<SavingsGoal> addContribution({
     required int goalId,
     required double amount,

@@ -33,6 +33,15 @@ class GoalsApiTest extends TestCase
         ]);
         $contrib->assertStatus(200)->assertJsonPath('data.current_amount', 750);
 
+        $update = $this->withApiAuth($auth)->putJson("/api/goals/{$id}", [
+            'name' => 'هدف محدّث',
+            'target' => 6000,
+            'end_date' => '2026-06-30',
+        ]);
+        $update->assertStatus(200)
+            ->assertJsonPath('data.name', 'هدف محدّث')
+            ->assertJsonPath('data.target', 6000);
+
         $delete = $this->withApiAuth($auth)->deleteJson("/api/goals/{$id}");
         $delete->assertStatus(200)->assertJsonPath('success', true);
     }

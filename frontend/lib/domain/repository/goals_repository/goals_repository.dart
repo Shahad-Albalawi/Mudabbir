@@ -182,6 +182,62 @@ class GoalsRepository {
     );
   }
 
+  Future<Either<Failure, SavingsGoal>> updateGoal({
+    required int goalId,
+    required String name,
+    required double target,
+    required String type,
+    required DateTime startDate,
+    required DateTime endDate,
+    String? imageSourcePath,
+  }) async {
+    try {
+      if (name.trim().isEmpty || target <= 0) {
+        return Left(ValidationFailure(GoalStrings.nameRequired));
+      }
+
+      String? storedImagePath;
+      if (imageSourcePath != null && imageSourcePath.isNotEmpty) {
+        storedImagePath = await _persistImage(imageSourcePath);
+      }
+
+      final existing = await getGoalById(goalId);
+      return await existing.fold(
+        Left.new,
+        (goal) async {
+          final updates = <String, dynamic>{
+            'name': name.trim(),
+            'target': target,
+            'type': type,
+            'start_date': _isoDate(startDate),
+            'end_date': _isoDate(endDate),
+          };
+          if (storedImagePath != null) {
+            updates['image_path'] = storedImagePath;
+          }
+
+          final current = goal.currentAmount.clamp(0, target);
+          final completed = current >= target;
+          updates['current_amount'] = current;
+          updates['is_completed'] = completed ? 1 : 0;
+          if (!completed) {
+            updates['completed_at'] = null;
+          }
+
+          await _db.update('goals', updates, 'id=?', [goalId]);
+
+          final refreshed = await getGoalById(goalId);
+          return refreshed.fold(
+            Left.new,
+            Right.new,
+          );
+        },
+      );
+    } catch (_) {
+      return Left(UnknownFailure(GoalStrings.updateFailed));
+    }
+  }
+
   Future<List<GoalContributionRecord>> _contributionsForGoal(int goalId) async {
     final result = await _db.complexQuery(
       table: 'goal_contributions',

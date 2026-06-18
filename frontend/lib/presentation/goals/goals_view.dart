@@ -176,6 +176,9 @@ class _GoalViewState extends ConsumerState<GoalView> {
       if (next.isAdd) {
         await goalViewmodel.getAllGoals();
       }
+      if (next.isEdit) {
+        await goalViewmodel.getAllGoals();
+      }
     });
 
     return Scaffold(
@@ -322,6 +325,19 @@ class _GoalViewState extends ConsumerState<GoalView> {
                         fontWeight: FontWeight.w600,
                         color: statusColor,
                       ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: goal.isCompleted
+                        ? null
+                        : () {
+                            HapticService.light();
+                            GoalPopup().showEdit(context, ref, goal);
+                          },
+                    icon: Icon(
+                      CupertinoIcons.pencil,
+                      color: scheme.primary,
+                      size: 20,
                     ),
                   ),
                   IconButton(

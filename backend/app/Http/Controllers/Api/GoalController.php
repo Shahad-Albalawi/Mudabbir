@@ -83,4 +83,39 @@ class GoalController extends Controller
 
         return response()->json(['success' => true, 'message' => 'Deleted']);
     }
+
+    public function update(Request $request, int $id): JsonResponse
+    {
+        $payload = $request->validate([
+            'name' => ['sometimes', 'string', 'max:255'],
+            'target' => ['sometimes', 'numeric', 'min:0.01'],
+            'type' => ['sometimes', 'string', 'max:64'],
+            'start_date' => ['sometimes', 'date'],
+            'end_date' => ['sometimes', 'date'],
+            'image_path' => ['nullable', 'string'],
+            'updated_at' => ['nullable', 'date'],
+        ]);
+
+        $userId = (int) $request->user()->id;
+        $result = $this->store->update(
+            $id,
+            $payload,
+            $userId,
+            $request->input('updated_at')
+        );
+        if (! $result) {
+            return response()->json(['success' => false, 'message' => 'Goal not found'], 404);
+        }
+
+        if (! empty($result['conflict'])) {
+            return response()->json([
+                'success' => false,
+                'conflict' => true,
+                'message' => 'Server has a newer version of this goal.',
+                'data' => $result['data'],
+            ], 409);
+        }
+
+        return response()->json(['success' => true, 'data' => $result['data']]);
+    }
 }

@@ -16,6 +16,7 @@ class GoalState {
   final String? error;
   final bool isDelete;
   final bool isAdd;
+  final bool isEdit;
   final bool isOffline;
   final GoalWriteResult? lastContribution;
 
@@ -25,6 +26,7 @@ class GoalState {
     this.error,
     this.isDelete = false,
     this.isAdd = false,
+    this.isEdit = false,
     this.isOffline = false,
     this.lastContribution,
   });
@@ -35,6 +37,7 @@ class GoalState {
     Object? error = _unsetGoalError,
     bool? isDelete,
     bool? isAdd,
+    bool? isEdit,
     bool? isOffline,
     GoalWriteResult? lastContribution,
     bool clearContribution = false,
@@ -45,6 +48,7 @@ class GoalState {
       error: identical(error, _unsetGoalError) ? this.error : error as String?,
       isDelete: isDelete ?? this.isDelete,
       isAdd: isAdd ?? this.isAdd,
+      isEdit: isEdit ?? this.isEdit,
       isOffline: isOffline ?? this.isOffline,
       lastContribution:
           clearContribution ? null : (lastContribution ?? this.lastContribution),
@@ -104,6 +108,40 @@ class GoalViewmodel extends StateNotifier<GoalState> {
         isAdd: true,
         error: sync.queuedOffline ? GoalStrings.savedOffline : null,
       ),
+    );
+  }
+
+  Future<void> updateGoal({
+    required int goalId,
+    required String name,
+    required double target,
+    required String type,
+    required DateTime startDate,
+    required DateTime endDate,
+    String? imageSourcePath,
+  }) async {
+    final result = await _repository.updateGoal(
+      goalId: goalId,
+      name: name,
+      target: target,
+      type: type,
+      startDate: startDate,
+      endDate: endDate,
+      imageSourcePath: imageSourcePath,
+    );
+
+    result.fold(
+      (failure) => state = state.copyWith(error: failure.userFacingMessage),
+      (sync) {
+        final updated = state.goals
+            .map((g) => g.id == goalId ? sync.goal : g)
+            .toList();
+        state = state.copyWith(
+          goals: updated,
+          isEdit: true,
+          error: sync.queuedOffline ? GoalStrings.savedOffline : null,
+        );
+      },
     );
   }
 

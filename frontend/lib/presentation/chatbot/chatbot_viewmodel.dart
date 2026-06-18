@@ -4,10 +4,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:mudabbir/data/local/database_helper.dart';
+import 'package:mudabbir/service/chatbot/chatbot_context_loader.dart';
 import 'package:mudabbir/constants/api_constants.dart';
 import 'package:mudabbir/presentation/resources/chatbot_llm_prompt.dart';
 import 'package:mudabbir/presentation/resources/chatbot_ui_strings.dart';
-import 'package:mudabbir/domain/services/financial_aggregator.dart';
 import 'package:mudabbir/domain/services/health_score_calculator.dart';
 import 'package:mudabbir/domain/services/insight_thresholds.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
@@ -43,6 +43,7 @@ class ExecutedCommand {
 
 class ChatbotViewModel extends BaseViewModel {
   final DbHelper _dbHelper = getIt<DbHelper>();
+  final ChatbotContextLoader _contextLoader = ChatbotContextLoader();
   final TextEditingController messageController = TextEditingController();
   final ScrollController scrollController = ScrollController();
 
@@ -1151,64 +1152,7 @@ class ChatbotViewModel extends BaseViewModel {
   }
 
   Future<Map<String, dynamic>> _getAllDatabaseContext() async {
-    final context = <String, dynamic>{};
-
-    try {
-      // Get accounts
-      final accountsResult = await _dbHelper.queryAllRows('accounts');
-      final aggregator = FinancialAggregator();
-      context['accounts'] = await accountsResult.fold(
-        (_) async => <Map<String, dynamic>>[],
-        (data) async {
-          final enriched = <Map<String, dynamic>>[];
-          for (final row in data) {
-            final id = row['id'] as int;
-            final balance = await aggregator.ledgerBalance(accountId: id);
-            enriched.add({...row, 'balance': balance});
-          }
-          return enriched;
-        },
-      );
-
-      // Get categories
-      final categoriesResult = await _dbHelper.queryAllRows('categories');
-      categoriesResult.fold(
-        (empty) => context['categories'] = [],
-        (data) => context['categories'] = data,
-      );
-
-      // Get transactions
-      final transactionsResult = await _dbHelper.queryAllRows('transactions');
-      transactionsResult.fold(
-        (empty) => context['transactions'] = [],
-        (data) => context['transactions'] = data,
-      );
-
-      // Get budgets
-      final budgetsResult = await _dbHelper.queryAllRows('budgets');
-      budgetsResult.fold(
-        (empty) => context['budgets'] = [],
-        (data) => context['budgets'] = data,
-      );
-
-      // Get goals
-      final goalsResult = await _dbHelper.queryAllRows('goals');
-      goalsResult.fold(
-        (empty) => context['goals'] = [],
-        (data) => context['goals'] = data,
-      );
-
-      // Get challenges
-      final challengesResult = await _dbHelper.queryAllRows('challenges');
-      challengesResult.fold(
-        (empty) => context['challenges'] = [],
-        (data) => context['challenges'] = data,
-      );
-    } catch (e) {
-      devLog('Error fetching database context: $e');
-    }
-
-    return context;
+    return _contextLoader.load();
   }
 
   String _buildCompletePrompt(

@@ -2,12 +2,14 @@
 
 namespace App\Services;
 
+use App\Services\Concerns\ResolvesSyncConflicts;
 use App\Services\Concerns\UsesJsonStorePath;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\File;
 
 class GoalStore
 {
+    use ResolvesSyncConflicts;
     use UsesJsonStorePath;
 
     /** @var string */
@@ -93,6 +95,51 @@ class GoalStore
         return $goal;
     }
 
+    /**
+     * @return array{conflict: bool, data: array}|null
+     */
+    public function update(int $id, array $updates, int $userId, ?string $clientUpdatedAt = null): ?array
+    {
+        $data = $this->read();
+        foreach ($data['goals'] as $idx => $goal) {
+            if ((int) $goal['id'] !== $id || (int) ($goal['user_id'] ?? 0) !== $userId) {
+                continue;
+            }
+
+            $conflict = $this->resolveUpdateConflict(
+                $goal,
+                $clientUpdatedAt,
+                fn (array $row): array => $this->normalizeGoal($row)
+            );
+            if ($conflict !== null) {
+                return $conflict;
+            }
+
+            $merged = array_merge($goal, $this->filterUpdatable($updates));
+            $target = (float) $merged['target'];
+            $current = min((float) $merged['current_amount'], $target);
+            $reached = $current >= $target && $target > 0;
+
+            $merged['target'] = $target;
+            $merged['current_amount'] = $current;
+            $merged['is_completed'] = $reached;
+            $merged['completed_at'] = $reached
+                ? ($goal['completed_at'] ?? Carbon::now()->toISOString())
+                : null;
+            $merged['updated_at'] = Carbon::now()->toISOString();
+
+            $data['goals'][$idx] = $this->normalizeGoal($merged);
+            $this->write($data);
+
+            return [
+                'conflict' => false,
+                'data' => $data['goals'][$idx],
+            ];
+        }
+
+        return null;
+    }
+
     public function addContribution(int $goalId, array $payload, int $userId): ?array
     {
         $data = $this->read();
@@ -163,6 +210,19 @@ class GoalStore
         $this->write($data);
 
         return true;
+    }
+
+    private function filterUpdatable(array $updates): array
+    {
+        $allowed = ['name', 'target', 'type', 'start_date', 'end_date', 'image_path'];
+        $filtered = [];
+        foreach ($allowed as $key) {
+            if (array_key_exists($key, $updates)) {
+                $filtered[$key] = $updates[$key];
+            }
+        }
+
+        return $filtered;
     }
 
     private function normalizeGoal(array $goal): array

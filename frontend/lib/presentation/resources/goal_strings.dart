@@ -45,6 +45,12 @@ class GoalStrings {
       _e ? 'Goal created successfully!' : 'تم إنشاء الهدف بنجاح!';
   static String get createFailed =>
       _e ? 'Failed to create goal' : 'فشل إنشاء الهدف';
+  static String get editTitle => _e ? 'Edit goal' : 'تعديل الهدف';
+  static String get editSubtitle =>
+      _e ? 'Update your savings target' : 'حدّث هدف ادخارك';
+  static String get saveButton => _e ? 'Save changes' : 'حفظ التعديلات';
+  static String get updatedSuccess =>
+      _e ? 'Goal updated successfully!' : 'تم تحديث الهدف بنجاح!';
 
   static String get deadlineLabel => _e ? 'Deadline' : 'الموعد النهائي';
   static String get projectedLabel =>
