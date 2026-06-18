@@ -1,9 +1,11 @@
-# Used when deploying from backend/ only. Prefer repo-root render.yaml for Blueprint.
+# Render Blueprint — Mudabbir API (monorepo: Laravel in backend/)
+# Dashboard: New → Blueprint → connect Shahad-Albalawi/Mudabbir
 services:
   - type: web
     name: mudabbir-backend-api
     runtime: php
     plan: free
+    rootDir: backend
     buildCommand: >-
       composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
       && mkdir -p database storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
@@ -14,3 +16,16 @@ services:
     startCommand: php artisan config:clear && php artisan serve --host 0.0.0.0 --port $PORT
     healthCheckPath: /api/health
     autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: DB_CONNECTION
+        value: sqlite
+      - key: LOG_LEVEL
+        value: warning
+      - key: APP_URL
+        sync: false
+      - key: APP_KEY
+        sync: false
