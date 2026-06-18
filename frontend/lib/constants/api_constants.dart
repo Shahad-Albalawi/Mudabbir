@@ -14,7 +14,7 @@ import 'package:flutter/foundation.dart';
 /// `flutter run --dart-define=USE_LOCAL_API=true`
 class ApiConstants {
   static const String _prodBaseUrl =
-      'https://laravel-main-nb0wjv.free.laravel.cloud';
+      'https://mudabbir-backend-api.onrender.com';
   static const String _androidEmulatorLocalBaseUrl = 'http://10.0.2.2:8000';
 
   static String get baseUrl {
