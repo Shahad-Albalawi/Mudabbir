@@ -93,7 +93,7 @@ php artisan migrate --force
 | `APP_NAME` | `Mudabbir` |
 | `APP_ENV` | `production` |
 | `APP_DEBUG` | `false` |
-| `APP_URL` | `https://laravel-main-nb0wjv.laravel.cloud` |
+| `APP_URL` | `https://laravel-main-nb0wjv.free.laravel.cloud` |
 | `APP_KEY` | انسخ من `php artisan key:generate --show` محلياً |
 | `LOG_LEVEL` | `warning` |
 | **`DB_CONNECTION`** | **`sqlite`** إذا ما أرفقتِ Database — **مهم** |
@@ -144,7 +144,7 @@ powershell -ExecutionPolicy Bypass -File scripts/laravel-cloud-redeploy.ps1
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/check-production-api.ps1 `
-  -ApiBaseUrl "https://laravel-main-nb0wjv.laravel.cloud"
+  -ApiBaseUrl "https://laravel-main-nb0wjv.free.laravel.cloud"
 ```
 
 المتوقع:

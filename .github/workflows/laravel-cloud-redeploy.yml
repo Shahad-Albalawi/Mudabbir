@@ -33,7 +33,7 @@ jobs:
         run: |
           sleep 90
           for i in 1 2 3 4 5 6; do
-            code=$(curl -sS -o /tmp/health.json -w "%{http_code}" "https://laravel-main-nb0wjv.laravel.cloud/api/health" || true)
+            code=$(curl -sS -o /tmp/health.json -w "%{http_code}" "https://laravel-main-nb0wjv.free.laravel.cloud/api/health" || true)
             echo "Attempt $i: HTTP $code"
             if [ "$code" = "200" ]; then
               cat /tmp/health.json

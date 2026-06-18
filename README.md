@@ -92,7 +92,7 @@ php artisan serve
 
 See `docs/DEPLOY_RENDER.md` for Render, or **`docs/DEPLOY_LARAVEL_CLOUD.md`** to restore Laravel Cloud (الخيار أ).
 
-**Production API:** `https://laravel-main-nb0wjv.laravel.cloud` (Flutter `release.json`). After deploy, verify with `scripts/check-production-api.ps1` — expect **200** on `/api/health`. If you see **530 / 1016**, redeploy on Laravel Cloud (branch `laravel-cloud`, build `bash cloud-build.sh`). See `docs/PRODUCTION_API.md`.
+**Production API:** `https://laravel-main-nb0wjv.free.laravel.cloud` (Flutter `release.json`). Verify with `scripts/check-production-api.ps1` — expect **200** on `/api/health`. Branch `laravel-cloud`, build `bash cloud-build.sh`. See `docs/PRODUCTION_API.md`.
 
 ---
 

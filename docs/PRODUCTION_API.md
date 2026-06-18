@@ -3,91 +3,68 @@
 Current default production host (Flutter `release.json` / `api_constants.dart`):
 
 ```text
-https://laravel-main-nb0wjv.laravel.cloud
+https://laravel-main-nb0wjv.free.laravel.cloud
 ```
 
-> **Do not use** `*.free.laravel.cloud` — that hostname does not exist in DNS (NXDOMAIN). Laravel Cloud URLs are `https://<env>.laravel.cloud`.
+This is the **Laravel Cloud vanity domain** shown as **Connected** in the dashboard (Domains).
 
-Legacy host (removed from the app):
+Legacy hosts (do not use):
 
 ```text
+https://laravel-main-nb0wjv.laravel.cloud
 https://gemini-api-s-challenges-uvxa39.laravel.cloud
 ```
 
-## Diagnosis (2026-06-17)
+## Status (2026-06-18)
 
-| Check | `laravel-main-nb0wjv.laravel.cloud` | `*.free.laravel.cloud` |
-|-------|--------------------------------------|-------------------------|
-| Public DNS | **OK** — Cloudflare anycast | **FAIL** — NXDOMAIN |
-| `GET /api/health` | **FAIL** — HTTP 530, `error code: 1016` | N/A |
-| `Server` header | `cloudflare` | — |
+| Check | Result |
+|-------|--------|
+| Deploy `fc36dcf` on branch `laravel-cloud` | **Deployed** (dashboard) |
+| Domain `laravel-main-nb0wjv.free.laravel.cloud` | **Connected** (dashboard) |
+| Public DNS propagation | May take up to ~15 minutes after first connect |
 
-### Root cause
+Verify from your machine:
 
-**Cloudflare error 1016 (HTTP 530)** means the edge receives the request but **cannot route to the Laravel Cloud origin**. This is an infrastructure/deploy issue, not a Flutter or Laravel bug.
+```powershell
+curl.exe -sS "https://laravel-main-nb0wjv.free.laravel.cloud/api/health"
+```
 
-Typical causes:
+Expect **200** and `{ "success": true, "status": "ok" }`.
 
-1. Environment **stopped**, **paused**, or **never finished deploying**
-2. Failed deployment leaving a broken origin mapping
-3. Build commands typo (use `bash cloud-build.sh`, not manual `composer` with typos)
+Or:
 
-The GitHub side is ready: branch **`laravel-cloud`** is synced from `main` (backend at repo root) via `.github/workflows/laravel-cloud-branch.yml`.
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/check-production-api.ps1
+```
 
-## Fixes
+## Laravel Cloud setup
 
-### Option A — Laravel Cloud (primary)
+| Setting | Value |
+|---------|--------|
+| Repository | `Shahad-Albalawi/Mudabbir` |
+| Branch | `laravel-cloud` |
+| Build | `bash cloud-build.sh` |
+| Deploy | `bash cloud-deploy.sh` |
+| `APP_URL` | `https://laravel-main-nb0wjv.free.laravel.cloud` |
 
-**Step-by-step (Arabic):** [DEPLOY_LARAVEL_CLOUD.md](./DEPLOY_LARAVEL_CLOUD.md)
-
-1. Sign in to [Laravel Cloud](https://cloud.laravel.com/).
-2. Open project **laravel-main** (or the env that owns `laravel-main-nb0wjv.laravel.cloud`).
-3. **Branch:** `laravel-cloud` (not `main`).
-4. **Build:** `bash cloud-build.sh` — **Deploy:** `bash cloud-deploy.sh`.
-5. If deploy did not start after a push: **Redeploy** from the dashboard.
-6. Environment variables:
-
-   | Variable | Value |
-   |----------|--------|
-   | `APP_URL` | `https://laravel-main-nb0wjv.laravel.cloud` |
-   | `APP_KEY` | from `php artisan key:generate --show` |
-   | `APP_ENV` | `production` |
-   | `APP_DEBUG` | `false` |
-
-7. Verify:
-
-   ```powershell
-   curl.exe -sS "https://laravel-main-nb0wjv.laravel.cloud/api/health"
-   ```
-
-   Expect **200** and `"status": "ok"`.
-
-   Or:
-
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File scripts/check-production-api.ps1
-   ```
-
-If the environment was deleted, create a new one and update `frontend/config/release.json` + `api_constants.dart`.
-
-### Option B — Render (fallback)
-
-See [DEPLOY_RENDER.md](./DEPLOY_RENDER.md) and `backend/render.yaml`.
+Database: `cloud-env.sh` auto-uses **SQLite** when Cloud MySQL (`forge`) is not attached.
 
 ## Flutter — locked to backend
 
 | Build | API host |
 |-------|----------|
-| **Debug** (default) | `http://10.0.2.2:8000` (local Laravel) |
-| **Release** | `https://laravel-main-nb0wjv.laravel.cloud` via `release.json` |
-| **Override** | `--dart-define=API_BASE_URL=...` or `FORCE_PROD_API=true` in debug |
+| **Release** | `https://laravel-main-nb0wjv.free.laravel.cloud` |
+| **Debug** | `http://10.0.2.2:8000` |
+| **Override** | `--dart-define=API_BASE_URL=...` |
 
-All HTTP (Dio, login, register, sync, chatbot) uses `ApiConstants.baseUrl` / `apiV1Base`. No hardcoded legacy `gemini-api-*` URLs remain in Dart sources.
+All HTTP uses `ApiConstants.baseUrl` / Dio.
 
-Success criteria:
+## Troubleshooting
 
-- `GET /api/health` → `200`, `{ "success": true, "status": "ok" }`
-- `POST /api/register` → `201`
-- No `530` / `error code: 1016`
+| Symptom | Action |
+|---------|--------|
+| HTTP 530 / 1016 | Wait for DNS; confirm env **Running**; **Restart** + Redeploy |
+| `Connection refused` + `forge` on migrate | Fixed in `cloud-env.sh` — redeploy latest `laravel-cloud` |
+| `/api/health` 404 | Wrong project deployed — confirm commit is `fc36dcf`+ from `laravel-cloud` |
 
-`ApiException` maps **530** to a user-facing “server temporarily unavailable” message in Arabic.
+Fallback hosting: [DEPLOY_RENDER.md](./DEPLOY_RENDER.md).
