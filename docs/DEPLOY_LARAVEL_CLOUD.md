@@ -111,6 +111,21 @@ php artisan migrate --force
 2. انتظر اكتمال البناء (أقل من 15 دقيقة).
 3. تأكد أن الحالة **Running** وليست **Stopped** — إن كانت متوقفة: القائمة `...` → **Restart**.
 
+### نشر تلقائي (اختياري — مرة واحدة)
+
+1. Laravel Cloud → **Settings → Deployments** → فعّل **Deploy hook** وانسخ الرابط.
+2. GitHub → `Shahad-Albalawi/Mudabbir` → **Settings → Secrets → Actions** → أضف:
+   - الاسم: `LARAVEL_CLOUD_DEPLOY_HOOK`
+   - القيمة: الرابط المنسوخ
+3. بعدها كل `push` على `main` يحدّث فرع `laravel-cloud` **ويشغّل النشر** تلقائياً.
+
+أو من جهازك (بدون GitHub secret):
+
+```powershell
+$env:LARAVEL_CLOUD_DEPLOY_HOOK = "https://YOUR-DEPLOY-HOOK-URL"
+powershell -ExecutionPolicy Bypass -File scripts/laravel-cloud-redeploy.ps1
+```
+
 ---
 
 ## 6) التحقق

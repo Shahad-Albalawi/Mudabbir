@@ -39,3 +39,15 @@ jobs:
           git branch -M laravel-cloud
           git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
           git push -f origin laravel-cloud
+
+      - name: Trigger Laravel Cloud redeploy
+        env:
+          DEPLOY_HOOK: ${{ secrets.LARAVEL_CLOUD_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$DEPLOY_HOOK" ]; then
+            echo "LARAVEL_CLOUD_DEPLOY_HOOK not set — add it in GitHub repo Secrets to auto-redeploy."
+            exit 0
+          fi
+          echo "Posting deploy hook for laravel-cloud branch..."
+          curl -fsS -X POST "${DEPLOY_HOOK}?commit_hash=${GITHUB_SHA}"
+          echo "Deploy hook accepted."
