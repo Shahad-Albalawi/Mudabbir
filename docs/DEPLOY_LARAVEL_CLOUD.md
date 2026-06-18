@@ -96,7 +96,17 @@ php artisan migrate --force
 | `APP_URL` | `https://laravel-main-nb0wjv.laravel.cloud` |
 | `APP_KEY` | انسخ من `php artisan key:generate --show` محلياً |
 | `LOG_LEVEL` | `warning` |
-| `DB_CONNECTION` | `sqlite` للبداية، أو `mysql` إذا أرفقت **Database** من Laravel Cloud |
+| **`DB_CONNECTION`** | **`sqlite`** إذا ما أرفقتِ Database — **مهم** |
+| `DB_DATABASE` | اتركيه فارغاً (يستخدم `database/database.sqlite` تلقائياً) |
+
+**قاعدة البيانات — اختاري واحد:**
+
+| الخيار | الإعداد |
+|--------|---------|
+| **أ) بدون Cloud Database (أسرع)** | `DB_CONNECTION=sqlite` — احذفي أي `DB_HOST` / `DB_USERNAME` / `DB_PASSWORD` قديمة بقيم `forge` |
+| **ب) إنتاج دائم (مُوصى به)** | من Laravel Cloud: **Add resource → Database** — يحقن المتغيرات تلقائياً ويُبقي المستخدمين بعد إعادة النشر |
+
+> خطأ `Connection refused` + `table_schema = forge` = Laravel يحاول MySQL بدون سيرفر. الحل: `DB_CONNECTION=sqlite` أو أرفقي Database.
 | `AI_PROVIDER` | `openai` أو `gemini` |
 | `OPENAI_API_KEY` | مفتاحك (للشات بوت) |
 | `GEMINI_API_KEY` | اختياري |
@@ -172,6 +182,7 @@ powershell -ExecutionPolicy Bypass -File scripts/build-release-apk.ps1 `
 | `nette/schema` requires php 7.1 - 8.3 | Laravel Cloud على PHP 8.5 — `cloud-build.sh` يحدّث الحزم تلقائياً |
 | 530 / 1016 بعد النشر | تأكد أن النشر نجح وأن البيئة **Running**؛ أعد Deploy |
 | 500 على `/api/health` | راجع سجلات البيئة في Laravel Cloud؛ غالباً `APP_KEY` ناقص أو `migrate` فشل |
+| `Connection refused` + `forge` عند migrate | MySQL غير مربوط — عيّني `DB_CONNECTION=sqlite` أو أرفقي **Database** من Laravel Cloud |
 | 401 على `/api/expenses` | طبيعي بدون توكن — سجّل دخول من التطبيق أولاً |
 | البيانات تختفي بعد إعادة النشر | JSON + sqlite على قرص مؤقت — أرفق Database دائمة |
 
