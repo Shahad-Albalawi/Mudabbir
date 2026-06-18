@@ -24,7 +24,7 @@ jobs:
         run: |
           mkdir deploy-tree
           cp -a backend/. deploy-tree/
-          chmod +x deploy-tree/cloud-build.sh deploy-tree/cloud-deploy.sh
+          chmod +x deploy-tree/cloud-build.sh deploy-tree/cloud-deploy.sh deploy-tree/cloud-env.sh
 
       - name: Push laravel-cloud branch
         env:
