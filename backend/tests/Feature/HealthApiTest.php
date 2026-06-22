@@ -12,6 +12,6 @@ class HealthApiTest extends TestCase
 
         $response->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonPath('status', 'ok');
+            ->assertJsonPath('data.status', 'ok');
     }
 }

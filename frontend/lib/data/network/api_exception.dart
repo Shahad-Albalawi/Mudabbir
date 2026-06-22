@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:mudabbir/data/network/api_exception_localizations.dart';
 import 'package:mudabbir/presentation/resources/network_messages.dart';
-import 'package:mudabbir/presentation/server_challenges/services/api_exception_localizations.dart';
 
 class ApiException implements Exception {
   final String message;

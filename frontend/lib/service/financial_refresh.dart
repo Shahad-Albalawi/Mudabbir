@@ -9,7 +9,7 @@ class FinancialRefresh {
   static Future<void> refreshAll(WidgetRef ref) async {
     await Future.wait([
       ref.read(homeProvider.notifier).reload(),
-      ref.read(statisticsProvider.notifier).loadStatistics(),
+      ref.read(statisticsProvider.notifier).loadStatistics(force: true),
     ]);
   }
 }

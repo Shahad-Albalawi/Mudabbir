@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:mudabbir/constants/api_constants.dart';
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:mudabbir/data/network/failure.dart';
@@ -15,7 +16,7 @@ Future<Either<Failure, T>> requestData<T>({
   HttpMethod method = HttpMethod.GET,
   Map<String, String>? headers,
   Map<String, dynamic>? body,
-  Duration timeout = const Duration(seconds: 10),
+  Duration timeout = ApiConstants.defaultTimeout,
 }) async {
   final dio = getIt<DioClient>().dio;
 

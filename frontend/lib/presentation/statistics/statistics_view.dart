@@ -2,22 +2,25 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:mudabbir/presentation/analysis/analysis_view.dart';
-import 'package:mudabbir/presentation/analysis/analysis_viewmodel.dart';
-import 'package:mudabbir/presentation/expenses/expenses_view.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mudabbir/service/routing_service/app_routes.dart';
 import 'package:mudabbir/presentation/resources/analysis_colors.dart';
+import 'package:mudabbir/presentation/resources/app_colors.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/currency_formatter.dart';
 import 'package:mudabbir/presentation/resources/expense_strings.dart';
-import 'package:mudabbir/presentation/budget/budget_view.dart';
+import 'package:mudabbir/presentation/analysis/analysis_viewmodel.dart';
 import 'package:mudabbir/presentation/resources/entity_localizations.dart';
+import 'package:mudabbir/presentation/resources/design_tokens.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/presentation/widgets/app_card.dart';
 import 'package:mudabbir/presentation/widgets/behavioral_score_card.dart';
-import 'package:mudabbir/presentation/widgets/ios_loading_widget.dart';
-import 'package:mudabbir/service/getit_init.dart';
+import 'package:mudabbir/presentation/widgets/chart_empty_state.dart';
+import 'package:mudabbir/presentation/widgets/app_skeleton.dart';
+import 'package:mudabbir/presentation/resources/statistics_strings.dart';
+import 'package:mudabbir/presentation/widgets/ios_empty_state.dart';
 import 'package:mudabbir/service/haptic_service.dart';
-import 'package:mudabbir/service/navigation_service.dart';
+import 'package:mudabbir/service/reporting/financial_report_exporter.dart';
 import 'statistics_viewmodel.dart';
 
 class StatisticsView extends ConsumerStatefulWidget {
@@ -28,9 +31,37 @@ class StatisticsView extends ConsumerStatefulWidget {
 }
 
 class _StatisticsViewState extends ConsumerState<StatisticsView> {
+  bool _exportingPdf = false;
+
   Future<void> _refresh() async {
     HapticService.light();
-    await ref.read(statisticsProvider.notifier).loadStatistics();
+    await ref.read(statisticsProvider.notifier).loadStatistics(force: true);
+  }
+
+  Future<void> _exportPdf() async {
+    HapticService.medium();
+    setState(() => _exportingPdf = true);
+    try {
+      await FinancialReportExporter().shareMonthlyReport();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppStrings.settingsExportPdfSuccess),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppStrings.settingsExportPdfFail),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _exportingPdf = false);
+    }
   }
 
   @override
@@ -39,8 +70,73 @@ class _StatisticsViewState extends ConsumerState<StatisticsView> {
     final analysis = ref.watch(analysisProvider);
     final scheme = Theme.of(context).colorScheme;
 
-    if (state.isLoading && state.totalIncome == 0 && state.totalExpense == 0) {
-      return const Center(child: IOSLoadingWidget(size: 56));
+    if (state.isLoading && !state.hasMeaningfulData) {
+      return RefreshIndicator(
+        onRefresh: _refresh,
+        color: scheme.primary,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(
+            AppLayout.pageGutter,
+            8,
+            AppLayout.pageGutter,
+            AppLayout.bottomNavClearance,
+          ),
+          children: const [
+            AppSkeletonBox(height: 28, width: 180),
+            SizedBox(height: AppLayout.sectionGap),
+            AppKpiSkeleton(),
+            SizedBox(height: AppLayout.sectionGap),
+            AppSkeletonBox(height: 220),
+            SizedBox(height: AppLayout.sectionGap),
+            AppSkeletonBox(height: 230),
+          ],
+        ),
+      );
+    }
+
+    if (!state.isLoading &&
+        state.errorMessage != null &&
+        !state.hasMeaningfulData) {
+      return RefreshIndicator(
+        onRefresh: _refresh,
+        color: scheme.primary,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            const SizedBox(height: 96),
+            IOSEmptyState(
+              icon: Icons.cloud_off_rounded,
+              title: AppStrings.snackErrorTitle,
+              subtitle: state.errorMessage!,
+              buttonLabel: AppStrings.retry,
+              onPressed: _refresh,
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (!state.isLoading &&
+        state.errorMessage == null &&
+        !state.hasMeaningfulData) {
+      return RefreshIndicator(
+        onRefresh: _refresh,
+        color: scheme.primary,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            const SizedBox(height: 96),
+            IOSEmptyState(
+              icon: CupertinoIcons.chart_bar,
+              title: StatisticsStrings.emptyTitle,
+              subtitle: StatisticsStrings.emptySubtitle,
+              buttonLabel: ExpenseStrings.addExpense,
+              onPressed: () => context.push(AppRoutes.expenses),
+            ),
+          ],
+        ),
+      );
     }
 
     return RefreshIndicator(
@@ -57,30 +153,72 @@ class _StatisticsViewState extends ConsumerState<StatisticsView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (state.errorMessage != null) ...[
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppLayout.sectionGap),
+                child: Material(
+                  color: scheme.error.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  child: ListTile(
+                    leading: Icon(Icons.error_outline, color: scheme.error),
+                    title: Text(
+                      state.errorMessage!,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    trailing: TextButton(
+                      onPressed: _refresh,
+                      child: Text(AppStrings.retry),
+                    ),
+                  ),
+                ),
+              ),
+            ],
             Row(
               children: [
                 Expanded(
                   child: Text(
                     AppStrings.statsTitle,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: scheme.textOnCard,
-                    ),
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
+                          color: scheme.onSurface,
+                          letterSpacing: AppTypographyScale.headlineTracking,
+                        ),
+                  ),
+                ),
+                Semantics(
+                  button: true,
+                  label: AppStrings.exportPdfReport,
+                  child: IconButton(
+                    tooltip: AppStrings.exportPdfReport,
+                    onPressed: _exportingPdf ? null : _exportPdf,
+                    icon: _exportingPdf
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: scheme.chromeIcon,
+                            ),
+                          )
+                        : Icon(
+                            Icons.picture_as_pdf_rounded,
+                            color: scheme.chromeIcon,
+                          ),
                   ),
                 ),
                 IconButton(
                   tooltip: ExpenseStrings.viewAllExpenses,
                   onPressed: () {
-                    getIt<NavigationService>().navigate(const ExpensesView());
+                    context.push(AppRoutes.expenses);
                   },
-                  icon: Icon(CupertinoIcons.doc_text, color: scheme.homeGreen),
+                  icon: Icon(CupertinoIcons.doc_text, color: scheme.chromeIcon),
                 ),
                 IconButton(
                   tooltip: AppStrings.navBudget,
                   onPressed: () {
-                    getIt<NavigationService>().navigate(BudgetView());
+                    context.push(AppRoutes.budget);
                   },
-                  icon: Icon(CupertinoIcons.creditcard, color: scheme.homeGreen),
+                  icon: Icon(CupertinoIcons.creditcard, color: scheme.chromeIcon),
                 ),
               ],
             ),
@@ -94,13 +232,13 @@ class _StatisticsViewState extends ConsumerState<StatisticsView> {
                 score: analysis.behavioralScore,
                 rating: analysis.behavioralRating,
                 summary: analysis.monthComparisonSummary,
-                accentColor: AnalysisColors.health(
+                accentColor: AnalysisColors.forScore(
                   scheme,
-                  analysis.behavioralRating,
+                  analysis.behavioralScore,
                 ),
                 compact: true,
                 onTap: () {
-                  getIt<NavigationService>().navigate(const AnalysisView());
+                  context.push(AppRoutes.analysis);
                 },
               ),
             if (!analysis.isLoading && analysis.behavioralScore > 0)
@@ -152,13 +290,14 @@ class _StatisticsViewState extends ConsumerState<StatisticsView> {
   }
 
   Widget _buildKpiRow(BuildContext context, StatisticsState state) {
+    final scheme = Theme.of(context).colorScheme;
     return Row(
       children: [
         Expanded(
           child: _KpiTile(
             label: AppStrings.totalIncome,
             value: AppCurrency.format(state.totalIncome),
-            color: Theme.of(context).colorScheme.success,
+            valueColor: scheme.incomeAmount,
             icon: Icons.trending_up_rounded,
           ),
         ),
@@ -167,7 +306,7 @@ class _StatisticsViewState extends ConsumerState<StatisticsView> {
           child: _KpiTile(
             label: AppStrings.totalExpense,
             value: AppCurrency.format(state.totalExpense),
-            color: Theme.of(context).colorScheme.error,
+            valueColor: scheme.expenseAmount,
             icon: Icons.trending_down_rounded,
           ),
         ),
@@ -176,7 +315,7 @@ class _StatisticsViewState extends ConsumerState<StatisticsView> {
           child: _KpiTile(
             label: AppStrings.currentBalance,
             value: AppCurrency.format(state.currentBalance),
-            color: Theme.of(context).colorScheme.homeGreen,
+            valueColor: scheme.incomeAmount,
             icon: Icons.account_balance_wallet_outlined,
           ),
         ),
@@ -194,7 +333,7 @@ class _StatisticsViewState extends ConsumerState<StatisticsView> {
           Text(
             title,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w500,
               color: scheme.textOnCard,
             ),
           ),
@@ -207,6 +346,16 @@ class _StatisticsViewState extends ConsumerState<StatisticsView> {
 
   Widget _buildBarChart(BuildContext context, StatisticsState state) {
     final scheme = Theme.of(context).colorScheme;
+    if (state.totalIncome == 0 &&
+        state.totalExpense == 0 &&
+        state.currentBalance == 0) {
+      return ChartEmptyState(
+        icon: Icons.bar_chart_rounded,
+        message: AppStrings.statsEmptyBarChart,
+        height: 210,
+      );
+    }
+
     final maxVal = [
       state.totalIncome,
       state.totalExpense,
@@ -215,7 +364,7 @@ class _StatisticsViewState extends ConsumerState<StatisticsView> {
     final maxY = maxVal > 0 ? maxVal * 1.2 : 10.0;
 
     return SizedBox(
-      height: 210,
+      height: 240,
       child: BarChart(
         BarChartData(
           alignment: BarChartAlignment.spaceAround,
@@ -230,7 +379,7 @@ class _StatisticsViewState extends ConsumerState<StatisticsView> {
                   '${labels[group.x.toInt()]}\n${rod.toY.toStringAsFixed(0)}',
                   TextStyle(
                     color: scheme.textOnCard,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w500,
                     fontSize: 12,
                   ),
                 );
@@ -247,7 +396,7 @@ class _StatisticsViewState extends ConsumerState<StatisticsView> {
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(6),
                   ),
-                  color: scheme.success,
+                  color: FintechPalette.income,
                 ),
               ],
             ),
@@ -260,7 +409,7 @@ class _StatisticsViewState extends ConsumerState<StatisticsView> {
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(6),
                   ),
-                  color: scheme.error,
+                  color: FintechPalette.expense,
                 ),
               ],
             ),
@@ -273,33 +422,16 @@ class _StatisticsViewState extends ConsumerState<StatisticsView> {
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(6),
                   ),
-                  color: scheme.homeGreen,
+                  color: FintechPalette.balance,
                 ),
               ],
             ),
           ],
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            horizontalInterval: maxY / 4,
-            getDrawingHorizontalLine: (v) => FlLine(
-              color: scheme.outline.withValues(alpha: 0.12),
-              strokeWidth: 1,
-            ),
-          ),
+          gridData: const FlGridData(show: false),
           titlesData: FlTitlesData(
             show: true,
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 44,
-                getTitlesWidget: (v, m) => Text(
-                  v.toInt().toString(),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.textMuted,
-                  ),
-                ),
-              ),
+            leftTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
             ),
             rightTitles: const AxisTitles(
               sideTitles: SideTitles(showTitles: false),
@@ -310,16 +442,25 @@ class _StatisticsViewState extends ConsumerState<StatisticsView> {
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
+                reservedSize: 34,
                 getTitlesWidget: (double value, TitleMeta meta) {
                   final labels = AppStrings.barChartLabels;
                   final i = value.toInt();
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      i >= 0 && i < labels.length ? labels[i] : '',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: scheme.textMuted,
-                        fontWeight: FontWeight.w600,
+                  return SideTitleWidget(
+                    axisSide: meta.axisSide,
+                    space: 6,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        i >= 0 && i < labels.length ? labels[i] : '',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: scheme.financialLabel,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.visible,
                       ),
                     ),
                   );
@@ -338,32 +479,11 @@ class _StatisticsViewState extends ConsumerState<StatisticsView> {
   ) {
     final scheme = Theme.of(context).colorScheme;
     if (data.isEmpty) {
-      return Container(
-        height: 200,
-        alignment: Alignment.center,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.pie_chart_outline_rounded,
-              size: 48,
-              color: scheme.outline.withValues(alpha: 0.55),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              AppStrings.chartNoData,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: scheme.textMuted,
-              ),
-            ),
-          ],
-        ),
-      );
+      return ChartEmptyState(message: AppStrings.chartNoData);
     }
 
     final total = data.values.fold(0.0, (a, b) => a + b);
     final palette = scheme.chartPalette;
-    final labelColor = scheme.textOnCard;
     final sections = data.entries.toList().asMap().entries.map((entry) {
       final i = entry.key;
       final e = entry.value;
@@ -373,13 +493,13 @@ class _StatisticsViewState extends ConsumerState<StatisticsView> {
         value: e.value,
         title: '${percent.toStringAsFixed(0)}%',
         color: color,
-        radius: 58,
+        radius: 52,
         titleStyle: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: labelColor,
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+          color: Colors.white.withValues(alpha: 0.95),
         ),
-        titlePositionPercentageOffset: 0.58,
+        titlePositionPercentageOffset: 0.62,
       );
     }).toList();
 
@@ -392,8 +512,8 @@ class _StatisticsViewState extends ConsumerState<StatisticsView> {
             child: PieChart(
               PieChartData(
                 sections: sections,
-                centerSpaceRadius: 42,
-                sectionsSpace: 3,
+                centerSpaceRadius: 48,
+                sectionsSpace: 2,
                 pieTouchData: PieTouchData(enabled: true),
               ),
             ),
@@ -403,15 +523,16 @@ class _StatisticsViewState extends ConsumerState<StatisticsView> {
             flex: 2,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: data.entries.toList().asMap().entries.map((entry) {
                 final i = entry.key;
                 final e = entry.value;
                 final percent = (e.value / (total == 0 ? 1 : total)) * 100;
                 final color = palette[i % palette.length];
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.only(bottom: 10),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Container(
                         width: 10,
@@ -426,17 +547,26 @@ class _StatisticsViewState extends ConsumerState<StatisticsView> {
                         child: Text(
                           EntityLocalizations.categoryName(e.key),
                           style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: scheme.textMuted),
+                              ?.copyWith(
+                            color: scheme.financialLabel,
+                            fontWeight: FontWeight.w500,
+                          ),
                           textDirection: TextDirection.rtl,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      Text(
-                        '${percent.toStringAsFixed(0)}%',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: scheme.textOnCard,
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: 38,
+                        child: Text(
+                          '${percent.toStringAsFixed(0)}%',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: scheme.textOnCard,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                          textAlign: TextAlign.end,
                         ),
                       ),
                     ],
@@ -465,17 +595,16 @@ class _StatisticsViewState extends ConsumerState<StatisticsView> {
           Text(
             title,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w500,
               color: scheme.textOnCard,
             ),
           ),
           const SizedBox(height: 12),
           if (data.isEmpty)
-            Text(
-              AppStrings.chartNoData,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: scheme.textMuted,
-              ),
+            ChartEmptyState(
+              message: AppStrings.chartNoData,
+              height: 120,
+              icon: Icons.trending_flat_rounded,
             )
           else
             Column(
@@ -502,7 +631,7 @@ class _StatisticsViewState extends ConsumerState<StatisticsView> {
                             '${e.value.toStringAsFixed(0)}%',
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w500,
                               color: color,
                             ),
                           ),
@@ -516,7 +645,7 @@ class _StatisticsViewState extends ConsumerState<StatisticsView> {
                           backgroundColor:
                               scheme.outline.withValues(alpha: 0.15),
                           valueColor: AlwaysStoppedAnimation<Color>(color),
-                          minHeight: 6,
+                          minHeight: 5,
                         ),
                       ),
                     ],
@@ -533,48 +662,58 @@ class _StatisticsViewState extends ConsumerState<StatisticsView> {
 class _KpiTile extends StatelessWidget {
   final String label;
   final String value;
-  final Color color;
+  final Color valueColor;
   final IconData icon;
 
   const _KpiTile({
     required this.label,
     required this.value,
-    required this.color,
+    required this.valueColor,
     required this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return AppCard(
-      margin: EdgeInsets.zero,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-      color: color.withValues(alpha: scheme.brightness == Brightness.dark ? 0.12 : 0.08),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 18, color: color),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: scheme.textMuted,
-              fontWeight: FontWeight.w600,
+    return Semantics(
+      label: '$label: $value',
+      child: AppCard(
+        margin: EdgeInsets.zero,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: scheme.chromeIconFill,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, size: 16, color: scheme.chromeIcon),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w800,
-              color: scheme.textOnCard,
+            const SizedBox(height: 10),
+            Text(
+              label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: scheme.textMuted,
+                    fontWeight: FontWeight.w500,
+                    height: 1.2,
+                  ),
             ),
-          ),
-        ],
+            const SizedBox(height: 6),
+            Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: valueColor,
+                  ),
+            ),
+          ],
+        ),
       ),
     );
   }

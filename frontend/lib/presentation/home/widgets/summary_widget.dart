@@ -3,10 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mudabbir/presentation/home/home_viewmodel.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/currency_formatter.dart';
+import 'package:mudabbir/presentation/resources/app_icons.dart';
+import 'package:mudabbir/presentation/resources/design_tokens.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/presentation/widgets/app_card.dart';
+import 'package:mudabbir/presentation/widgets/app_skeleton.dart';
+import 'package:mudabbir/presentation/widgets/ios_empty_state.dart';
 import 'package:mudabbir/service/haptic_service.dart';
 
+/// Premium financial overview — hero balance, calm metrics, clear hierarchy.
 class SummaryWidget extends ConsumerStatefulWidget {
   const SummaryWidget({super.key});
 
@@ -24,130 +29,141 @@ class _SummaryWidgetState extends ConsumerState<SummaryWidget> {
     final homeState = ref.watch(homeProvider);
     final scheme = Theme.of(context).colorScheme;
 
+    if (homeState.isLoading) {
+      return const AppSummarySkeleton();
+    }
+
+    if (homeState.error != null) {
+      return IOSEmptyState(
+        icon: Icons.cloud_off_rounded,
+        title: AppStrings.snackErrorTitle,
+        subtitle: homeState.error!,
+        buttonLabel: AppStrings.retry,
+        onPressed: () => ref.read(homeProvider.notifier).reload(),
+      );
+    }
+
+    final balance = showTotal
+        ? homeState.currentBalance
+        : homeState.monthlyBalance;
+    final income =
+        showTotal ? homeState.totalIncome : homeState.monthlyIncome;
+    final expense =
+        showTotal ? homeState.totalExpense : homeState.monthlyExpense;
+
     return AppCard(
-      color: scheme.brightness == Brightness.light
-          ? scheme.homeBannerFill.withValues(alpha: 0.55)
-          : scheme.surface,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            height: 3,
-            margin: const EdgeInsets.only(bottom: 14),
-            decoration: BoxDecoration(
-              color: scheme.homeGreen,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
           Row(
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      AppStrings.financialStatus,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      showTotal ? AppStrings.allTime : AppStrings.thisMonth,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                child: Text(
+                  AppStrings.financialStatus,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w500,
                         color: scheme.textMuted,
+                        letterSpacing: 0.2,
                       ),
-                    ),
-                  ],
                 ),
               ),
-              TextButton.icon(
-                onPressed: () {
+              _PeriodPill(
+                showTotal: showTotal,
+                onToggle: () {
                   HapticService.selection();
                   setState(() => showTotal = !showTotal);
                 },
-                icon: Icon(
-                  showTotal ? Icons.calendar_view_month : Icons.calendar_today,
-                  size: 16,
-                  color: scheme.homeGreen,
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            AppStrings.currentBalance,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: scheme.textMuted,
+                  fontWeight: FontWeight.w500,
                 ),
-                label: Text(
-                  showTotal
-                      ? AppStrings.totalLabel
-                      : AppStrings.currentMonthLabel,
-                  style: TextStyle(fontSize: 12, color: scheme.homeGreen),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _formatAmount(balance),
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: scheme.onSurface,
+                  letterSpacing: AppTypographyScale.headlineTracking,
+                  height: 1.08,
+                ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: _MetricChip(
+                  label: AppStrings.totalIncome,
+                  value: _formatAmount(income),
+                  valueColor: scheme.incomeAmount,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: _MetricChip(
+                  label: AppStrings.totalExpense,
+                  value: _formatAmount(expense),
+                  valueColor: scheme.expenseAmount,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          const Divider(height: 1),
-          const SizedBox(height: 12),
-          _amountRow(
-            context,
-            label: AppStrings.totalIncome,
-            amount: _formatAmount(
-              showTotal ? homeState.totalIncome : homeState.monthlyIncome,
-            ),
-            color: scheme.success,
-          ),
-          const SizedBox(height: 10),
-          _amountRow(
-            context,
-            label: AppStrings.currentBalance,
-            amount: _formatAmount(
-              showTotal ? homeState.currentBalance : homeState.monthlyBalance,
-            ),
-            color: scheme.homeGreen,
-            emphasized: true,
-          ),
-          const SizedBox(height: 10),
-          _amountRow(
-            context,
-            label: AppStrings.totalExpense,
-            amount: _formatAmount(
-              showTotal ? homeState.totalExpense : homeState.monthlyExpense,
-            ),
-            color: scheme.error,
-          ),
           if (homeState.financialHealthScore > 0) ...[
-            const SizedBox(height: 14),
-            const Divider(height: 1),
-            const SizedBox(height: 10),
-            _healthRow(context, homeState),
+            const SizedBox(height: AppSpacing.md),
+            _HealthPill(score: homeState.financialHealthScore),
           ],
           if (homeState.spendingAlerts.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             for (final alert in homeState.spendingAlerts)
               Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: 16,
-                      color: scheme.textMuted,
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        alert,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: scheme.textMuted,
-                        ),
+                padding: const EdgeInsets.only(top: AppSpacing.sm),
+                child: Text(
+                  alert,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: scheme.textMuted,
+                        height: 1.4,
                       ),
-                    ),
-                  ],
                 ),
               ),
           ],
           if (homeState.nextMonthBudgetSuggestion > 0) ...[
-            const SizedBox(height: 8),
-            Text(
-              '${AppStrings.nextMonthBudgetSuggestion}: ${AppCurrency.format(homeState.nextMonthBudgetSuggestion)}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: scheme.textMuted,
+            const SizedBox(height: AppSpacing.md),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.smd,
+              ),
+              decoration: BoxDecoration(
+                color: scheme.insightSurface,
+                borderRadius: BorderRadius.circular(AppLayout.chipRadius),
+              ),
+              child: RichText(
+                text: TextSpan(
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: scheme.financialLabel,
+                        fontWeight: FontWeight.w500,
+                        height: 1.45,
+                      ),
+                  children: [
+                    TextSpan(text: '${AppStrings.nextMonthBudgetSuggestion}: '),
+                    TextSpan(
+                      text: AppCurrency.format(
+                        homeState.nextMonthBudgetSuggestion,
+                      ),
+                      style: TextStyle(
+                        color: scheme.incomeAmount,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -155,56 +171,125 @@ class _SummaryWidgetState extends ConsumerState<SummaryWidget> {
       ),
     );
   }
+}
 
-  Widget _amountRow(
-    BuildContext context, {
-    required String label,
-    required String amount,
-    required Color color,
-    bool emphasized = false,
-  }) {
+class _PeriodPill extends StatelessWidget {
+  final bool showTotal;
+  final VoidCallback onToggle;
+
+  const _PeriodPill({required this.showTotal, required this.onToggle});
+
+  @override
+  Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Row(
-      children: [
-        Expanded(
+    return Material(
+      color: scheme.groupedFill,
+      borderRadius: BorderRadius.circular(AppRadius.xxl),
+      child: InkWell(
+        onTap: onToggle,
+        borderRadius: BorderRadius.circular(AppRadius.xxl),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.smd,
+            vertical: AppSpacing.xs + 2,
+          ),
           child: Text(
-            label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: scheme.textOnCard,
-            ),
+            showTotal ? AppStrings.allTime : AppStrings.thisMonth,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: scheme.primary,
+                  fontWeight: FontWeight.w500,
+                ),
           ),
         ),
-        Text(
-          amount,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: color,
-            fontWeight: emphasized ? FontWeight.w700 : FontWeight.w600,
-          ),
-        ),
-      ],
+      ),
     );
   }
+}
 
-  Widget _healthRow(BuildContext context, HomeState homeState) {
+class _MetricChip extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color valueColor;
+
+  const _MetricChip({
+    required this.label,
+    required this.value,
+    required this.valueColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final score = homeState.financialHealthScore;
-    final scoreColor = score >= 75
-        ? scheme.homeGreen
-        : score >= 50
-        ? scheme.warning
-        : scheme.error;
-
-    return Row(
-      children: [
-        Icon(Icons.favorite_border, size: 18, color: scoreColor),
-        const SizedBox(width: 8),
-        Text(
-          '${AppStrings.financialHealth}: $score/100',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w500,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        color: scheme.groupedFill,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: scheme.textMuted,
+                  fontWeight: FontWeight.w500,
+                  fontSize: AppTypographyScale.caption,
+                ),
           ),
-        ),
-      ],
+          const SizedBox(height: 4),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: valueColor,
+                  letterSpacing: -0.2,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HealthPill extends StatelessWidget {
+  final int score;
+
+  const _HealthPill({required this.score});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final color = score >= 75
+        ? scheme.dataGreen
+        : score >= 50
+            ? scheme.warning
+            : scheme.error;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppRadius.xxl),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(AppIcons.heart, size: 16, color: color),
+          const SizedBox(width: 6),
+          Text(
+            '${AppStrings.financialHealth}: $score/100',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: color,
+                ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -4,7 +4,7 @@ import 'package:mudabbir/domain/models/savings_goal.dart';
 import 'package:mudabbir/domain/repository/goals_repository/goals_repository.dart';
 import 'package:mudabbir/domain/repository/synced_goals_repository/synced_goals_repository.dart';
 import 'package:mudabbir/presentation/resources/goal_strings.dart';
-import 'package:mudabbir/presentation/server_challenges/services/api_exception.dart';
+import 'package:mudabbir/data/network/api_exception.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/utils/dev_log.dart';
 
@@ -19,6 +19,7 @@ class GoalState {
   final bool isEdit;
   final bool isOffline;
   final GoalWriteResult? lastContribution;
+  final bool isSubmitting;
 
   GoalState({
     this.isLoading = false,
@@ -29,6 +30,7 @@ class GoalState {
     this.isEdit = false,
     this.isOffline = false,
     this.lastContribution,
+    this.isSubmitting = false,
   });
 
   GoalState copyWith({
@@ -41,6 +43,7 @@ class GoalState {
     bool? isOffline,
     GoalWriteResult? lastContribution,
     bool clearContribution = false,
+    bool? isSubmitting,
   }) {
     return GoalState(
       isLoading: isLoading ?? this.isLoading,
@@ -52,6 +55,7 @@ class GoalState {
       isOffline: isOffline ?? this.isOffline,
       lastContribution:
           clearContribution ? null : (lastContribution ?? this.lastContribution),
+      isSubmitting: isSubmitting ?? this.isSubmitting,
     );
   }
 }
@@ -66,19 +70,25 @@ class GoalViewmodel extends StateNotifier<GoalState> {
 
     try {
       final result = await _repository.getGoals();
+      if (!mounted) return;
       state = state.copyWith(
         isLoading: false,
         goals: result.goals,
         isOffline: result.isOffline,
+        isDelete: false,
+        isAdd: false,
+        isEdit: false,
       );
     } on ApiException catch (e) {
       devLog(e.message);
+      if (!mounted) return;
       state = state.copyWith(isLoading: false, error: e.message);
-    } catch (e) {
-      devLog(e.toString());
+    } catch (_) {
+      devLog('Goals load error');
+      if (!mounted) return;
       state = state.copyWith(
         isLoading: false,
-        error: GoalStrings.updateFailed,
+        error: GoalStrings.loadFailed,
       );
     }
   }
@@ -92,23 +102,28 @@ class GoalViewmodel extends StateNotifier<GoalState> {
     required DateTime endDate,
     String? imageSourcePath,
   }) async {
-    final result = await _repository.createGoal(
-      name: name,
-      target: target,
-      currentAmount: currentAmount,
-      type: type,
-      startDate: startDate,
-      endDate: endDate,
-      imageSourcePath: imageSourcePath,
-    );
+    state = state.copyWith(isSubmitting: true, error: null);
+    try {
+      final result = await _repository.createGoal(
+        name: name,
+        target: target,
+        currentAmount: currentAmount,
+        type: type,
+        startDate: startDate,
+        endDate: endDate,
+        imageSourcePath: imageSourcePath,
+      );
 
-    result.fold(
-      (failure) => state = state.copyWith(error: failure.userFacingMessage),
-      (sync) => state = state.copyWith(
-        isAdd: true,
-        error: sync.queuedOffline ? GoalStrings.savedOffline : null,
-      ),
-    );
+      result.fold(
+        (failure) => state = state.copyWith(error: failure.userFacingMessage),
+        (sync) => state = state.copyWith(
+          isAdd: true,
+          error: sync.queuedOffline ? GoalStrings.savedOffline : null,
+        ),
+      );
+    } finally {
+      state = state.copyWith(isSubmitting: false);
+    }
   }
 
   Future<void> updateGoal({
@@ -120,42 +135,56 @@ class GoalViewmodel extends StateNotifier<GoalState> {
     required DateTime endDate,
     String? imageSourcePath,
   }) async {
-    final result = await _repository.updateGoal(
-      goalId: goalId,
-      name: name,
-      target: target,
-      type: type,
-      startDate: startDate,
-      endDate: endDate,
-      imageSourcePath: imageSourcePath,
-    );
+    state = state.copyWith(isSubmitting: true, error: null);
+    try {
+      final result = await _repository.updateGoal(
+        goalId: goalId,
+        name: name,
+        target: target,
+        type: type,
+        startDate: startDate,
+        endDate: endDate,
+        imageSourcePath: imageSourcePath,
+      );
 
-    result.fold(
-      (failure) => state = state.copyWith(error: failure.userFacingMessage),
-      (sync) {
-        final updated = state.goals
-            .map((g) => g.id == goalId ? sync.goal : g)
-            .toList();
-        state = state.copyWith(
-          goals: updated,
-          isEdit: true,
-          error: sync.queuedOffline ? GoalStrings.savedOffline : null,
-        );
-      },
-    );
+      result.fold(
+        (failure) => state = state.copyWith(error: failure.userFacingMessage),
+        (sync) {
+          final updated = state.goals
+              .map((g) => g.id == goalId ? sync.goal : g)
+              .toList();
+          state = state.copyWith(
+            goals: updated,
+            isEdit: true,
+            error: sync.queuedOffline ? GoalStrings.savedOffline : null,
+          );
+        },
+      );
+    } finally {
+      state = state.copyWith(isSubmitting: false);
+    }
   }
 
   Future<void> deleteGoal(int id) async {
-    final result = await _repository.deleteGoal(id);
-    result.fold(
-      (_) {},
-      (sync) {
-        if (sync.deleted) {
-          final updated = state.goals.where((g) => g.id != id).toList();
-          state = state.copyWith(goals: updated, isDelete: true);
-        }
-      },
-    );
+    state = state.copyWith(isSubmitting: true, error: null);
+    try {
+      final result = await _repository.deleteGoal(id);
+      result.fold(
+        (failure) => state = state.copyWith(error: failure.userFacingMessage),
+        (sync) {
+          if (sync.deleted) {
+            final updated = state.goals.where((g) => g.id != id).toList();
+            state = state.copyWith(
+              goals: updated,
+              isDelete: true,
+              error: sync.queuedOffline ? GoalStrings.savedOffline : null,
+            );
+          }
+        },
+      );
+    } finally {
+      state = state.copyWith(isSubmitting: false);
+    }
   }
 
   Future<GoalWriteResult?> addContribution({

@@ -1,13 +1,16 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:mudabbir/presentation/resources/app_colors.dart';
+import 'package:mudabbir/presentation/resources/app_icons.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
-import 'package:mudabbir/presentation/resources/server_challenge_strings.dart';
 import 'package:mudabbir/presentation/resources/font_manager.dart';
+import 'package:mudabbir/presentation/resources/server_challenge_strings.dart';
 import 'package:mudabbir/presentation/resources/styles_manager.dart';
 import 'package:mudabbir/presentation/server_challenges/models/challenge_model.dart';
-import 'package:mudabbir/presentation/server_challenges/screens/challenge_detail_screen.dart';
-import 'package:mudabbir/service/getit_init.dart';
-import 'package:mudabbir/service/navigation_service.dart';
-import 'package:intl/intl.dart';
+import 'package:mudabbir/presentation/widgets/app_card.dart';
+import 'package:mudabbir/service/routing_service/app_routes.dart';
 
 class ChallengeCard extends StatelessWidget {
   final ChallengeModel challenge;
@@ -17,37 +20,28 @@ class ChallengeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      color: scheme.surface,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppLayout.cardRadius),
-        side: BorderSide(
-          color: scheme.outline.withValues(alpha: 0.3),
-        ),
-      ),
-      child: InkWell(
-        onTap: () => _navigateToDetail(),
-        borderRadius: BorderRadius.circular(AppLayout.cardRadius),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(scheme),
-              const SizedBox(height: 12),
-              _buildAmountRow(scheme),
-              const SizedBox(height: 8),
-              _buildDateInfo(scheme),
-              if (challenge.isActive || challenge.isUpcoming) ...[
-                const SizedBox(height: 16),
-                _buildProgress(scheme),
-              ],
+    return Semantics(
+      label: challenge.name,
+      button: true,
+      child: AppCard(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        onTap: () => _navigateToDetail(context),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeader(scheme),
+            const SizedBox(height: 12),
+            _buildAmountRow(scheme),
+            const SizedBox(height: 8),
+            _buildDateInfo(scheme),
+            if (challenge.isActive || challenge.isUpcoming) ...[
               const SizedBox(height: 16),
-              _buildFooter(scheme),
+              _buildProgress(scheme),
             ],
-          ),
+            const SizedBox(height: 16),
+            _buildFooter(scheme),
+          ],
         ),
       ),
     );
@@ -79,7 +73,7 @@ class ChallengeCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -99,26 +93,26 @@ class ChallengeCard extends StatelessWidget {
   (Color, IconData, String) _getStatusInfo(ColorScheme scheme) {
     if (challenge.achieved) {
       return (
-        scheme.success,
-        Icons.check_circle,
+        GamificationPalette.mint,
+        CupertinoIcons.checkmark_seal_fill,
         ServerChallengeStrings.cardCompleted,
       );
     } else if (challenge.isExpired) {
       return (
         scheme.error,
-        Icons.cancel,
+        CupertinoIcons.xmark_circle_fill,
         ServerChallengeStrings.cardExpired,
       );
     } else if (challenge.isActive) {
       return (
-        scheme.primary,
-        Icons.trending_up,
+        GamificationPalette.blue,
+        CupertinoIcons.flame_fill,
         ServerChallengeStrings.cardActive,
       );
     } else {
       return (
-        scheme.warning,
-        Icons.schedule,
+        GamificationPalette.amber,
+        CupertinoIcons.time,
         ServerChallengeStrings.cardUpcoming,
       );
     }
@@ -129,7 +123,7 @@ class ChallengeCard extends StatelessWidget {
 
     return Row(
       children: [
-        Icon(Icons.calendar_today, size: 16, color: scheme.textMuted),
+        Icon(AppIcons.calendar, size: 16, color: scheme.textMuted),
         const SizedBox(width: 8),
         Text(
           '${dateFormat.format(challenge.startDate)} - ${dateFormat.format(challenge.endDate)}',
@@ -145,13 +139,13 @@ class ChallengeCard extends StatelessWidget {
   Widget _buildAmountRow(ColorScheme scheme) {
     return Row(
       children: [
-        Icon(Icons.attach_money, size: 16, color: scheme.primary),
+        Icon(AppIcons.wallet, size: 16, color: scheme.chromeIcon),
         const SizedBox(width: 8),
         Text(
           ServerChallengeStrings.goalAmount(challenge.amount),
           style: getBoldStyle(
             fontSize: FontSize.s16,
-            color: scheme.primary,
+            color: scheme.dataGreen,
           ),
         ),
         const Spacer(),
@@ -159,7 +153,7 @@ class ChallengeCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: scheme.success.withValues(alpha: 0.1),
+              color: GamificationPalette.mint.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
@@ -168,7 +162,7 @@ class ChallengeCard extends StatelessWidget {
               ),
               style: getMediumStyle(
                 fontSize: FontSize.s12,
-                color: scheme.success,
+                color: GamificationPalette.mint,
               ),
             ),
           ),
@@ -178,7 +172,8 @@ class ChallengeCard extends StatelessWidget {
 
   Widget _buildProgress(ColorScheme scheme) {
     final daysRemaining = challenge.daysRemaining;
-    final progress = challenge.progress;
+    final progress = challenge.progress.clamp(0.0, 1.0);
+    final progressColor = GamificationPalette.progressColor(progress);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,7 +194,7 @@ class ChallengeCard extends StatelessWidget {
               '${(progress * 100).toInt()}%',
               style: getBoldStyle(
                 fontSize: FontSize.s12,
-                color: scheme.primary,
+                color: scheme.dataGreen,
               ),
             ),
           ],
@@ -211,9 +206,7 @@ class ChallengeCard extends StatelessWidget {
             value: progress,
             minHeight: 8,
             backgroundColor: scheme.outline.withValues(alpha: 0.2),
-            valueColor: AlwaysStoppedAnimation<Color>(
-              challenge.isUpcoming ? scheme.warning : scheme.primary,
-            ),
+            valueColor: AlwaysStoppedAnimation<Color>(progressColor),
           ),
         ),
       ],
@@ -226,7 +219,7 @@ class ChallengeCard extends StatelessWidget {
         _buildParticipantsInfo(scheme),
         const Spacer(),
         if (challenge.participants.length > 1)
-          Icon(Icons.group, size: 16, color: scheme.textMuted),
+          Icon(CupertinoIcons.person_2, size: 16, color: scheme.textMuted),
       ],
     );
   }
@@ -254,10 +247,9 @@ class ChallengeCard extends StatelessWidget {
   }
 
   Widget _buildAvatarStack(ColorScheme scheme) {
-    final displayParticipants = challenge.participants
-        .take(3)
-        .toList(); // Show max 3 avatars
+    final displayParticipants = challenge.participants.take(3).toList();
     final remaining = challenge.participants.length - 3;
+    final palette = GamificationPalette.milestones;
 
     return SizedBox(
       width: displayParticipants.length * 20.0 + (remaining > 0 ? 20 : 0),
@@ -267,7 +259,11 @@ class ChallengeCard extends StatelessWidget {
           for (int i = 0; i < displayParticipants.length; i++)
             Positioned(
               left: i * 20.0,
-              child: _buildAvatar(scheme, displayParticipants[i].name),
+              child: _buildAvatar(
+                scheme,
+                displayParticipants[i].name,
+                palette[i % palette.length],
+              ),
             ),
           if (remaining > 0)
             Positioned(
@@ -279,12 +275,12 @@ class ChallengeCard extends StatelessWidget {
     );
   }
 
-  Widget _buildAvatar(ColorScheme scheme, String name) {
+  Widget _buildAvatar(ColorScheme scheme, String name, Color accent) {
     return Container(
       width: 32,
       height: 32,
       decoration: BoxDecoration(
-        color: scheme.primary.withValues(alpha: 0.2),
+        color: accent.withValues(alpha: 0.18),
         shape: BoxShape.circle,
         border: Border.all(color: scheme.surface, width: 2),
       ),
@@ -293,7 +289,7 @@ class ChallengeCard extends StatelessWidget {
           name.isNotEmpty ? name[0].toUpperCase() : '?',
           style: getMediumStyle(
             fontSize: FontSize.s12,
-            color: scheme.primary,
+            color: accent,
           ),
         ),
       ),
@@ -305,7 +301,7 @@ class ChallengeCard extends StatelessWidget {
       width: 32,
       height: 32,
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest,
+        color: scheme.groupedFill,
         shape: BoxShape.circle,
         border: Border.all(color: scheme.surface, width: 2),
       ),
@@ -321,9 +317,7 @@ class ChallengeCard extends StatelessWidget {
     );
   }
 
-  void _navigateToDetail() {
-    getIt<NavigationService>().navigate(
-      ChallengeDetailScreen(challengeId: challenge.id),
-    );
+  void _navigateToDetail(BuildContext context) {
+    context.push(AppRoutes.challengeDetail(challenge.id));
   }
 }

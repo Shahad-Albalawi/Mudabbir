@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mudabbir/domain/models/expense_transaction.dart';
+import 'package:mudabbir/presentation/auth/financial_form_validators.dart';
 import 'package:mudabbir/presentation/expenses/expenses_viewmodel.dart';
 import 'package:mudabbir/presentation/resources/entity_localizations.dart';
 import 'package:mudabbir/presentation/resources/expense_strings.dart';
+import 'package:mudabbir/presentation/widgets/app_loading_button.dart';
 import 'package:mudabbir/service/financial_refresh.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Bottom sheet for creating or editing an expense.
 class ExpenseFormSheet extends ConsumerStatefulWidget {
-  final ExpensesViewModel model;
   final ExpenseTransaction? existing;
 
   const ExpenseFormSheet({
     super.key,
-    required this.model,
     this.existing,
   });
 
@@ -31,10 +31,15 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
   bool _isRecurring = false;
   bool _saving = false;
 
+  ExpensesState get _expensesState => ref.read(expensesProvider);
+
+  ExpensesNotifier get _notifier => ref.read(expensesProvider.notifier);
+
   @override
   void initState() {
     super.initState();
     final existing = widget.existing;
+    final meta = ref.read(expensesProvider);
     _amountCtrl = TextEditingController(
       text: existing != null ? existing.amount.toStringAsFixed(0) : '',
     );
@@ -43,12 +48,10 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
     );
     _notesCtrl = TextEditingController(text: existing?.notes ?? '');
     _accountId = existing?.accountId ??
-        (widget.model.accounts.isNotEmpty
-            ? widget.model.accounts.first['id'] as int?
-            : null);
+        (meta.accounts.isNotEmpty ? meta.accounts.first['id'] as int? : null);
     _categoryId = existing?.categoryId ??
-        (widget.model.categories.isNotEmpty
-            ? widget.model.categories.first['id'] as int?
+        (meta.categories.isNotEmpty
+            ? meta.categories.first['id'] as int?
             : null);
     _isRecurring = existing?.isRecurring ?? false;
   }
@@ -63,6 +66,8 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final accounts = _expensesState.accounts;
+    final categories = _expensesState.categories;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
@@ -87,24 +92,21 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(labelText: ExpenseStrings.amount),
-                  validator: (v) {
-                    final n = double.tryParse(v ?? '');
-                    if (n == null || n <= 0) return ExpenseStrings.invalidAmount;
-                    return null;
-                  },
+                  validator: FinancialFormValidators.amount,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _dateCtrl,
                   readOnly: true,
                   decoration: InputDecoration(labelText: ExpenseStrings.date),
+                  validator: FinancialFormValidators.dateNotFuture,
                   onTap: () async {
                     final picked = await showDatePicker(
                       context: context,
                       initialDate: DateTime.tryParse(_dateCtrl.text) ??
                           DateTime.now(),
                       firstDate: DateTime(2020),
-                      lastDate: DateTime(2100),
+                      lastDate: DateTime.now(),
                     );
                     if (picked != null) {
                       _dateCtrl.text =
@@ -117,7 +119,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                   initialValue: _accountId,
                   decoration:
                       InputDecoration(labelText: ExpenseStrings.account),
-                  items: widget.model.accounts
+                  items: accounts
                       .map(
                         (a) => DropdownMenuItem<int>(
                           value: a['id'] as int,
@@ -128,13 +130,14 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                       )
                       .toList(),
                   onChanged: (v) => setState(() => _accountId = v),
+                  validator: (_) => FinancialFormValidators.accountSelected(_accountId),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<int>(
                   initialValue: _categoryId,
                   decoration:
                       InputDecoration(labelText: ExpenseStrings.category),
-                  items: widget.model.categories
+                  items: categories
                       .map(
                         (c) => DropdownMenuItem<int>(
                           value: c['id'] as int,
@@ -145,12 +148,15 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                       )
                       .toList(),
                   onChanged: (v) => setState(() => _categoryId = v),
+                  validator: (_) => FinancialFormValidators.categorySelected(_categoryId),
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _notesCtrl,
                   decoration: InputDecoration(labelText: ExpenseStrings.notes),
                   maxLines: 2,
+                  maxLength: FinancialFormValidators.maxNotesLength,
+                  validator: FinancialFormValidators.notes,
                 ),
                 const SizedBox(height: 8),
                 SwitchListTile(
@@ -160,19 +166,10 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                   onChanged: (v) => setState(() => _isRecurring = v),
                 ),
                 const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: _saving ? null : _save,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: _saving
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(ExpenseStrings.save),
+                AppLoadingButton(
+                  isLoading: _saving,
+                  label: ExpenseStrings.save,
+                  onPressed: _save,
                 ),
               ],
             ),
@@ -184,14 +181,13 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
 
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    if (_accountId == null || _categoryId == null) return;
 
     setState(() => _saving = true);
     final amount = double.parse(_amountCtrl.text);
     final notes = _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim();
 
     final message = widget.existing == null
-        ? await widget.model.addExpense(
+        ? await _notifier.addExpense(
             amount: amount,
             date: _dateCtrl.text,
             accountId: _accountId!,
@@ -199,7 +195,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
             notes: notes,
             isRecurring: _isRecurring,
           )
-        : await widget.model.updateExpense(
+        : await _notifier.updateExpense(
             widget.existing!,
             amount: amount,
             date: _dateCtrl.text,

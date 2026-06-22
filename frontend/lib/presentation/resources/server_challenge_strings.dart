@@ -17,6 +17,12 @@ class ServerChallengeStrings {
       ? 'Something went wrong. Please try again later.'
       : 'حدث خطأ غير متوقع. يرجى المحاولة لاحقاً.';
 
+  static String get loadFailed =>
+      _e ? 'Could not load challenges.' : 'تعذر تحميل التحديات.';
+
+  static String get syncFailed =>
+      _e ? 'Could not sync challenge data.' : 'تعذر مزامنة بيانات التحدي.';
+
   static String get challengeCreatedSuccess =>
       _e ? 'Challenge created successfully' : 'تم إنشاء التحدي بنجاح';
 
@@ -158,14 +164,30 @@ class ServerChallengeStrings {
   static String get emptyActive =>
       _e ? 'No active challenges' : 'لا توجد تحديات نشطة';
 
+  static String get emptyActiveSubtitle => _e
+      ? 'Create a challenge and invite friends to save together.'
+      : 'أنشئ تحدياً وادعُ أصدقاءك للادخار معاً.';
+
   static String get emptyUpcoming =>
       _e ? 'No upcoming challenges' : 'لا توجد تحديات قادمة';
+
+  static String get emptyUpcomingSubtitle => _e
+      ? 'Scheduled challenges will appear here.'
+      : 'ستظهر التحديات المجدولة هنا.';
 
   static String get emptyCompleted =>
       _e ? 'No completed challenges' : 'لا توجد تحديات مكتملة';
 
+  static String get emptyCompletedSubtitle => _e
+      ? 'Finished challenges are listed here.'
+      : 'التحديات المنتهية بنجاح تظهر هنا.';
+
   static String get emptyExpired =>
       _e ? 'No ended challenges' : 'لا توجد تحديات منتهية';
+
+  static String get emptyExpiredSubtitle => _e
+      ? 'Expired challenges without completion appear here.'
+      : 'التحديات المنتهية دون إكمال تظهر هنا.';
 
   // —— Create screen ——
   static String get createTitle => _e ? 'Create challenge' : 'إنشاء تحدي';
@@ -312,6 +334,10 @@ class ServerChallengeStrings {
   static String get pendingEmpty =>
       _e ? 'No pending invitations' : 'لا توجد دعوات معلقة';
 
+  static String get pendingEmptySubtitle => _e
+      ? 'When someone invites you to a challenge, it appears here.'
+      : 'عندما يدعوك أحد لتحدي، ستظهر الدعوة هنا.';
+
   static String get pendingStatus => _e ? 'Pending' : 'معلق';
 
   static String fromCreator(String name) => _e ? 'From: $name' : 'من: $name';
@@ -401,4 +427,12 @@ class ServerChallengeStrings {
   static String get progressQueuedOffline => _e
       ? 'Saved locally — will sync when online'
       : 'حُفظ محلياً — سيُزامَن عند الاتصال';
+
+  static String get createRequiresOnline => _e
+      ? 'Creating a challenge requires an internet connection. Connect and try again.'
+      : 'إنشاء تحدي يتطلب اتصالاً بالإنترنت. اتصل بالشبكة وحاول مجدداً.';
+
+  static String get writeRequiresOnline => _e
+      ? 'This action requires an internet connection. Connect and try again.'
+      : 'يتطلب هذا الإجراء اتصالاً بالإنترنت. اتصل بالشبكة وحاول مجدداً.';
 }

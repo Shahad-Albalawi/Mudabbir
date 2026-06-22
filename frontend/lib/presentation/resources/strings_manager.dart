@@ -1,381 +1,303 @@
+import 'package:flutter/material.dart';
+import 'package:mudabbir/l10n/app_localizations.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/language/app_language_controller.dart';
 
+/// Backward-compatible facade over generated [AppLocalizations].
+/// Prefer `context.l10n` / [AppLocalizations.of] in new UI code.
 class AppStrings {
-  static bool get _isEnglish {
+  static AppLocalizations? _bound;
+
+  /// Called from [MaterialApp.builder] so non-widget code can read strings.
+  static void bind(AppLocalizations l10n) => _bound = l10n;
+
+  static AppLocalizations get _t {
+    final cached = _bound;
+    if (cached != null) return cached;
     try {
-      return getIt<AppLanguageController>().locale.languageCode == 'en';
+      return lookupAppLocalizations(getIt<AppLanguageController>().locale);
     } catch (_) {
-      return false;
+      return lookupAppLocalizations(const Locale('ar'));
     }
   }
 
   /// Use for display helpers that are not widgets (e.g. DB label mapping).
-  static bool get isEnglishLocale => _isEnglish;
+  static bool get isEnglishLocale => _t.localeName.startsWith('en');
 
-  static String get noRouteFound =>
-      _isEnglish ? 'No route found' : 'المسار غير موجود';
+  static String get noRouteFound => _t.noRouteFound;
+  static String get onBoardingTitle1 => _t.onBoardingTitle1;
+  static String get onBoardingTitle2 => _t.onBoardingTitle2;
+  static String get onBoardingTitle3 => _t.onBoardingTitle3;
+  static String get onBoardingTitle4 => _t.onBoardingTitle4;
+  static String get onBoardingSubTitle1 => _t.onBoardingSubTitle1;
+  static String get onBoardingSubTitle2 => _t.onBoardingSubTitle2;
+  static String get onBoardingSubTitle3 => _t.onBoardingSubTitle3;
+  static String get onBoardingSubTitle4 => _t.onBoardingSubTitle4;
+  static String get skip => _t.skip;
+  static String get onboardingGetStarted => _t.onboardingGetStarted;
+  static String get themePickerTitle => _t.themePickerTitle;
+  static String get languagePickerTitle => _t.languagePickerTitle;
+  static String get authShowPassword => _t.authShowPassword;
+  static String get authHidePassword => _t.authHidePassword;
+  static String get sendMessage => _t.sendMessage;
+  static String get chatUserMessage => _t.chatUserMessage;
+  static String get chatAssistantMessage => _t.chatAssistantMessage;
+  static String get title => _t.title;
+  static String get yourStat => _t.yourStat;
+  static String get totalIncome => _t.totalIncome;
+  static String get totalExpense => _t.totalExpense;
+  static String get currentBalance => _t.currentBalance;
+  static String get addExpense => _t.addExpense;
+  static String get addIncome => _t.addIncome;
+  static String get addChallenge => _t.addChallenge;
+  static String get statisticsString => _t.statisticsString;
+  static String get homeText1 => _t.homeText1;
+  static String get homeText2 => _t.homeText2;
+  static String get navHome => _t.navHome;
+  static String get navStatistics => _t.navStatistics;
+  static String get navGoals => _t.navGoals;
+  static String get navBudget => _t.navBudget;
+  static String get inviteFriend => _t.inviteFriend;
+  static String get loginWelcome => _t.loginWelcome;
+  static String get loginSubtitle => _t.loginSubtitle;
+  static String get emailLabel => _t.emailLabel;
+  static String get emailHint => _t.emailHint;
+  static String get passwordLabel => _t.passwordLabel;
+  static String get passwordHint => _t.passwordHint;
+  static String get signIn => _t.signIn;
+  static String get noAccount => _t.noAccount;
+  static String get createOne => _t.createOne;
+  static String get createAccount => _t.createAccount;
+  static String get registerSubtitle => _t.registerSubtitle;
+  static String get firstNameLabel => _t.firstNameLabel;
+  static String get firstNameHint => _t.firstNameHint;
+  static String get confirmPasswordLabel => _t.confirmPasswordLabel;
+  static String get confirmPasswordHint => _t.confirmPasswordHint;
+  static String get createAccountButton => _t.createAccountButton;
+  static String get alreadyHaveAccount => _t.alreadyHaveAccount;
+  static String get signInLink => _t.signInLink;
+  static String get validationEmailRequired => _t.validationEmailRequired;
+  static String get validationEmailInvalid => _t.validationEmailInvalid;
+  static String get validationPasswordRequired => _t.validationPasswordRequired;
+  static String get validationPasswordMinLength => _t.validationPasswordMinLength;
+  static String get validationFirstNameRequired => _t.validationFirstNameRequired;
+  static String get validationPasswordMismatch => _t.validationPasswordMismatch;
+  static String get goalsEmptyTitle => _t.goalsEmptyTitle;
+  static String get goalsEmptySubtitle => _t.goalsEmptySubtitle;
+  static String get addNewGoal => _t.addNewGoal;
+  static String get tapToAdd => _t.tapToAdd;
+  static String get fromAmount => _t.fromAmount;
+  static String get noBudgetsYet => _t.noBudgetsYet;
+  static String get addNewBudget => _t.addNewBudget;
+  static String get addBudgetButton => _t.addBudgetButton;
+  static String get financialStatus => _t.financialStatus;
+  static String get allTime => _t.allTime;
+  static String get thisMonth => _t.thisMonth;
+  static String get totalLabel => _t.totalLabel;
+  static String get currentMonthLabel => _t.currentMonthLabel;
+  static String get financialHealth => _t.financialHealth;
+  static String get nextMonthBudgetSuggestion => _t.nextMonthBudgetSuggestion;
+  static String get logout => _t.logout;
+  static String get success => _t.success;
+  static String get budgetDeleted => _t.budgetDeleted;
+  static String get chatbotTitle => _t.chatbotTitle;
+  static String get clearChat => _t.clearChat;
+  static String get loading => _t.loading;
+  static String get typing => _t.typing;
+  static String get chatHint => _t.chatHint;
+  static String get emptyChatTitle => _t.emptyChatTitle;
+  static String get emptyChatSubtitle => _t.emptyChatSubtitle;
+  static String get splashTagline => _t.splashTagline;
+  static String get chatWelcomeMessage => _t.chatWelcomeMessage;
+  static String get txLoadError => _t.txLoadError;
+  static String get txSectionAmount => _t.txSectionAmount;
+  static String get txSectionDate => _t.txSectionDate;
+  static String get txSectionDetails => _t.txSectionDetails;
+  static String get txSectionNotes => _t.txSectionNotes;
+  static String get txAvailableBalance => _t.txAvailableBalance;
+  static String get txCancel => _t.txCancel;
+  static String get txSaveIncome => _t.txSaveIncome;
+  static String get txSaveExpense => _t.txSaveExpense;
+  static String get txNoAccounts => _t.txNoAccounts;
+  static String get txInsufficientTitle => _t.txInsufficientTitle;
+  static String get txInsufficientBody => _t.txInsufficientBody;
+  static String get txAvailableBalanceShort => _t.txAvailableBalanceShort;
+  static String get txInsufficientHint => _t.txInsufficientHint;
+  static String get txOk => _t.txOk;
+  static String get labelAccount => _t.labelAccount;
+  static String get labelCategory => _t.labelCategory;
+  static String get fieldAmount => _t.fieldAmount;
+  static String get fieldAmountRequired => _t.fieldAmountRequired;
+  static String get fieldAmountInvalid => _t.fieldAmountInvalid;
+  static String get fieldAmountPositive => _t.fieldAmountPositive;
+  static String get fieldNotes => _t.fieldNotes;
+  static String get fieldNotesTooLong => _t.fieldNotesTooLong;
+  static String get fieldDate => _t.fieldDate;
+  static String get budgetExceeded => _t.budgetExceeded;
+  static String get milestone25Title => _t.milestone25Title;
+  static String get milestone25Body => _t.milestone25Body;
+  static String get milestone50Title => _t.milestone50Title;
+  static String get milestone50Body => _t.milestone50Body;
+  static String get milestone75Title => _t.milestone75Title;
+  static String get milestone75Body => _t.milestone75Body;
+  static String get milestone100Title => _t.milestone100Title;
+  static String get milestone100Body => _t.milestone100Body;
+  static String get milestoneAwesome => _t.milestoneAwesome;
+  static String get statsTitle => _t.statsTitle;
+  static String get statsIncomeExpense => _t.statsIncomeExpense;
+  static String get statsExpenseByCategory => _t.statsExpenseByCategory;
+  static String get statsIncomeByCategory => _t.statsIncomeByCategory;
+  static String get statsGoalsProgress => _t.statsGoalsProgress;
+  static String get statsBudgetsProgress => _t.statsBudgetsProgress;
+  static String get statsAnalysisTitle => _t.statsAnalysisTitle;
+  static String get statsAnalysisSubtitle => _t.statsAnalysisSubtitle;
+  static String get snackSuccessTitle => _t.snackSuccessTitle;
+  static String get snackErrorTitle => _t.snackErrorTitle;
+  static String get retry => _t.retry;
+  static String get goalsAddAmountTitle => _t.goalsAddAmountTitle;
+  static String get goalsAmountLabel => _t.goalsAmountLabel;
+  static String get goalsAmountHint => _t.goalsAmountHint;
+  static String get goalsAddButton => _t.goalsAddButton;
+  static String get goalsInvalidAmount => _t.goalsInvalidAmount;
+  static String get goalsDeletedSuccess => _t.goalsDeletedSuccess;
+  static String get challengesUpdateTitle => _t.challengesUpdateTitle;
+  static String get challengesUpdateButton => _t.challengesUpdateButton;
+  static String get challengesUpdatedSuccess => _t.challengesUpdatedSuccess;
+  static String get challengesDeletedSuccess => _t.challengesDeletedSuccess;
+  static String get challengesStartLabel => _t.challengesStartLabel;
+  static String get challengesEndLabel => _t.challengesEndLabel;
+  static String get challengesAddNewButton => _t.challengesAddNewButton;
+  static String get chartNoData => _t.chartNoData;
+  static String get loginSuccessBody => _t.loginSuccessBody;
+  static String get loginSessionError => _t.loginSessionError;
+  static String get loginGenericError => _t.loginGenericError;
+  static String get registerSuccessBody => _t.registerSuccessBody;
+  static String get registerGenericError => _t.registerGenericError;
+  static String get registerCatchError => _t.registerCatchError;
+  static String get analysisBalanceTitle => _t.analysisBalanceTitle;
+  static String get analysisSpendingTitle => _t.analysisSpendingTitle;
+  static String get analysisSavingsBehaviorTitle => _t.analysisSavingsBehaviorTitle;
+  static String get analysisHealthScoreTitle => _t.analysisHealthScoreTitle;
+  static String get analysisSavingsRateLabel => _t.analysisSavingsRateLabel;
+  static String get analysisCategoryInsightsTitle => _t.analysisCategoryInsightsTitle;
+  static String get analysisRecommendationsTitle => _t.analysisRecommendationsTitle;
+  static String get themeModeTooltip => _t.themeModeTooltip;
+  static String get languageTooltip => _t.languageTooltip;
+  static String get themeSystem => _t.themeSystem;
+  static String get themeLight => _t.themeLight;
+  static String get themeDark => _t.themeDark;
+  static String get languageArabicOption => _t.languageArabicOption;
+  static String get languageEnglishOption => _t.languageEnglishOption;
+  static String get budgetPopupTitle => _t.budgetPopupTitle;
+  static String get budgetPopupSubtitle => _t.budgetPopupSubtitle;
+  static String get budgetPopupAmountSection => _t.budgetPopupAmountSection;
+  static String get budgetPopupPeriodSection => _t.budgetPopupPeriodSection;
+  static String get budgetPopupAccountSection => _t.budgetPopupAccountSection;
+  static String get fieldStartDate => _t.fieldStartDate;
+  static String get fieldEndDate => _t.fieldEndDate;
+  static String get fieldRequired => _t.fieldRequired;
+  static String get fieldEndAfterStart => _t.fieldEndAfterStart;
+  static String get fieldSelectAccount => _t.fieldSelectAccount;
+  static String get budgetCreateSuccess => _t.budgetCreateSuccess;
+  static String get budgetCreateFailed => _t.budgetCreateFailed;
+  static String get budgetNoAccountsHint => _t.budgetNoAccountsHint;
+  static String get budgetDeleteConfirmTitle => _t.budgetDeleteConfirmTitle;
+  static String get budgetDeleteConfirmBody => _t.budgetDeleteConfirmBody;
+  static String get budgetOfflineBanner => _t.budgetOfflineBanner;
+  static String get delete => _t.delete;
+  static String get chatbotFabLabel => _t.chatbotFabLabel;
+  static String get homeAlertSpendingExceedsIncome =>
+      _t.homeAlertSpendingExceedsIncome;
+  static String get statsEmptyBarChart => _t.statsEmptyBarChart;
+  static String get expenseDeleteConfirmTitle => _t.expenseDeleteConfirmTitle;
+  static String get expenseDeleteConfirmBody => _t.expenseDeleteConfirmBody;
+  static String get goalDeleteConfirmTitle => _t.goalDeleteConfirmTitle;
+  static String get goalPopupCreateTitle => _t.goalPopupCreateTitle;
+  static String get goalPopupCreateSubtitle => _t.goalPopupCreateSubtitle;
+  static String get goalPickImage => _t.goalPickImage;
+  static String get goalNameHint => _t.goalNameHint;
+  static String get goalTargetAmountLabel => _t.goalTargetAmountLabel;
+  static String get goalCurrentAmountLabel => _t.goalCurrentAmountLabel;
+  static String get goalTypeLabel => _t.goalTypeLabel;
+  static String get goalPeriodLabel => _t.goalPeriodLabel;
+  static String get goalNameRequired => _t.goalNameRequired;
+  static String get goalTargetRequired => _t.goalTargetRequired;
+  static String get goalTypeRequired => _t.goalTypeRequired;
+  static String get goalStartRequired => _t.goalStartRequired;
+  static String get goalEndRequired => _t.goalEndRequired;
+  static String get goalEndAfterStart => _t.goalEndAfterStart;
+  static String get goalCreateSuccess => _t.goalCreateSuccess;
+  static String get goalCreateFailed => _t.goalCreateFailed;
+  static String get goalEditTitle => _t.goalEditTitle;
+  static String get goalEditSubtitle => _t.goalEditSubtitle;
+  static String get goalSaveChanges => _t.goalSaveChanges;
+  static String get goalUpdatedSuccess => _t.goalUpdatedSuccess;
+  static String get expenseOfflineBanner => _t.expenseOfflineBanner;
+  static String get goalOfflineBanner => _t.goalOfflineBanner;
+  static String get settingsTitle => _t.settingsTitle;
+  static String get settingsAccountSection => _t.settingsAccountSection;
+  static String get settingsPreferencesSection => _t.settingsPreferencesSection;
+  static String get settingsLegalSection => _t.settingsLegalSection;
+  static String get settingsExportPdf => _t.settingsExportPdf;
+  static String get settingsExportPdfSuccess => _t.settingsExportPdfSuccess;
+  static String get settingsExportPdfFail => _t.settingsExportPdfFail;
+  static String get settingsLogoutConfirmTitle => _t.settingsLogoutConfirmTitle;
+  static String get settingsLogoutConfirmMessage => _t.settingsLogoutConfirmMessage;
+  static String get settingsOpenLabel => _t.settingsOpenLabel;
+  static String get settingsPrivacyPolicy => _t.settingsPrivacyPolicy;
+  static String get privacyPolicyTitle => _t.privacyPolicyTitle;
+  static String get privacyPolicyIntro => _t.privacyPolicyIntro;
+  static String get privacyPolicyDataWeCollectTitle =>
+      _t.privacyPolicyDataWeCollectTitle;
+  static String get privacyPolicyDataWeCollectBody =>
+      _t.privacyPolicyDataWeCollectBody;
+  static String get privacyPolicyHowWeUseTitle => _t.privacyPolicyHowWeUseTitle;
+  static String get privacyPolicyHowWeUseBody => _t.privacyPolicyHowWeUseBody;
+  static String get privacyPolicyThirdPartyTitle =>
+      _t.privacyPolicyThirdPartyTitle;
+  static String get privacyPolicyThirdPartyBody =>
+      _t.privacyPolicyThirdPartyBody;
+  static String get privacyPolicySecurityTitle => _t.privacyPolicySecurityTitle;
+  static String get privacyPolicySecurityBody => _t.privacyPolicySecurityBody;
+  static String get privacyPolicyContactTitle => _t.privacyPolicyContactTitle;
+  static String get privacyPolicyContactBody => _t.privacyPolicyContactBody;
+  static String get exportPdfReport => _t.exportPdfReport;
 
-  static String get onBoardingTitle1 =>
-      _isEnglish ? 'Welcome to Mudabbir' : 'مرحباً بك في مدبر';
-  static String get onBoardingTitle2 =>
-      _isEnglish ? 'Track your budget easily' : 'تابع ميزانيتك بسهولة';
-  static String get onBoardingTitle3 => _isEnglish
-      ? 'Your smart assistant for expense management'
-      : 'مساعدك الذكي لإدارة المصروفات';
-  static String get onBoardingTitle4 =>
-      _isEnglish ? 'Achieve your financial goals' : 'حقق أهدافك المالية';
+  static String goalDeleteConfirmBody(String goalName) =>
+      _t.goalDeleteConfirmBody(goalName);
 
-  static String get onBoardingSubTitle1 => _isEnglish
-      ? 'Mudabbir helps you organize spending and savings.'
-      : 'تطبيق مدبر يساعدك على تنظيم نفقاتك ومدخراتك.';
-  static String get onBoardingSubTitle2 => _isEnglish
-      ? 'Track your income and expenses in one place.'
-      : 'تابع دخلك ومصاريفك اليومية في مكان واحد.';
-  static String get onBoardingSubTitle3 => _isEnglish
-      ? 'Use the smart assistant for personalized financial tips.'
-      : 'استخدم المساعد الذكي للحصول على نصائح مالية مخصصة.';
-  static String get onBoardingSubTitle4 => _isEnglish
-      ? 'Start today for better financial stability.'
-      : 'ابدأ اليوم بخطتك المالية لتحقيق استقرار أفضل.';
+  static String homeAlertSpendingUp(String percent) =>
+      _t.homeAlertSpendingUp(percent);
+  static String homePendingSyncBanner(int count) =>
+      _t.homePendingSyncBanner(count);
 
-  static String get skip => _isEnglish ? 'Skip' : 'تخطي';
-  static String get title => _isEnglish ? 'Mudabbir' : 'مُدَبِّرٌ';
-  static String get yourStat => _isEnglish ? 'Your insights' : 'تحليلاتك';
+  static String budgetSpentSummary(String spent, String limit) =>
+      _t.budgetSpentSummary(spent, limit);
 
-  static String get totalIncome => _isEnglish ? 'Total Income' : 'إجمالي الدخل';
-  static String get totalExpense =>
-      _isEnglish ? 'Total Expense' : 'إجمالي المصروف';
-  static String get currentBalance =>
-      _isEnglish ? 'Current Savings' : 'التوفير الحالي';
-
-  static String get addExpense => _isEnglish ? 'Add Expense' : 'اضافة مصروف';
-  static String get addIncome => _isEnglish ? 'Add Income' : 'اضافة دخل';
-  static String get addChallenge => _isEnglish ? 'Add Challenge' : 'اضافة تحدي';
-  static String get statisticsString => _isEnglish
-      ? 'Tap here to view your analytics and statistics'
-      : 'انقر هنا لاستعراض تحليلاتك والأطلاع عل الاحصائيات الخاصة بك';
-
-  static String get homeText1 =>
-      _isEnglish ? 'Welcome to Mudabbir' : 'أهلا بك في مدبر ';
-  static String get homeText2 => _isEnglish
-      ? 'Start your journey toward better money management'
-      : 'ابدأ رحلتك نحو ادارة مالية أفضل معنا';
-
-  static String get navHome => _isEnglish ? 'Home' : 'الرئيسية';
-  static String get navStatistics => _isEnglish ? 'Statistics' : 'الإحصائيات';
-  static String get navGoals => _isEnglish ? 'Goals' : 'الأهداف';
-  static String get navBudget => _isEnglish ? 'Budgets' : 'الميزانية';
-
-  static String get inviteFriend =>
-      _isEnglish ? 'Invite a friend' : 'قم بدعوة صديق';
-
-  // Auth - Login
-  static String get loginWelcome =>
-      _isEnglish ? 'Welcome back' : 'مرحباً بعودتك';
-  static String get loginSubtitle =>
-      _isEnglish ? 'Sign in to continue' : 'سجل دخولك للمتابعة';
-  static String get emailLabel => _isEnglish ? 'Email' : 'البريد الإلكتروني';
-  static String get emailHint =>
-      _isEnglish ? 'Enter your email' : 'أدخل بريدك الإلكتروني';
-  static String get passwordLabel => _isEnglish ? 'Password' : 'كلمة المرور';
-  static String get passwordHint =>
-      _isEnglish ? 'Enter your password' : 'أدخل كلمة المرور';
-  static String get signIn => _isEnglish ? 'Sign In' : 'تسجيل الدخول';
-  static String get noAccount =>
-      _isEnglish ? "Don't have an account? " : 'ليس لديك حساب؟ ';
-  static String get createOne => _isEnglish ? 'Create one' : 'أنشئ حساباً';
-
-  // Auth - Register
-  static String get createAccount =>
-      _isEnglish ? 'Create Account' : 'إنشاء حساب جديد';
-  static String get registerSubtitle => _isEnglish
-      ? 'Enter your details to get started'
-      : 'أدخل معلوماتك لإنشاء حساب جديد';
-  static String get firstNameLabel => _isEnglish ? 'First name' : 'الاسم الأول';
-  static String get firstNameHint =>
-      _isEnglish ? 'Enter your first name' : 'أدخل اسمك الأول';
-  static String get confirmPasswordLabel =>
-      _isEnglish ? 'Confirm password' : 'تأكيد كلمة المرور';
-  static String get confirmPasswordHint =>
-      _isEnglish ? 'Re-enter your password' : 'أعد إدخال كلمة المرور';
-  static String get createAccountButton =>
-      _isEnglish ? 'Create Account' : 'إنشاء الحساب';
-  static String get alreadyHaveAccount =>
-      _isEnglish ? 'Already have an account? ' : 'لديك حساب بالفعل؟ ';
-  static String get signInLink => _isEnglish ? 'Sign in' : 'سجل الدخول';
-
-  // Goals / Budget
-  static String get goalsEmptyTitle =>
-      _isEnglish ? 'No financial goals yet' : 'لا توجد أهداف مالية';
-  static String get goalsEmptySubtitle =>
-      _isEnglish ? 'Start by adding a new goal' : 'ابدأ بإضافة هدف مالي جديد';
-  static String get addNewGoal =>
-      _isEnglish ? 'Add New Goal' : 'إضافة هدف جديد';
-  static String get tapToAdd => _isEnglish ? 'Tap to add' : 'اضغط للإضافة';
-  static String get fromAmount => _isEnglish ? 'of' : 'من';
-
-  static String get noBudgetsYet => _isEnglish
-      ? 'No budgets yet. Start managing your spending.'
-      : 'لا يوجد ميزانيات، ابدأ بإدارة مصاريفك.';
-  static String get addNewBudget =>
-      _isEnglish ? 'Add a new budget' : 'قم بإضافة ميزانية جديدة';
-  static String get addBudgetButton =>
-      _isEnglish ? 'Add a New Budget' : 'إضافة ميزانية جديدة';
-
-  // Home summary
-  static String get financialStatus =>
-      _isEnglish ? 'Financial Status' : 'الحالة المالية';
-  static String get allTime => _isEnglish ? 'All time' : 'كل الأوقات';
-  static String get thisMonth => _isEnglish ? 'This month' : 'هذا الشهر';
-  static String get totalLabel => _isEnglish ? 'Total' : 'الإجمالي';
-  static String get currentMonthLabel =>
-      _isEnglish ? 'Current month' : 'الشهر الحالي';
-  static String get financialHealth =>
-      _isEnglish ? 'Financial health' : 'الصحة المالية';
-  static String get nextMonthBudgetSuggestion => _isEnglish
-      ? 'Next month budget suggestion'
-      : 'اقتراح ميزانية الشهر القادم';
-  static String get logout => _isEnglish ? 'Logout' : 'تسجيل الخروج';
-  static String get success => _isEnglish ? 'Success' : 'نجح';
-  static String get budgetDeleted =>
-      _isEnglish ? 'Budget deleted successfully' : 'تم حذف الميزانية بنجاح';
-
-  // Chatbot
-  static String get chatbotTitle =>
-      _isEnglish ? 'Mudabbir Assistant' : 'مساعد مدبر الذكي';
-  static String get clearChat => _isEnglish ? 'Clear chat' : 'مسح المحادثة';
-  static String get loading => _isEnglish ? 'Loading...' : 'جاري التحميل...';
-  static String get typing => _isEnglish ? 'Typing' : 'جاري الكتابة';
-  static String get chatHint =>
-      _isEnglish ? 'Type your message...' : 'اكتب سؤالك هنا...';
-  static String get emptyChatTitle =>
-      _isEnglish ? 'Welcome to Mudabbir Assistant' : 'مرحباً بك في مساعد مدبر';
-  static String get emptyChatSubtitle => _isEnglish
-      ? 'Your smart finance assistant'
-      : 'مساعدك الذكي لإدارة الأموال';
-
-  static String get splashTagline =>
-      _isEnglish ? 'Smart personal finance' : 'إدارة مالية ذكية';
-
-  static String get chatWelcomeMessage => _isEnglish
-      ? "Hi! I'm Mudabbir, your smart money assistant. How can I help you today?"
-      : 'مرحباً! أنا مدبر، مساعدك الذكي في إدارة الأموال. كيف يمكنني مساعدتك اليوم؟';
-
-  // Transaction popup
-  static String get txLoadError =>
-      _isEnglish ? 'Failed to load data' : 'خطأ في تحميل البيانات';
-  static String get txSectionAmount => _isEnglish ? 'Amount' : 'المبلغ';
-  static String get txSectionDate => _isEnglish ? 'Date' : 'التاريخ';
-  static String get txSectionDetails => _isEnglish ? 'Details' : 'التفاصيل';
-  static String get txSectionNotes =>
-      _isEnglish ? 'Notes (optional)' : 'ملاحظات (اختياري)';
-  static String get txAvailableBalance =>
-      _isEnglish ? 'Available balance' : 'الرصيد المتاح';
-  static String get txCancel => _isEnglish ? 'Cancel' : 'إلغاء';
-  static String get txSaveIncome => _isEnglish ? 'Save income' : 'حفظ الدخل';
-  static String get txSaveExpense =>
-      _isEnglish ? 'Save expense' : 'حفظ المصروف';
   static String txSuccess(String type) => type == 'income'
-      ? (_isEnglish
-            ? 'Income added successfully! 🎉'
-            : 'تم إضافة الدخل بنجاح! 🎉')
-      : (_isEnglish
-            ? 'Expense added successfully! 🎉'
-            : 'تم إضافة المصروف بنجاح! 🎉');
-  static String get txNoAccounts =>
-      _isEnglish ? 'No accounts found.' : 'لا توجد حسابات.';
-  static String txNoCategories(String type) =>
-      _isEnglish ? 'No $type categories found.' : 'لا توجد فئات $type.';
-  static String txLoadFailed(Object e) =>
-      _isEnglish ? 'Failed to load data: $e' : 'فشل تحميل البيانات: $e';
-  static String get txInsufficientTitle =>
-      _isEnglish ? 'Insufficient balance' : 'رصيد غير كافٍ';
-  static String get txInsufficientBody => _isEnglish
-      ? 'The amount exceeds your available balance.'
-      : 'المبلغ المدخل أكبر من الرصيد المتاح.';
-  static String get txAvailableBalanceShort =>
-      _isEnglish ? 'Available:' : 'الرصيد المتاح:';
-  static String get txInsufficientHint => _isEnglish
-      ? 'Enter an amount less than or equal to your available balance.'
-      : 'الرجاء إدخال مبلغ أقل من أو يساوي الرصيد المتاح.';
-  static String get txOk => _isEnglish ? 'OK' : 'حسناً';
-  static String get labelAccount => _isEnglish ? 'Account' : 'الحساب';
-  static String get labelCategory => _isEnglish ? 'Category' : 'الفئة';
+      ? _t.txSuccessIncome
+      : _t.txSuccessExpense;
 
-  // Form fields (popup)
-  static String get fieldAmount => _isEnglish ? 'Amount' : 'المبلغ';
-  static String get fieldAmountRequired =>
-      _isEnglish ? 'Amount is required' : 'المبلغ مطلوب';
-  static String get fieldAmountInvalid =>
-      _isEnglish ? 'Invalid number' : 'رقم غير صالح';
-  static String get fieldAmountPositive => _isEnglish
-      ? 'Amount must be greater than 0'
-      : 'يجب أن يكون المبلغ أكبر من صفر';
-  static String get fieldNotes =>
-      _isEnglish ? 'Notes (optional)' : 'ملاحظات (اختياري)';
-  static String get fieldNotesTooLong => _isEnglish
-      ? 'Notes cannot exceed 500 characters'
-      : 'الملاحظات لا تتجاوز 500 حرف';
-  static String get fieldDate => _isEnglish ? 'Date' : 'التاريخ';
+  static String txNoCategories(String type) => _t.txNoCategories(type);
 
-  static String get budgetExceeded => _isEnglish
-      ? 'This would exceed your budget limit'
-      : 'لقد قمت بتجاوز الحد الاقصى للميزانية';
+  static String txLoadFailed(Object e) => _t.txLoadFailed(e);
 
-  // Milestones
-  static String get milestone25Title =>
-      _isEnglish ? 'Great start! 🎯' : 'بداية رائعة! 🎯';
-  static String get milestone25Body =>
-      _isEnglish ? 'You reached 25% of your goal' : 'لقد أكملت 25% من هدفك';
-  static String get milestone50Title =>
-      _isEnglish ? 'Halfway there! 🔥' : 'في منتصف الطريق! 🔥';
-  static String get milestone50Body =>
-      _isEnglish ? 'You reached 50% of your goal' : 'لقد أكملت 50% من هدفك';
-  static String get milestone75Title =>
-      _isEnglish ? 'Almost there! ⚡' : 'أنت قريب جداً! ⚡';
-  static String get milestone75Body =>
-      _isEnglish ? 'You reached 75% of your goal' : 'لقد أكملت 75% من هدفك';
-  static String get milestone100Title =>
-      _isEnglish ? 'Goal achieved! 🏆' : 'مبروك! هدف محقق! 🏆';
-  static String get milestone100Body => _isEnglish
-      ? 'You completed your goal successfully'
-      : 'لقد أكملت هدفك بنجاح';
-  static String get milestoneAwesome => _isEnglish ? 'Awesome!' : 'رائع!';
+  static String goalLine(String name) => _t.goalLine(name);
 
-  // Journey / progress copy
+  static String challengeLine(String name) => _t.challengeLine(name);
+
+  static List<String> get barChartLabels => [
+        _t.barChartIncome,
+        _t.barChartExpenses,
+        _t.barChartBalance,
+      ];
+
   static String journeyMotivation(double progress) {
-    if (progress >= 1.0) {
-      return _isEnglish
-          ? 'Congratulations! 🎉 Goal reached!'
-          : 'مبروك! 🎉 وصلت للهدف!';
-    }
-    if (progress >= 0.75) {
-      return _isEnglish
-          ? 'Amazing! 💪 You are so close!'
-          : 'رائع! 💪 أنت قريب جداً!';
-    }
-    if (progress >= 0.5) {
-      return _isEnglish
-          ? 'Excellent! 🔥 Keep going!'
-          : 'ممتاز! 🔥 استمر في التقدم!';
-    }
-    if (progress >= 0.25) {
-      return _isEnglish
-          ? 'Strong start! 🎯 Keep it up!'
-          : 'بداية موفقة! 🎯 واصل التقدم!';
-    }
-    if (progress > 0) {
-      return _isEnglish
-          ? 'First step! 🌟 Keep going!'
-          : 'خطوة أولى رائعة! 🌟 استمر!';
-    }
-    return _isEnglish
-        ? 'Start your journey toward the goal! 🚀'
-        : 'ابدأ رحلتك نحو الهدف! 🚀';
+    if (progress >= 1.0) return _t.journeyMotivationComplete;
+    if (progress >= 0.75) return _t.journeyMotivation75;
+    if (progress >= 0.5) return _t.journeyMotivation50;
+    if (progress >= 0.25) return _t.journeyMotivation25;
+    if (progress > 0) return _t.journeyMotivationStart;
+    return _t.journeyMotivationZero;
   }
-
-  // Statistics
-  static String get statsTitle =>
-      _isEnglish ? 'Financial statistics' : 'الإحصائيات المالية';
-  static String get statsIncomeExpense =>
-      _isEnglish ? 'Income, expenses & balance' : 'الدخل والمصروفات والرصيد';
-  static String get statsExpenseByCategory =>
-      _isEnglish ? 'Spending by category' : 'المصروفات حسب الفئة';
-  static String get statsIncomeByCategory =>
-      _isEnglish ? 'Income by category' : 'الدخل حسب الفئة';
-  static String get statsGoalsProgress =>
-      _isEnglish ? 'Goals progress' : 'تقدم الأهداف';
-  static String get statsBudgetsProgress =>
-      _isEnglish ? 'Budgets progress' : 'تقدم الميزانيات';
-  static String get statsAnalysisTitle =>
-      _isEnglish ? 'Spending behavior insights' : 'تحليل سلوك المستخدم';
-  static String get statsAnalysisSubtitle =>
-      _isEnglish ? 'Smart financial insights' : 'رؤى مالية ذكية';
-
-  static String goalLine(String name) =>
-      _isEnglish ? 'Goal: $name' : 'الهدف: $name';
-  static String challengeLine(String name) =>
-      _isEnglish ? 'Challenge: $name' : 'التحدي: $name';
-
-  static String get snackSuccessTitle => _isEnglish ? 'Success' : 'نجاح';
-  static String get snackErrorTitle => _isEnglish ? 'Error' : 'خطأ';
-  static String get retry => _isEnglish ? 'Try again' : 'إعادة المحاولة';
-
-  // Goals dialog
-  static String get goalsAddAmountTitle =>
-      _isEnglish ? 'Add to goal' : 'إضافة مبلغ للهدف';
-  static String get goalsAmountLabel =>
-      _isEnglish ? 'Amount to add' : 'المبلغ المراد إضافته';
-  static String get goalsAmountHint =>
-      _isEnglish ? 'Enter amount' : 'أدخل المبلغ';
-  static String get goalsAddButton => _isEnglish ? 'Add' : 'إضافة';
-  static String get goalsInvalidAmount =>
-      _isEnglish ? 'Please enter a valid amount' : 'يرجى إدخال مبلغ صحيح';
-  static String get goalsDeletedSuccess =>
-      _isEnglish ? 'Goal deleted successfully' : 'تم حذف الهدف بنجاح';
-
-  // Challenges dialog
-  static String get challengesUpdateTitle =>
-      _isEnglish ? 'Update challenge status' : 'تحديث حالة التحدي';
-  static String get challengesUpdateButton => _isEnglish ? 'Update' : 'تحديث';
-  static String get challengesUpdatedSuccess =>
-      _isEnglish ? 'Challenge status updated' : 'تم تحديث حالة التحدي بنجاح';
-  static String get challengesDeletedSuccess =>
-      _isEnglish ? 'Challenge deleted successfully' : 'تم حذف التحدي بنجاح';
-  static String get challengesStartLabel => _isEnglish ? 'Start' : 'البداية';
-  static String get challengesEndLabel => _isEnglish ? 'End' : 'النهاية';
-  static String get challengesAddNewButton =>
-      _isEnglish ? 'Add new challenge' : 'إضافة تحدي جديد';
-
-  static List<String> get barChartLabels => _isEnglish
-      ? ['Income', 'Expenses', 'Balance']
-      : ['الدخل', 'المصروفات', 'الرصيد'];
-
-  static String get chartNoData =>
-      _isEnglish ? 'No data available' : 'لا توجد بيانات متاحة';
-
-  static String get loginSuccessBody =>
-      _isEnglish ? 'Signed in successfully' : 'تم تسجيل الدخول بنجاح';
-  static String get loginSessionError => _isEnglish
-      ? 'Could not create a session. Please try again.'
-      : 'لم يتم إنشاء جلسة تسجيل الدخول. حاول مرة أخرى.';
-  static String get loginGenericError => _isEnglish
-      ? 'Something went wrong while signing in. Try again.'
-      : 'حدث خطأ أثناء تسجيل الدخول. حاول مرة أخرى.';
-  static String get registerSuccessBody =>
-      _isEnglish ? 'Account created successfully' : 'تم إنشاء الحساب بنجاح';
-  static String get registerGenericError => _isEnglish
-      ? 'Registration failed. Try again.'
-      : 'فشل التسجيل. حاول مرة أخرى.';
-  static String get registerCatchError => _isEnglish
-      ? 'Something went wrong during registration. Try again.'
-      : 'حدث خطأ أثناء التسجيل. حاول مرة أخرى.';
-
-  // Analysis screen chrome
-  static String get analysisBalanceTitle =>
-      _isEnglish ? 'Balance status' : 'حالة الرصيد';
-  static String get analysisSpendingTitle =>
-      _isEnglish ? 'Spending analysis' : 'تحليل الإنفاق';
-  static String get analysisSavingsBehaviorTitle =>
-      _isEnglish ? 'Savings behavior' : 'سلوك الادخار';
-  static String get analysisHealthScoreTitle =>
-      _isEnglish ? 'Financial health score' : 'درجة الصحة المالية';
-  static String get analysisSavingsRateLabel =>
-      _isEnglish ? 'Savings rate:' : 'معدل الادخار:';
-  static String get analysisCategoryInsightsTitle =>
-      _isEnglish ? 'Category spending insights' : 'رؤى إنفاق الفئات';
-  static String get analysisRecommendationsTitle =>
-      _isEnglish ? 'Personal recommendations' : 'التوصيات الشخصية';
-
-  // Appearance & language (home header pickers)
-  static String get themeModeTooltip =>
-      _isEnglish ? 'Theme mode' : 'وضع المظهر';
-  static String get languageTooltip => _isEnglish ? 'Language' : 'اللغة';
-  static String get themeSystem => _isEnglish ? 'System' : 'حسب النظام';
-  static String get themeLight => _isEnglish ? 'Light' : 'فاتح';
-  static String get themeDark => _isEnglish ? 'Dark' : 'داكن';
-  static String get languageArabicOption => _isEnglish ? 'Arabic' : 'العربية';
-  static String get languageEnglishOption =>
-      _isEnglish ? 'English' : 'الإنجليزية';
 }

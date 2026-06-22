@@ -1,93 +1,155 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mudabbir/data/network/api_exception.dart';
 import 'package:mudabbir/data/network/failure.dart';
 import 'package:mudabbir/domain/models/expense_transaction.dart';
 import 'package:mudabbir/domain/repository/synced_expense_repository/synced_expense_repository.dart';
 import 'package:mudabbir/presentation/resources/expense_strings.dart';
-import 'package:mudabbir/presentation/server_challenges/services/api_exception.dart';
 import 'package:mudabbir/service/getit_init.dart';
-import 'package:stacked/stacked.dart';
+import 'package:mudabbir/service/notifications/financial_alert_service.dart';
 
-/// Stacked view model for expense CRUD, filters, and budget feedback.
-class ExpensesViewModel extends BaseViewModel {
+const _unsetExpenseError = Object();
+
+class ExpensesState {
+  final bool isLoading;
+  final List<ExpenseTransaction> expenses;
+  final List<Map<String, dynamic>> categories;
+  final List<Map<String, dynamic>> accounts;
+  final String? errorMessage;
+  final String? successMessage;
+  final bool isOffline;
+  final String selectedMonth;
+  final int? selectedCategoryId;
+  final bool recurringOnly;
+  final double filteredTotal;
+
+  ExpensesState({
+    this.isLoading = false,
+    this.expenses = const [],
+    this.categories = const [],
+    this.accounts = const [],
+    this.errorMessage,
+    this.successMessage,
+    this.isOffline = false,
+    String? selectedMonth,
+    this.selectedCategoryId,
+    this.recurringOnly = false,
+    this.filteredTotal = 0,
+  }) : selectedMonth = selectedMonth ?? ExpensesNotifier.currentMonthKey();
+
+  ExpensesState copyWith({
+    bool? isLoading,
+    List<ExpenseTransaction>? expenses,
+    List<Map<String, dynamic>>? categories,
+    List<Map<String, dynamic>>? accounts,
+    Object? errorMessage = _unsetExpenseError,
+    Object? successMessage = _unsetExpenseError,
+    bool? isOffline,
+    String? selectedMonth,
+    int? selectedCategoryId,
+    bool? recurringOnly,
+    double? filteredTotal,
+    bool clearError = false,
+    bool clearSuccess = false,
+  }) {
+    return ExpensesState(
+      isLoading: isLoading ?? this.isLoading,
+      expenses: expenses ?? this.expenses,
+      categories: categories ?? this.categories,
+      accounts: accounts ?? this.accounts,
+      errorMessage: clearError
+          ? null
+          : identical(errorMessage, _unsetExpenseError)
+              ? this.errorMessage
+              : errorMessage as String?,
+      successMessage: clearSuccess
+          ? null
+          : identical(successMessage, _unsetExpenseError)
+              ? this.successMessage
+              : successMessage as String?,
+      isOffline: isOffline ?? this.isOffline,
+      selectedMonth: selectedMonth ?? this.selectedMonth,
+      selectedCategoryId: selectedCategoryId ?? this.selectedCategoryId,
+      recurringOnly: recurringOnly ?? this.recurringOnly,
+      filteredTotal: filteredTotal ?? this.filteredTotal,
+    );
+  }
+}
+
+class ExpensesNotifier extends StateNotifier<ExpensesState> {
   final SyncedExpenseRepository _repository = getIt<SyncedExpenseRepository>();
 
-  List<ExpenseTransaction> expenses = [];
-  List<Map<String, dynamic>> categories = [];
-  List<Map<String, dynamic>> accounts = [];
-  String? errorMessage;
-  String? successMessage;
-  bool isOffline = false;
+  ExpensesNotifier() : super(ExpensesState());
 
-  String selectedMonth = _currentMonthKey();
-  int? selectedCategoryId;
-  bool recurringOnly = false;
-  double filteredTotal = 0;
-
-  static String _currentMonthKey() {
+  static String currentMonthKey() {
     final now = DateTime.now();
     return '${now.year}-${now.month.toString().padLeft(2, '0')}';
   }
 
-  /// Loads categories, accounts, and filtered expenses.
   Future<void> initialize() async {
-    setBusy(true);
-    errorMessage = null;
+    state = state.copyWith(isLoading: true, clearError: true);
     await _loadMeta();
     await loadExpenses();
-    setBusy(false);
+    state = state.copyWith(isLoading: false);
   }
 
   Future<void> _loadMeta() async {
     final cats = await _repository.getExpenseCategories();
     final accs = await _repository.getAccounts();
-    cats.fold((_) => categories = [], (data) => categories = data);
-    accs.fold((_) => accounts = [], (data) => accounts = data);
+    state = state.copyWith(
+      categories: cats.fold((_) => <Map<String, dynamic>>[], (data) => data),
+      accounts: accs.fold((_) => <Map<String, dynamic>>[], (data) => data),
+    );
   }
 
-  /// Reloads expenses using active filters.
   Future<void> loadExpenses() async {
-    setBusy(true);
-    errorMessage = null;
+    state = state.copyWith(isLoading: true, clearError: true);
 
     try {
       final result = await _repository.getTransactions(
         type: 'expense',
-        monthKey: selectedMonth,
-        categoryId: selectedCategoryId,
-        recurringOnly: recurringOnly,
+        monthKey: state.selectedMonth,
+        categoryId: state.selectedCategoryId,
+        recurringOnly: state.recurringOnly,
       );
-      isOffline = result.isOffline;
-      expenses = result.expenses;
-      filteredTotal = expenses.fold(0.0, (sum, item) => sum + item.amount);
+      final total = result.expenses.fold(0.0, (sum, item) => sum + item.amount);
+      state = state.copyWith(
+        isLoading: false,
+        isOffline: result.isOffline,
+        expenses: result.expenses,
+        filteredTotal: total,
+      );
     } on ApiException catch (e) {
-      errorMessage = e.message;
-      expenses = [];
-      filteredTotal = 0;
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: e.message,
+        expenses: const [],
+        filteredTotal: 0,
+      );
     } catch (_) {
-      errorMessage = ExpenseStrings.loadFailed;
-      expenses = [];
-      filteredTotal = 0;
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: ExpenseStrings.loadFailed,
+        expenses: const [],
+        filteredTotal: 0,
+      );
     }
-
-    setBusy(false);
-    notifyListeners();
   }
 
   void setMonth(String monthKey) {
-    selectedMonth = monthKey;
+    state = state.copyWith(selectedMonth: monthKey);
     loadExpenses();
   }
 
   void setCategoryFilter(int? categoryId) {
-    selectedCategoryId = categoryId;
+    state = state.copyWith(selectedCategoryId: categoryId);
     loadExpenses();
   }
 
   void toggleRecurringOnly(bool value) {
-    recurringOnly = value;
+    state = state.copyWith(recurringOnly: value);
     loadExpenses();
   }
 
-  /// Creates a new expense and returns budget feedback message if any.
   Future<String?> addExpense({
     required double amount,
     required String date,
@@ -97,8 +159,6 @@ class ExpensesViewModel extends BaseViewModel {
     bool isRecurring = false,
     bool allowOverBudget = false,
   }) async {
-    final accountName = _resolveAccountName(accountId);
-    final categoryName = _resolveCategoryName(categoryId);
     final tx = ExpenseTransaction(
       id: 0,
       amount: amount,
@@ -107,8 +167,8 @@ class ExpensesViewModel extends BaseViewModel {
       notes: notes,
       accountId: accountId,
       categoryId: categoryId,
-      accountName: accountName,
-      categoryName: categoryName,
+      accountName: _resolveAccountName(accountId),
+      categoryName: _resolveCategoryName(categoryId),
       isRecurring: isRecurring,
       recurrenceInterval: isRecurring ? 'monthly' : null,
     );
@@ -118,26 +178,30 @@ class ExpensesViewModel extends BaseViewModel {
       allowOverBudget: allowOverBudget,
     );
     return result.fold((failure) {
-      errorMessage = failure.userFacingMessage;
-      notifyListeners();
+      state = state.copyWith(errorMessage: failure.userFacingMessage);
       return null;
     }, (write) async {
+      String? message;
       if (write.queuedOffline) {
-        successMessage = ExpenseStrings.savedOffline;
+        message = ExpenseStrings.savedOffline;
       } else {
-        successMessage = ExpenseStrings.savedSuccess;
+        message = ExpenseStrings.savedSuccess;
         if (write.result.budgetMessage != null) {
-          successMessage =
+          message =
               '${ExpenseStrings.savedSuccess}\n${write.result.budgetMessage}';
         }
       }
+      state = state.copyWith(successMessage: message);
+      await FinancialAlertService.instance.maybeNotifyBudgetUsage(
+        write.result.budgetSnapshot,
+      );
       await loadExpenses();
-      return successMessage;
+      return message;
     });
   }
 
-  /// Updates an existing expense.
-  Future<String?> updateExpense(ExpenseTransaction existing, {
+  Future<String?> updateExpense(
+    ExpenseTransaction existing, {
     required double amount,
     required String date,
     required int accountId,
@@ -166,36 +230,40 @@ class ExpensesViewModel extends BaseViewModel {
     );
 
     return result.fold((failure) {
-      errorMessage = failure.userFacingMessage;
-      notifyListeners();
+      state = state.copyWith(errorMessage: failure.userFacingMessage);
       return null;
     }, (write) async {
+      String? message;
       if (write.queuedOffline) {
-        successMessage = ExpenseStrings.savedOffline;
+        message = ExpenseStrings.savedOffline;
       } else {
-        successMessage = ExpenseStrings.updatedSuccess;
+        message = ExpenseStrings.updatedSuccess;
         if (write.result.budgetMessage != null) {
-          successMessage =
+          message =
               '${ExpenseStrings.updatedSuccess}\n${write.result.budgetMessage}';
         }
       }
+      state = state.copyWith(successMessage: message);
+      await FinancialAlertService.instance.maybeNotifyBudgetUsage(
+        write.result.budgetSnapshot,
+      );
       await loadExpenses();
-      return successMessage;
+      return message;
     });
   }
 
-  /// Deletes expense by id.
   Future<bool> deleteExpense(int id) async {
     final result = await _repository.deleteTransaction(id);
     return result.fold((failure) {
-      errorMessage = failure.userFacingMessage;
-      notifyListeners();
+      state = state.copyWith(errorMessage: failure.userFacingMessage);
       return false;
     }, (syncResult) async {
       if (syncResult.deleted) {
-        successMessage = syncResult.queuedOffline
-            ? ExpenseStrings.savedOffline
-            : ExpenseStrings.deletedSuccess;
+        state = state.copyWith(
+          successMessage: syncResult.queuedOffline
+              ? ExpenseStrings.savedOffline
+              : ExpenseStrings.deletedSuccess,
+        );
         await loadExpenses();
       }
       return syncResult.deleted;
@@ -203,7 +271,7 @@ class ExpensesViewModel extends BaseViewModel {
   }
 
   String _resolveAccountName(int accountId) {
-    for (final account in accounts) {
+    for (final account in state.accounts) {
       if (account['id'] == accountId) {
         return account['name']?.toString() ?? '';
       }
@@ -212,7 +280,7 @@ class ExpensesViewModel extends BaseViewModel {
   }
 
   String _resolveCategoryName(int categoryId) {
-    for (final category in categories) {
+    for (final category in state.categories) {
       if (category['id'] == categoryId) {
         return category['name']?.toString() ?? '';
       }
@@ -221,8 +289,11 @@ class ExpensesViewModel extends BaseViewModel {
   }
 
   void clearMessages() {
-    errorMessage = null;
-    successMessage = null;
-    notifyListeners();
+    state = state.copyWith(clearError: true, clearSuccess: true);
   }
 }
+
+final expensesProvider =
+    StateNotifierProvider.autoDispose<ExpensesNotifier, ExpensesState>((ref) {
+  return ExpensesNotifier()..initialize();
+});

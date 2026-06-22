@@ -1,66 +1,121 @@
 import 'package:flutter/material.dart';
+import 'package:mudabbir/presentation/resources/app_colors.dart';
+import 'package:mudabbir/presentation/resources/design_tokens.dart';
 import 'package:mudabbir/presentation/resources/ios_style_constants.dart';
 
 /// iOS grouped-table spacing and radii (8pt grid).
 class AppLayout {
   AppLayout._();
 
-  static const double pageGutter = 16;
-  static const double sectionGap = 12;
-  static const double cardRadius = IOSStyleConstants.radiusSmall;
-  static const double chipRadius = 8;
-  static const double listRowHeight = 44;
-  static const double bottomNavClearance =
-      IOSStyleConstants.navBarHeight + 12;
+  /// Screen horizontal padding: 20px (premium fintech).
+  static const double pageGutter = 20;
+  static const double sectionGap = AppSpacing.smd;
+  static const double cardRadius = AppRadius.card;
+  static const double chipRadius = AppSpacing.sm;
+  static const double listRowHeight = AppTouch.minTarget;
+  static const double bottomNavHeight = IOSStyleConstants.navBarHeight;
+  /// Space for bottom nav + floating chat FAB so list content is not obscured.
+  static const double fabClearance = 56 + 16 + 20;
+  static const double bottomNavClearance = bottomNavHeight + fabClearance;
 }
 
 /// iOS system-like semantic colors (charts, status).
 extension AppSemanticColors on ColorScheme {
   Color get success => brightness == Brightness.dark
-      ? const Color(0xFF72C98E)
-      : const Color(0xFF34C759);
+      ? BrandPalette.green500
+      : BrandPalette.green600;
 
-  Color get warning => brightness == Brightness.dark
-      ? const Color(0xFFD9A84A)
-      : const Color(0xFFFF9500);
+  Color get warning => BrandPalette.warning;
 
-  /// Theme-aware chart palette (pie / bar legends).
+  /// Muted fintech chart palette — calm, distinct segments.
   List<Color> get chartPalette => brightness == Brightness.dark
-      ? [
-          const Color(0xFF6EAD8A),
-          const Color(0xFF8BB89A),
-          const Color(0xFFA8C4B0),
-          const Color(0xFFC4B08A),
-          const Color(0xFF9AA8A0),
-        ]
-      : [
-          const Color(0xFF2D6A4F),
-          const Color(0xFF40916C),
-          const Color(0xFF52B788),
-          const Color(0xFF74C69D),
-          const Color(0xFF8B7355),
-        ];
+      ? FintechPalette.chart
+      : FintechPalette.chart;
 
-  /// Home screen branded green — slightly brighter in dark for legibility.
-  Color get homeGreen => brightness == Brightness.dark
-      ? const Color(0xFF84D4A6)
-      : primary;
+  /// Expense amounts — neutral slate, not alarming red.
+  Color get expenseAmount => brightness == Brightness.dark
+      ? const Color(0xFFB8C4D4)
+      : BrandPalette.slate950;
 
-  Color get homeGreenSoft => homeGreen.withValues(
-        alpha: brightness == Brightness.dark ? 0.2 : 0.12,
+  /// Income / positive balance amounts.
+  Color get incomeAmount => dataGreen;
+
+  /// Strong label color for financial rows (readable navy/slate).
+  Color get financialLabel => brightness == Brightness.dark
+      ? const Color(0xFFE2E8F0)
+      : BrandPalette.slate950;
+
+  /// Green reserved for numeric values (amounts, scores) — not labels or links.
+  Color get dataGreen => BrandPalette.green500;
+
+  /// Neutral icon / chrome on cards — brighter in dark for legibility.
+  Color get chromeIcon => brightness == Brightness.dark
+      ? DarkAppColors.primary
+      : BrandPalette.brandPrimary;
+
+  Color get chromeIconFill => brightness == Brightness.dark
+      ? const Color(0xFF21262D)
+      : BrandPalette.inputFillLight;
+
+  /// Branded accent — prefer [dataGreen] for amounts only.
+  Color get homeGreen => dataGreen;
+
+  Color get homeGreenSoft => dataGreen.withValues(
+        alpha: brightness == Brightness.dark ? 0.18 : 0.12,
       );
 
+  /// Subtle branded tint for welcome cards.
   Color get homeBannerFill => brightness == Brightness.dark
-      ? homeGreen.withValues(alpha: 0.1)
-      : const Color(0xFFE6F2EB);
+      ? DarkAppColors.card
+      : BrandPalette.cardLight;
+
+  Color get heroOnGradient => onSurface;
+
+  Color get heroMutedOnGradient => textMuted;
 
   /// Primary readable text on cards (dark mode tuned).
   Color get textOnCard => brightness == Brightness.dark
-      ? const Color(0xFFF8FAF9)
+      ? DarkAppColors.textPrimary
       : onSurface;
+
+  /// Tertiary labels — timestamps, hints, captions.
+  Color get textTertiary => brightness == Brightness.dark
+      ? DarkAppColors.textTertiary
+      : AppColors.textTertiary;
 
   /// Secondary labels under icons / muted card copy.
   Color get textMuted => brightness == Brightness.dark
-      ? const Color(0xFFDCE6E0)
-      : const Color(0xFF4A4A4A);
+      ? DarkAppColors.textSecondary
+      : AppColors.textSecondary;
+
+  /// Skeleton shimmer base — visible in dark without harsh contrast.
+  Color get skeletonBase => brightness == Brightness.dark
+      ? const Color(0xFF21262D)
+      : BrandPalette.borderLight.withValues(alpha: 0.5);
+
+  /// Skeleton shimmer peak opacity multiplier.
+  double get skeletonPulseHigh => brightness == Brightness.dark ? 0.55 : 0.65;
+
+  double get skeletonPulseLow => brightness == Brightness.dark ? 0.28 : 0.35;
+
+  /// iOS grouped table background — used for full-page scaffolds.
+  Color get pageBackground => brightness == Brightness.dark
+      ? BrandPalette.canvasDark
+      : BrandPalette.canvasLight;
+
+  /// Secondary grouped fill (insets, chips, skeleton tracks).
+  Color get groupedFill => brightness == Brightness.dark
+      ? BrandPalette.inputFillDark
+      : BrandPalette.inputFillLight;
+
+  /// Tab bar / elevated chrome above page background.
+  Color get elevatedSurface => brightness == Brightness.dark
+      ? DarkAppColors.surfaceElevated
+      : surface;
+
+  /// Insight / assistant surface tint.
+  Color get insightSurface => groupedFill;
+
+  /// Inset field background (forms).
+  Color get inputFill => groupedFill;
 }

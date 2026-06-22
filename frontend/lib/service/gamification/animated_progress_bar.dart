@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mudabbir/presentation/resources/app_colors.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
-import 'package:mudabbir/presentation/resources/color_manager.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 
 /// Animated progress bar with particle effects
@@ -14,8 +14,8 @@ class AnimatedProgressBar extends StatefulWidget {
   const AnimatedProgressBar({
     super.key,
     required this.progress,
-    this.primaryColor = Colors.blue,
-    this.secondaryColor = Colors.purple,
+    this.primaryColor = GamificationPalette.blue,
+    this.secondaryColor = GamificationPalette.purple,
     this.duration = const Duration(milliseconds: 800),
     this.height = 8.0,
   });
@@ -62,21 +62,11 @@ class _AnimatedProgressBarState extends State<AnimatedProgressBar>
     super.dispose();
   }
 
-  Color _getProgressColor(double progress) {
-    if (progress >= 1.0) {
-      return Colors.green;
-    } else if (progress >= 0.75) {
-      return Colors.purple;
-    } else if (progress >= 0.5) {
-      return Colors.orange;
-    } else if (progress >= 0.25) {
-      return Colors.blue;
-    }
-    return ColorManager.grey;
-  }
+  Color _getProgressColor(double progress) => GamificationPalette.progressColor(progress);
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return AnimatedBuilder(
       animation: _animation,
       builder: (context, child) {
@@ -90,7 +80,7 @@ class _AnimatedProgressBarState extends State<AnimatedProgressBar>
               width: double.infinity,
               height: widget.height,
               decoration: BoxDecoration(
-                color: ColorManager.grey200,
+                color: scheme.outlineVariant.withValues(alpha: 0.35),
                 borderRadius: BorderRadius.circular(widget.height / 2),
               ),
             ),
@@ -105,7 +95,7 @@ class _AnimatedProgressBarState extends State<AnimatedProgressBar>
                   gradient: LinearGradient(
                     colors: [
                       progressColor,
-                      progressColor.withValues(alpha: 0.7),
+                      widget.secondaryColor,
                     ],
                   ),
                   borderRadius: BorderRadius.circular(widget.height / 2),
@@ -175,7 +165,7 @@ class ProgressIndicatorWithMessage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: progress >= 1.0 ? Colors.green : Colors.blue,
+                color: progress >= 1.0 ? scheme.success : scheme.dataGreen,
               ),
             ),
             Expanded(

@@ -1,168 +1,122 @@
 import 'package:flutter/material.dart';
-import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/onboarding/onboarding_viewmodel.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
+import 'package:mudabbir/presentation/resources/design_tokens.dart';
+import 'package:mudabbir/presentation/widgets/app_brand_logo.dart';
 
-class OnboardingPageWidget extends StatefulWidget {
+/// Single onboarding slide — iOS large title, calm body, minimal chrome.
+class OnboardingPageWidget extends StatelessWidget {
   final SliderObject sliderObject;
+  final bool isWelcome;
 
-  const OnboardingPageWidget({super.key, required this.sliderObject});
-
-  @override
-  State<OnboardingPageWidget> createState() => _OnboardingPageWidgetState();
-}
-
-class _OnboardingPageWidgetState extends State<OnboardingPageWidget>
-    with TickerProviderStateMixin {
-  late final AnimationController _contentController;
-  late final AnimationController _imageController;
-  late final Animation<double> _titleAnimation;
-  late final Animation<double> _subtitleAnimation;
-  late final Animation<double> _imageAnimation;
-  late final Animation<Offset> _titleSlideAnimation;
-  late final Animation<Offset> _subtitleSlideAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _contentController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    );
-
-    _imageController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    );
-
-    _titleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _contentController,
-        curve: const Interval(0.0, 0.5, curve: Curves.easeOutCubic),
-      ),
-    );
-
-    _subtitleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _contentController,
-        curve: const Interval(0.3, 0.8, curve: Curves.easeOutCubic),
-      ),
-    );
-
-    _imageAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _imageController, curve: Curves.elasticOut),
-    );
-
-    _titleSlideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(
-          CurvedAnimation(
-            parent: _contentController,
-            curve: const Interval(0.0, 0.5, curve: Curves.easeOutCubic),
-          ),
-        );
-
-    _subtitleSlideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
-          CurvedAnimation(
-            parent: _contentController,
-            curve: const Interval(0.3, 0.8, curve: Curves.easeOutCubic),
-          ),
-        );
-
-    _contentController.forward();
-    Future.delayed(const Duration(milliseconds: 400), () {
-      _imageController.forward();
-    });
-  }
-
-  @override
-  void dispose() {
-    _contentController.dispose();
-    _imageController.dispose();
-    super.dispose();
-  }
+  const OnboardingPageWidget({
+    super.key,
+    required this.sliderObject,
+    this.isWelcome = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final isDark = scheme.brightness == Brightness.dark;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      padding: const EdgeInsets.symmetric(horizontal: AppLayout.pageGutter),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const SizedBox(height: 40),
-          SlideTransition(
-            position: _titleSlideAnimation,
-            child: FadeTransition(
-              opacity: _titleAnimation,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  widget.sliderObject.title,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    height: 1.2,
-                    letterSpacing: -0.5,
-                    color: scheme.onSurface,
-                  ),
+          const Spacer(flex: 2),
+          if (isWelcome)
+            _WelcomeMark(isDark: isDark)
+          else if (sliderObject.icon != null)
+            _FeatureGlyph(icon: sliderObject.icon!, scheme: scheme),
+          SizedBox(height: isWelcome ? 36 : 32),
+          Text(
+            sliderObject.title,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: AppTypographyScale.headlineTracking,
+                  color: scheme.onSurface,
+                  height: AppTypographyScale.headlineHeight,
                 ),
-              ),
-            ),
           ),
-          const SizedBox(height: 16),
-          SlideTransition(
-            position: _subtitleSlideAnimation,
-            child: FadeTransition(
-              opacity: _subtitleAnimation,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Text(
-                  widget.sliderObject.subTitle,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w400,
-                    height: 1.4,
+          const SizedBox(height: 12),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 320),
+            child: Text(
+              sliderObject.subTitle,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: scheme.textMuted,
+                    height: 1.55,
+                    fontWeight: FontWeight.w400,
                   ),
-                ),
-              ),
             ),
           ),
-          const SizedBox(height: 60),
-          Expanded(
-            child: Center(
-              child: AnimatedBuilder(
-                animation: _imageAnimation,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: _imageAnimation.value,
-                    child: widget.sliderObject.icon != null
-                        ? Container(
-                            width: 160,
-                            height: 160,
-                            decoration: BoxDecoration(
-                              color: scheme.primary.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(
-                                color: scheme.outline.withValues(alpha: 0.25),
-                              ),
-                            ),
-                            child: Center(
-                              child: Icon(
-                                widget.sliderObject.icon,
-                                size: 80,
-                                color: scheme.primary,
-                              ),
-                            ),
-                          )
-                        : const SizedBox.shrink(),
-                  );
-                },
-              ),
-            ),
-          ),
-          const SizedBox(height: 40),
+          const Spacer(flex: 3),
         ],
+      ),
+    );
+  }
+}
+
+class _WelcomeMark extends StatelessWidget {
+  final bool isDark;
+
+  const _WelcomeMark({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      width: 112,
+      height: 112,
+      decoration: BoxDecoration(
+        color: isDark ? scheme.surface : Colors.white,
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: Border.all(
+          color: scheme.outline.withValues(alpha: isDark ? 0.35 : 0.1),
+        ),
+        boxShadow: isDark
+            ? const []
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+      ),
+      padding: const EdgeInsets.all(24),
+      child: const AppBrandLogo(
+        height: 64,
+        tone: BrandMarkTone.onLight,
+      ),
+    );
+  }
+}
+
+class _FeatureGlyph extends StatelessWidget {
+  final IconData icon;
+  final ColorScheme scheme;
+
+  const _FeatureGlyph({required this.icon, required this.scheme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 72,
+      height: 72,
+      decoration: BoxDecoration(
+        color: scheme.groupedFill,
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        icon,
+        size: 32,
+        color: scheme.primary,
       ),
     );
   }

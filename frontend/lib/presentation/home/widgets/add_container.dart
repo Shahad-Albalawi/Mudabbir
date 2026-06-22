@@ -1,17 +1,18 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mudabbir/presentation/resources/app_icons.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
+import 'package:mudabbir/presentation/resources/design_tokens.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
-import 'package:mudabbir/presentation/server_challenges/screens/challenges_list_screen.dart';
 import 'package:mudabbir/presentation/widgets/app_card.dart';
 import 'package:mudabbir/presentation/widgets/ios_pressable.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/haptic_service.dart';
-import 'package:mudabbir/service/navigation_service.dart';
 import 'package:mudabbir/service/popup_service/popup_service.dart';
+import 'package:mudabbir/service/routing_service/app_routes.dart';
+import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Quick action buttons for adding expense, income, or challenge.
+/// Quick actions — premium iOS icon row on grouped card.
 class AddContainer extends ConsumerWidget {
   const AddContainer({super.key});
 
@@ -20,14 +21,14 @@ class AddContainer extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return AppCard(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.smd),
       child: IntrinsicHeight(
         child: Row(
           children: [
             Expanded(
               child: _ActionButton(
                 label: AppStrings.addExpense,
-                icon: CupertinoIcons.minus,
+                icon: AppIcons.expense,
                 onTap: () {
                   HapticService.medium();
                   getIt<PopupService>().showAddExpensePopup(context);
@@ -36,12 +37,12 @@ class AddContainer extends ConsumerWidget {
             ),
             VerticalDivider(
               width: 1,
-              color: scheme.outline.withValues(alpha: 0.2),
+              color: scheme.outline.withValues(alpha: 0.12),
             ),
             Expanded(
               child: _ActionButton(
                 label: AppStrings.addIncome,
-                icon: CupertinoIcons.plus,
+                icon: AppIcons.income,
                 onTap: () {
                   HapticService.medium();
                   getIt<PopupService>().showAddIncomePopup(context);
@@ -50,15 +51,15 @@ class AddContainer extends ConsumerWidget {
             ),
             VerticalDivider(
               width: 1,
-              color: scheme.outline.withValues(alpha: 0.2),
+              color: scheme.outline.withValues(alpha: 0.12),
             ),
             Expanded(
               child: _ActionButton(
                 label: AppStrings.addChallenge,
-                icon: CupertinoIcons.flag,
+                icon: AppIcons.challenge,
                 onTap: () {
                   HapticService.medium();
-                  getIt<NavigationService>().navigate(ChallengesListScreen());
+                  context.push(AppRoutes.challenges);
                 },
               ),
             ),
@@ -87,25 +88,32 @@ class _ActionButton extends StatelessWidget {
     return IOSPressable(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        padding: const EdgeInsets.symmetric(
+          vertical: AppSpacing.sm,
+          horizontal: AppSpacing.xs,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              width: AppTouch.minTarget,
+              height: AppTouch.minTarget,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: scheme.homeGreenSoft,
-                shape: BoxShape.circle,
+                color: scheme.groupedFill,
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
-              child: Icon(icon, color: scheme.homeGreen, size: 20),
+              child: Icon(icon, color: scheme.primary, size: 22),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: scheme.textOnCard,
-                fontWeight: FontWeight.w600,
-              ),
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: scheme.onSurface,
+                    fontWeight: FontWeight.w500,
+                    height: 1.25,
+                  ),
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,

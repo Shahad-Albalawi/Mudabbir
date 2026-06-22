@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
+import 'package:mudabbir/presentation/widgets/app_skeleton.dart';
 import 'package:mudabbir/presentation/widgets/ios_empty_state.dart';
-import 'package:mudabbir/presentation/widgets/ios_loading_widget.dart';
 
 /// Standard loading / error / empty / content switch for feature screens.
 class AppAsyncView extends StatelessWidget {
@@ -12,6 +12,9 @@ class AppAsyncView extends StatelessWidget {
   final Widget emptyState;
   final Widget child;
 
+  final String? loadingLabel;
+  final Widget? loading;
+
   const AppAsyncView({
     super.key,
     required this.isLoading,
@@ -20,12 +23,18 @@ class AppAsyncView extends StatelessWidget {
     this.onRetry,
     this.isEmpty = false,
     required this.emptyState,
+    this.loadingLabel,
+    this.loading,
   });
 
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const IOSLoadingScreen();
+      return Semantics(
+        container: true,
+        label: loadingLabel ?? AppStrings.loading,
+        child: loading ?? const AppListSkeleton(),
+      );
     }
 
     if (errorMessage != null && errorMessage!.isNotEmpty) {

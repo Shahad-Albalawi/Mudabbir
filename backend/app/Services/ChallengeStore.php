@@ -154,11 +154,11 @@ class ChallengeStore
                 }
             }
 
-            $userId = (int) $data['next_user_id'];
-            $data['next_user_id'] = $userId + 1;
+            $provisionalId = (int) ($data['next_provisional_participant_id'] ?? -1);
+            $data['next_provisional_participant_id'] = $provisionalId - 1;
 
             $challenge['participants'][] = [
-                'id' => $userId,
+                'id' => $provisionalId,
                 'name' => strstr($email, '@', true) ?: 'Participant',
                 'email' => $email,
                 'status' => 'pending',
@@ -540,9 +540,11 @@ class ChallengeStore
         }
 
         foreach ($challenge['participants'] ?? [] as $participant) {
-            if ((int) ($participant['id'] ?? 0) === $userId) {
-                return true;
+            if ((int) ($participant['id'] ?? 0) !== $userId) {
+                continue;
             }
+
+            return (string) ($participant['status'] ?? '') === 'accepted';
         }
 
         return false;

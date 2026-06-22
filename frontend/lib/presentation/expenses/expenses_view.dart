@@ -1,203 +1,193 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mudabbir/domain/models/expense_transaction.dart';
 import 'package:mudabbir/presentation/expenses/expenses_viewmodel.dart';
+import 'package:mudabbir/presentation/home/home_viewmodel.dart';
+import 'package:mudabbir/presentation/statistics/statistics_viewmodel.dart';
 import 'package:mudabbir/presentation/expenses/widgets/expense_form_sheet.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/entity_localizations.dart';
 import 'package:mudabbir/presentation/resources/expense_strings.dart';
-import 'package:mudabbir/presentation/resources/server_challenge_strings.dart';
+import 'package:mudabbir/presentation/resources/strings_manager.dart';
+import 'package:mudabbir/presentation/widgets/app_animated_list_item.dart';
+import 'package:mudabbir/presentation/widgets/app_confirm_dialog.dart';
+import 'package:mudabbir/presentation/widgets/app_offline_banner.dart';
+import 'package:mudabbir/presentation/widgets/app_skeleton.dart';
 import 'package:mudabbir/presentation/widgets/app_card.dart';
+import 'package:mudabbir/presentation/widgets/app_grouped_scaffold.dart';
 import 'package:mudabbir/presentation/widgets/ios_empty_state.dart';
-import 'package:mudabbir/presentation/widgets/ios_loading_widget.dart';
-import 'package:stacked/stacked.dart';
-
 /// Full expense list with filters and CRUD actions.
-class ExpensesView extends StatelessWidget {
+class ExpensesView extends ConsumerWidget {
   const ExpensesView({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(expensesProvider);
+    final notifier = ref.read(expensesProvider.notifier);
     final scheme = Theme.of(context).colorScheme;
 
-    return ViewModelBuilder<ExpensesViewModel>.reactive(
-      viewModelBuilder: () => ExpensesViewModel(),
-      onViewModelReady: (model) => model.initialize(),
-      builder: (context, model, child) {
-        return Scaffold(
-          backgroundColor: scheme.surfaceContainerHighest,
-          appBar: AppBar(
-            title: Text(ExpenseStrings.title),
-            actions: [
-              IconButton(
-                tooltip: ExpenseStrings.addExpense,
-                onPressed: () => _openForm(context, model),
-                icon: const Icon(CupertinoIcons.add),
-              ),
-            ],
-          ),
-          body: model.isBusy
-              ? const Center(child: IOSLoadingWidget(size: 48))
-              : Column(
-                  children: [
-                    _FiltersBar(model: model),
-                    if (model.isOffline)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppLayout.pageGutter,
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              CupertinoIcons.cloud,
-                              size: 18,
-                              color: scheme.textMuted,
+    ref.listen<ExpensesState>(expensesProvider, (previous, next) {
+      if (next.successMessage != null &&
+          previous?.successMessage != next.successMessage) {
+        ref.read(statisticsProvider.notifier).loadStatistics(force: true);
+        ref.read(homeProvider.notifier).reload();
+      }
+    });
+
+    return AppGroupedScaffold(
+      onBackPressed: () => context.pop(),
+      largeTitle: true,
+      title: Text(ExpenseStrings.title),
+      actions: [
+        IconButton(
+          tooltip: ExpenseStrings.addExpense,
+          onPressed: () => _openForm(context, ref),
+          icon: const Icon(CupertinoIcons.add),
+        ),
+      ],
+      body: state.isLoading && state.expenses.isEmpty
+          ? const AppListSkeleton()
+          : Column(
+              children: [
+                _FiltersBar(state: state, notifier: notifier),
+                if (state.isOffline)
+                  AppOfflineBanner(
+                    message: ExpenseStrings.offlineBanner,
+                    onRetry: notifier.loadExpenses,
+                  ),
+                if (state.errorMessage != null)
+                  _MessageBanner(
+                    text: state.errorMessage!,
+                    color: scheme.error,
+                  ),
+                if (state.successMessage != null)
+                  _MessageBanner(
+                    text: state.successMessage!,
+                    color: scheme.success,
+                  ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppLayout.pageGutter,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        ExpenseStrings.totalFiltered,
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      Text(
+                        ExpenseStrings.formatAmount(state.filteredTotal),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: scheme.dataGreen,
+                              fontWeight: FontWeight.w600,
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                ExpenseStrings.offlineBanner,
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: model.loadExpenses,
-                              child: Text(ServerChallengeStrings.retry),
-                            ),
-                          ],
-                        ),
                       ),
-                    if (model.errorMessage != null)
-                      _MessageBanner(
-                        text: model.errorMessage!,
-                        color: scheme.error,
-                      ),
-                    if (model.successMessage != null)
-                      _MessageBanner(
-                        text: model.successMessage!,
-                        color: scheme.success,
-                      ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppLayout.pageGutter,
-                        vertical: 8,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            ExpenseStrings.totalFiltered,
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                          Text(
-                            ExpenseStrings.formatAmount(model.filteredTotal),
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(
-                                  color: scheme.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: model.expenses.isEmpty
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: state.errorMessage != null && state.expenses.isEmpty
+                      ? IOSEmptyState(
+                          icon: Icons.cloud_off_rounded,
+                          title: AppStrings.snackErrorTitle,
+                          subtitle: state.errorMessage!,
+                          buttonLabel: AppStrings.retry,
+                          onPressed: notifier.loadExpenses,
+                        )
+                      : state.expenses.isEmpty
                           ? IOSEmptyState(
                               icon: CupertinoIcons.doc_text,
                               title: ExpenseStrings.emptyTitle,
                               subtitle: ExpenseStrings.emptySubtitle,
                               buttonLabel: ExpenseStrings.addExpense,
-                              onPressed: () => _openForm(context, model),
+                              onPressed: () => _openForm(context, ref),
                             )
                           : ListView.separated(
-                              padding: const EdgeInsets.fromLTRB(
-                                AppLayout.pageGutter,
-                                8,
-                                AppLayout.pageGutter,
-                                24,
+                          padding: const EdgeInsets.fromLTRB(
+                            AppLayout.pageGutter,
+                            8,
+                            AppLayout.pageGutter,
+                            24,
+                          ),
+                          itemCount: state.expenses.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 8),
+                          itemBuilder: (context, index) {
+                            final item = state.expenses[index];
+                            return AppAnimatedListItem(
+                              index: index,
+                              child: _ExpenseTile(
+                                item: item,
+                                onEdit: () => _openForm(
+                                  context,
+                                  ref,
+                                  existing: item,
+                                ),
+                                onDelete: () => _confirmDelete(
+                                  context,
+                                  ref,
+                                  item,
+                                ),
                               ),
-                              itemCount: model.expenses.length,
-                              separatorBuilder: (_, __) =>
-                                  const SizedBox(height: 8),
-                              itemBuilder: (context, index) {
-                                final item = model.expenses[index];
-                                return _ExpenseTile(
-                                  item: item,
-                                  onEdit: () => _openForm(
-                                    context,
-                                    model,
-                                    existing: item,
-                                  ),
-                                  onDelete: () => _confirmDelete(
-                                    context,
-                                    model,
-                                    item,
-                                  ),
-                                );
-                              },
-                            ),
-                    ),
-                  ],
+                            );
+                          },
+                        ),
                 ),
-        );
-      },
+              ],
+            ),
     );
   }
 
   Future<void> _openForm(
     BuildContext context,
-    ExpensesViewModel model, {
+    WidgetRef ref, {
     ExpenseTransaction? existing,
   }) async {
-    model.clearMessages();
+    ref.read(expensesProvider.notifier).clearMessages();
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
       ),
-      builder: (_) => ExpenseFormSheet(
-        model: model,
-        existing: existing,
-      ),
+      builder: (_) => ExpenseFormSheet(existing: existing),
     );
   }
 
   Future<void> _confirmDelete(
     BuildContext context,
-    ExpensesViewModel model,
+    WidgetRef ref,
     ExpenseTransaction item,
   ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(ExpenseStrings.deleteConfirmTitle),
-        content: Text(ExpenseStrings.deleteConfirmBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(ExpenseStrings.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(ExpenseStrings.deleteExpense),
-          ),
-        ],
-      ),
+    final confirmed = await AppConfirmDialog.show(
+      context,
+      title: ExpenseStrings.deleteConfirmTitle,
+      message: ExpenseStrings.deleteConfirmBody,
+      confirmLabel: ExpenseStrings.deleteExpense,
+      cancelLabel: ExpenseStrings.cancel,
     );
     if (confirmed == true) {
-      await model.deleteExpense(item.id);
+      await ref.read(expensesProvider.notifier).deleteExpense(item.id);
     }
   }
 }
 
 class _FiltersBar extends StatelessWidget {
-  final ExpensesViewModel model;
-  const _FiltersBar({required this.model});
+  final ExpensesState state;
+  final ExpensesNotifier notifier;
+
+  const _FiltersBar({required this.state, required this.notifier});
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
+    return Semantics(
+      label: ExpenseStrings.filterRecurring,
+      child: SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.fromLTRB(
         AppLayout.pageGutter,
@@ -207,23 +197,23 @@ class _FiltersBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _MonthPicker(model: model),
+          _MonthPicker(state: state, notifier: notifier),
           const SizedBox(width: 8),
           FilterChip(
             label: Text(ExpenseStrings.filterRecurring),
-            selected: model.recurringOnly,
-            onSelected: model.toggleRecurringOnly,
+            selected: state.recurringOnly,
+            onSelected: notifier.toggleRecurringOnly,
           ),
           const SizedBox(width: 8),
           DropdownButton<int?>(
-            value: model.selectedCategoryId,
+            value: state.selectedCategoryId,
             hint: Text(ExpenseStrings.filterCategory),
             items: [
               DropdownMenuItem<int?>(
                 value: null,
                 child: Text(ExpenseStrings.filterAll),
               ),
-              ...model.categories.map(
+              ...state.categories.map(
                 (c) => DropdownMenuItem<int?>(
                   value: c['id'] as int,
                   child: Text(
@@ -232,21 +222,24 @@ class _FiltersBar extends StatelessWidget {
                 ),
               ),
             ],
-            onChanged: model.setCategoryFilter,
+            onChanged: notifier.setCategoryFilter,
           ),
         ],
+      ),
       ),
     );
   }
 }
 
 class _MonthPicker extends StatelessWidget {
-  final ExpensesViewModel model;
-  const _MonthPicker({required this.model});
+  final ExpensesState state;
+  final ExpensesNotifier notifier;
+
+  const _MonthPicker({required this.state, required this.notifier});
 
   @override
   Widget build(BuildContext context) {
-    final parts = model.selectedMonth.split('-');
+    final parts = state.selectedMonth.split('-');
     final year = int.parse(parts[0]);
     final month = int.parse(parts[1]);
     final label = '${parts[1]}/${parts[0]}';
@@ -262,7 +255,7 @@ class _MonthPicker extends StatelessWidget {
         if (picked != null) {
           final key =
               '${picked.year}-${picked.month.toString().padLeft(2, '0')}';
-          model.setMonth(key);
+          notifier.setMonth(key);
         }
       },
       icon: const Icon(CupertinoIcons.calendar, size: 18),
@@ -323,7 +316,7 @@ class _ExpenseTile extends StatelessWidget {
                     child: Text(
                       ExpenseStrings.recurringBadge,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: scheme.primary,
+                        color: scheme.textMuted,
                       ),
                     ),
                   ),

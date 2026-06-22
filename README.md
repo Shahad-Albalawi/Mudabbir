@@ -99,10 +99,13 @@ See **`docs/DEPLOY_RENDER_AR.md`** (Render — مُوصى به حالياً) or 
 ## Release checklist
 
 - [ ] Set `API_BASE_URL` in `frontend/config/release.json`
-- [ ] Build release: `scripts/build-release-apk.ps1`
+- [ ] Configure Android signing: `frontend/android/key.properties` (see `key.properties.example`)
+- [ ] Build for Play Store: `scripts/build-release-aab.ps1` (AAB required; APK for sideload: `build-release-apk.ps1`)
 - [ ] Verify login/register (no guest bypass in release)
 - [ ] Confirm `devLog` / Dio logging silent in release
-- [ ] Test offline: expenses/goals use local SQLite + sync
+- [ ] Test offline sync: expenses, goals, and **budgets** (SQLite + Hive + Laravel API)
+- [ ] Test local notifications: budget 80%/exceeded and goal completion (grant permission on Android 13+)
+- [ ] Prepare Play listing: see **`docs/PLAY_STORE.md`** (screenshots, privacy policy, data safety)
 - [ ] Replace launcher icons if needed (`android/app/src/main/res`, iOS `AppIcon`)
 
 ---

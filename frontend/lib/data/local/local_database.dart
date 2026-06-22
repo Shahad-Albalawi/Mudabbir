@@ -37,7 +37,7 @@ class LocalDatabase {
 
     _database = await openDatabase(
       path,
-      version: 6,
+      version: 7,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
       onOpen: (db) async {
@@ -83,6 +83,11 @@ class LocalDatabase {
     if (oldVersion < 6) {
       await db.execute(
         'ALTER TABLE transactions ADD COLUMN updated_at TEXT',
+      );
+    }
+    if (oldVersion < 7) {
+      await db.execute(
+        'ALTER TABLE budgets ADD COLUMN updated_at TEXT',
       );
     }
   }
@@ -170,6 +175,7 @@ class LocalDatabase {
       start_date TEXT NOT NULL,
       end_date TEXT NOT NULL,
       account_id INTEGER NOT NULL,
+      updated_at TEXT,
       FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
     )
   ''');

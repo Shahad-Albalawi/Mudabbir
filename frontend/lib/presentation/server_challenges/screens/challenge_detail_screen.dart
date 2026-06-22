@@ -1,18 +1,26 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mudabbir/presentation/resources/color_manager.dart';
+import 'package:intl/intl.dart';
+import 'package:mudabbir/domain/repository/server_challenge_repository/server_challenge_repository.dart';
+import 'package:mudabbir/presentation/resources/app_icons.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/server_challenge_strings.dart';
-import 'package:mudabbir/presentation/resources/font_manager.dart';
-import 'package:mudabbir/presentation/resources/styles_manager.dart';
 import 'package:mudabbir/presentation/server_challenges/models/challenge_model.dart';
 import 'package:mudabbir/presentation/server_challenges/providers/challenge_provider.dart';
 import 'package:mudabbir/presentation/server_challenges/providers/challenge_state.dart';
 import 'package:mudabbir/presentation/server_challenges/widgets/challenge_badge_chip.dart';
 import 'package:mudabbir/presentation/server_challenges/widgets/challenge_leaderboard_card.dart';
 import 'package:mudabbir/presentation/server_challenges/widgets/participant_item.dart';
-import 'package:intl/intl.dart';
+import 'package:mudabbir/presentation/widgets/app_confirm_dialog.dart';
+import 'package:mudabbir/presentation/widgets/app_loading_button.dart';
+import 'package:mudabbir/presentation/widgets/app_offline_banner.dart';
+import 'package:mudabbir/presentation/widgets/app_grouped_scaffold.dart';
+import 'package:mudabbir/presentation/widgets/app_skeleton.dart';
+import 'package:mudabbir/presentation/widgets/ios_dialog_style.dart';
+import 'package:mudabbir/presentation/widgets/ios_empty_state.dart';
 import 'package:mudabbir/service/getit_init.dart';
-import 'package:mudabbir/domain/repository/server_challenge_repository/server_challenge_repository.dart';
+import 'package:mudabbir/utils/challenge_current_user.dart';
 
 class ChallengeDetailScreen extends ConsumerStatefulWidget {
   final int challengeId;
@@ -38,27 +46,23 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
     });
   }
 
+  ParticipantModel? _me(ChallengeModel challenge) =>
+      ChallengeCurrentUser.participantIn(challenge);
+
   double _getCurrentAmount(ChallengeModel challenge) {
-    final me = challenge.participants.firstWhere(
-      (p) => p.id == challenge.creatorId,
-      orElse: () => challenge.participants.first,
-    );
+    final me = _me(challenge);
+    if (me == null) return 0;
     final fromServer = me.currentProgress;
     if (fromServer > 0) return fromServer;
-    return _repository.progressForChallenge(challenge.id, userId: me.id);
+    return _repository.progressForChallenge(challenge.id);
   }
 
   Future<void> _addProgress(ChallengeModel challenge, double amount) async {
-    final me = challenge.participants.firstWhere(
-      (p) => p.id == challenge.creatorId,
-      orElse: () => challenge.participants.first,
-    );
     final result = await ref
         .read(challengeOperationProvider.notifier)
         .addProgress(
           challengeId: challenge.id,
           amount: amount,
-          userId: me.id,
         );
     if (result?.challenge != null && mounted) {
       ref
@@ -70,18 +74,18 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final detailState = ref.watch(challengeDetailProvider(widget.challengeId));
 
-    // Listen to operation state for updates
     ref.listen<ChallengeOperationState>(challengeOperationProvider, (
       previous,
       next,
     ) {
-        if (next is ChallengeOperationSuccess) {
+      if (next is ChallengeOperationSuccess) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.message),
-            backgroundColor: const Color(0xFF4CAF50),
+            behavior: SnackBarBehavior.floating,
           ),
         );
 
@@ -95,24 +99,15 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.message),
-            backgroundColor: ColorManager.error,
+            backgroundColor: scheme.error,
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }
     });
 
-    return Scaffold(
-      backgroundColor: ColorManager.background,
-      appBar: AppBar(
-        title: Text(
-          ServerChallengeStrings.detailTitle,
-          style: getBoldStyle(
-            fontSize: FontSize.s20,
-            color: ColorManager.darkGrey,
-          ),
-        ),
-        centerTitle: false,
-      ),
+    return AppGroupedScaffold(
+      titleText: ServerChallengeStrings.detailTitle,
       body: SafeArea(
         top: false,
         child: Padding(
@@ -126,14 +121,18 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
   Widget _buildBody(ChallengeDetailState state) {
     return switch (state) {
       ChallengeDetailInitial() => const SizedBox.shrink(),
-      ChallengeDetailLoading() => const Center(
-        child: CircularProgressIndicator(),
-      ),
+      ChallengeDetailLoading() => const AppSummarySkeleton(),
       ChallengeDetailError(:final message) => _buildError(message),
       ChallengeDetailLoaded(:final challenge, :final isOffline) =>
         Column(
           children: [
-            if (isOffline) _buildOfflineBanner(),
+            if (isOffline)
+              AppOfflineBanner(
+                message: ServerChallengeStrings.offlineBanner,
+                onRetry: () => ref
+                    .read(challengeDetailProvider(widget.challengeId).notifier)
+                    .loadChallenge(),
+              ),
             Expanded(child: _buildContent(challenge)),
           ],
         ),
@@ -141,52 +140,22 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
   }
 
   Widget _buildError(String message) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 80,
-              color: ColorManager.error.withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: getMediumStyle(
-                fontSize: FontSize.s16,
-                color: ColorManager.darkGrey,
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () => ref
-                  .read(challengeDetailProvider(widget.challengeId).notifier)
-                  .loadChallenge(),
-              icon: const Icon(Icons.refresh),
-              label: Text(ServerChallengeStrings.retry),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+    final isServerError = message.contains('503') ||
+        message.toLowerCase().contains('server') ||
+        message.toLowerCase().contains('maintenance');
 
-  Widget _buildOfflineBanner() {
-    return MaterialBanner(
-      content: Text(ServerChallengeStrings.offlineBanner),
-      leading: const Icon(Icons.cloud_off_outlined),
-      actions: [
-        TextButton(
-          onPressed: () => ref
-              .read(challengeDetailProvider(widget.challengeId).notifier)
-              .loadChallenge(),
-          child: Text(ServerChallengeStrings.retry),
-        ),
-      ],
+    return Center(
+      child: IOSEmptyState(
+        icon: isServerError
+            ? CupertinoIcons.cloud
+            : CupertinoIcons.exclamationmark_circle,
+        title: message,
+        subtitle: isServerError ? ServerChallengeStrings.serverMaintenanceHint : '',
+        buttonLabel: ServerChallengeStrings.retry,
+        onPressed: () => ref
+            .read(challengeDetailProvider(widget.challengeId).notifier)
+            .loadChallenge(),
+      ),
     );
   }
 
@@ -211,10 +180,10 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
   }
 
   Widget _buildStreakCard(ChallengeModel challenge) {
-    final me = challenge.participants.firstWhere(
-      (p) => p.id == challenge.creatorId,
-      orElse: () => challenge.participants.first,
-    );
+    final me = _me(challenge);
+    if (me == null) return const SizedBox.shrink();
+
+    final scheme = Theme.of(context).colorScheme;
     final today = DateTime.now().toIso8601String().split('T').first;
     final checkedToday = me.lastCheckIn == today;
 
@@ -226,24 +195,23 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.local_fire_department, color: Color(0xFFFF7043)),
+                Icon(CupertinoIcons.flame_fill, color: scheme.tertiary),
                 const SizedBox(width: 8),
                 Text(
                   ServerChallengeStrings.streakTitle,
-                  style: getBoldStyle(
-                    fontSize: FontSize.s16,
-                    color: ColorManager.darkGrey,
-                  ),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
             Text(
               ServerChallengeStrings.streakDays(me.streakDays),
-              style: getBoldStyle(
-                fontSize: FontSize.s20,
-                color: ColorManager.primary,
-              ),
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: scheme.dataGreen,
+                    fontWeight: FontWeight.w700,
+                  ),
             ),
             if (me.badges.isNotEmpty) ...[
               const SizedBox(height: 10),
@@ -260,13 +228,13 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton.icon(
+              child: FilledButton.icon(
                 onPressed: checkedToday
                     ? null
                     : () => ref
                         .read(challengeOperationProvider.notifier)
-                        .checkIn(challengeId: challenge.id, userId: me.id),
-                icon: const Icon(Icons.check_circle_outline),
+                        .checkIn(challengeId: challenge.id),
+                icon: const Icon(CupertinoIcons.checkmark_circle),
                 label: Text(
                   checkedToday
                       ? ServerChallengeStrings.alreadyCheckedIn
@@ -281,6 +249,7 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
   }
 
   Widget _buildInfoCard(ChallengeModel challenge) {
+    final scheme = Theme.of(context).colorScheme;
     final dateFormat = DateFormat('MMMM d, yyyy');
 
     return Card(
@@ -291,26 +260,25 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
           children: [
             Text(
               challenge.name,
-              style: getBoldStyle(
-                fontSize: FontSize.s20,
-                color: ColorManager.darkGrey,
-              ),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
             ),
             const SizedBox(height: 16),
             _buildInfoRow(
-              Icons.calendar_today,
+              CupertinoIcons.calendar,
               ServerChallengeStrings.startDateLabel,
               dateFormat.format(challenge.startDate),
             ),
             const SizedBox(height: 12),
             _buildInfoRow(
-              Icons.event,
+              CupertinoIcons.calendar_today,
               ServerChallengeStrings.endDateLabel,
               dateFormat.format(challenge.endDate),
             ),
             if (challenge.isActive || challenge.isUpcoming) ...[
               const SizedBox(height: 16),
-              _buildProgressSection(challenge),
+              _buildProgressSection(challenge, scheme),
             ],
           ],
         ),
@@ -319,9 +287,11 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
   }
 
   Widget _buildInfoRow(IconData icon, String label, String value) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Row(
       children: [
-        Icon(icon, size: 20, color: ColorManager.grey1),
+        Icon(icon, size: 20, color: scheme.textMuted),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -329,18 +299,16 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
             children: [
               Text(
                 label,
-                style: getRegularStyle(
-                  fontSize: FontSize.s12,
-                  color: ColorManager.grey1,
-                ),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: scheme.textMuted,
+                    ),
               ),
               const SizedBox(height: 2),
               Text(
                 value,
-                style: getMediumStyle(
-                  fontSize: FontSize.s14,
-                  color: ColorManager.darkGrey,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
               ),
             ],
           ),
@@ -349,7 +317,7 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
     );
   }
 
-  Widget _buildProgressSection(ChallengeModel challenge) {
+  Widget _buildProgressSection(ChallengeModel challenge, ColorScheme scheme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -364,17 +332,16 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
                   : ServerChallengeStrings.daysRemaining(
                       challenge.daysRemaining,
                     ),
-              style: getMediumStyle(
-                fontSize: FontSize.s14,
-                color: ColorManager.grey1,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: scheme.textMuted,
+                  ),
             ),
             Text(
               '${(challenge.progress * 100).toInt()}%',
-              style: getBoldStyle(
-                fontSize: FontSize.s16,
-                color: ColorManager.primary,
-              ),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: scheme.dataGreen,
+                    fontWeight: FontWeight.w700,
+                  ),
             ),
           ],
         ),
@@ -384,11 +351,9 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
           child: LinearProgressIndicator(
             value: challenge.progress,
             minHeight: 12,
-            backgroundColor: ColorManager.grey.withValues(alpha: 0.2),
+            backgroundColor: scheme.outlineVariant.withValues(alpha: 0.35),
             valueColor: AlwaysStoppedAnimation<Color>(
-              challenge.isUpcoming
-                  ? const Color(0xFFFF9800)
-                  : ColorManager.primary,
+              challenge.isUpcoming ? scheme.tertiary : scheme.primary,
             ),
           ),
         ),
@@ -397,39 +362,22 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
   }
 
   Widget _buildStatusCard(ChallengeModel challenge) {
+    final scheme = Theme.of(context).colorScheme;
+    final me = _me(challenge);
     final currentAmount = _getCurrentAmount(challenge);
-    final targetAmount =
-        challenge.participants
-            .firstWhere(
-              (p) => p.id == challenge.creatorId,
-              orElse: () => challenge.participants.first,
-            )
-            .targetAmount ??
-        0.0;
+    final targetAmount = me?.targetAmount ?? 0.0;
     final progress = targetAmount > 0
         ? (currentAmount / targetAmount).clamp(0.0, 1.0)
         : 0.0;
     final isAchieved = currentAmount >= targetAmount && targetAmount > 0;
 
     final (color, icon, text) = isAchieved
-        ? (
-            const Color(0xFF4CAF50),
-            Icons.check_circle,
-            ServerChallengeStrings.cardCompleted,
-          )
+        ? (scheme.tertiary, CupertinoIcons.checkmark_seal_fill, ServerChallengeStrings.cardCompleted)
         : challenge.isExpired
-        ? (ColorManager.error, Icons.cancel, ServerChallengeStrings.cardExpired)
-        : challenge.isActive
-        ? (
-            ColorManager.primary,
-            Icons.trending_up,
-            ServerChallengeStrings.cardActive,
-          )
-        : (
-            const Color(0xFFFF9800),
-            Icons.schedule,
-            ServerChallengeStrings.cardUpcoming,
-          );
+            ? (scheme.error, CupertinoIcons.xmark_circle_fill, ServerChallengeStrings.cardExpired)
+            : challenge.isActive
+                ? (scheme.primary, CupertinoIcons.flame_fill, ServerChallengeStrings.cardActive)
+                : (scheme.tertiary, CupertinoIcons.time, ServerChallengeStrings.cardUpcoming);
 
     return Card(
       child: Padding(
@@ -454,35 +402,33 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
                     children: [
                       Text(
                         ServerChallengeStrings.statusLabel,
-                        style: getRegularStyle(
-                          fontSize: FontSize.s12,
-                          color: ColorManager.grey1,
-                        ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: scheme.textMuted,
+                            ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         text,
-                        style: getBoldStyle(
-                          fontSize: FontSize.s18,
-                          color: color,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: color,
+                              fontWeight: FontWeight.w700,
+                            ),
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-            if (!challenge.isExpired) ...[
+            if (!challenge.isExpired && me != null) ...[
               const SizedBox(height: 24),
-              // Target and Current Amount Display
               Row(
                 children: [
                   Expanded(
                     child: _buildAmountBox(
                       ServerChallengeStrings.targetAmountLabel,
                       targetAmount,
-                      ColorManager.primary,
-                      Icons.flag,
+                      scheme.dataGreen,
+                      AppIcons.goals,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -490,14 +436,13 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
                     child: _buildAmountBox(
                       ServerChallengeStrings.currentAmountLabel,
                       currentAmount,
-                      isAchieved ? const Color(0xFF4CAF50) : ColorManager.grey1,
-                      Icons.account_balance_wallet,
+                      isAchieved ? scheme.tertiary : scheme.dataGreen,
+                      AppIcons.wallet,
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 20),
-              // Progress Bar
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -506,19 +451,16 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
                     children: [
                       Text(
                         ServerChallengeStrings.progressLabel,
-                        style: getMediumStyle(
-                          fontSize: FontSize.s14,
-                          color: ColorManager.grey1,
-                        ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: scheme.textMuted,
+                            ),
                       ),
                       Text(
                         '${(progress * 100).toStringAsFixed(1)}%',
-                        style: getBoldStyle(
-                          fontSize: FontSize.s14,
-                          color: isAchieved
-                              ? const Color(0xFF4CAF50)
-                              : ColorManager.primary,
-                        ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: isAchieved ? scheme.tertiary : scheme.dataGreen,
+                              fontWeight: FontWeight.w700,
+                            ),
                       ),
                     ],
                   ),
@@ -528,40 +470,28 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
                     child: LinearProgressIndicator(
                       value: progress,
                       minHeight: 10,
-                      backgroundColor: ColorManager.grey.withValues(alpha: 0.2),
+                      backgroundColor: scheme.outlineVariant.withValues(alpha: 0.35),
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        isAchieved
-                            ? const Color(0xFF4CAF50)
-                            : ColorManager.primary,
+                        isAchieved ? scheme.tertiary : scheme.primary,
                       ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 20),
-              // Update Amount Button
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton.icon(
+                child: FilledButton.icon(
                   onPressed: () => _showUpdateAmountDialog(challenge),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isAchieved
-                        ? const Color(0xFF4CAF50)
-                        : ColorManager.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                  icon: Icon(
+                    isAchieved
+                        ? CupertinoIcons.checkmark_seal_fill
+                        : CupertinoIcons.pencil,
                   ),
-                  icon: Icon(isAchieved ? Icons.check_circle : Icons.edit),
                   label: Text(
                     isAchieved
                         ? ServerChallengeStrings.updateAmountAchieved
                         : ServerChallengeStrings.updateAmountButton,
-                    style: getBoldStyle(
-                      fontSize: FontSize.s16,
-                      color: Colors.white,
-                    ),
                   ),
                 ),
               ),
@@ -578,6 +508,8 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
     Color color,
     IconData icon,
   ) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -595,10 +527,9 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
               Expanded(
                 child: Text(
                   label,
-                  style: getRegularStyle(
-                    fontSize: FontSize.s12,
-                    color: ColorManager.grey1,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: scheme.textMuted,
+                      ),
                 ),
               ),
             ],
@@ -606,108 +537,157 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
           const SizedBox(height: 8),
           Text(
             ServerChallengeStrings.formatAmount(amount),
-            style: getBoldStyle(fontSize: FontSize.s18, color: color),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                ),
           ),
         ],
       ),
     );
   }
 
-  // Update the _showUpdateAmountDialog to show current amount and accept new amount to add
   void _showUpdateAmountDialog(ChallengeModel challenge) {
+    final scheme = Theme.of(context).colorScheme;
+    final me = _me(challenge);
     final currentAmount = _getCurrentAmount(challenge);
     final amountController = TextEditingController();
+    var saving = false;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(ServerChallengeStrings.addAmountTitle),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: ColorManager.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    ServerChallengeStrings.currentAmountLabel,
-                    style: getRegularStyle(
-                      fontSize: FontSize.s12,
-                      color: ColorManager.grey1,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setLocalState) {
+            return Dialog(
+              shape: IOSDialogStyle.dialogShape(),
+              child: Container(
+                width: MediaQuery.of(dialogContext).size.width * 0.9,
+                constraints: const BoxConstraints(maxWidth: 400),
+                decoration: IOSDialogStyle.surfaceDecoration(dialogContext),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IOSDialogStyle.header(
+                      dialogContext,
+                      title: ServerChallengeStrings.addAmountTitle,
+                      icon: CupertinoIcons.plus_circle,
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    ServerChallengeStrings.formatAmount(currentAmount),
-                    style: getBoldStyle(
-                      fontSize: FontSize.s20,
-                      color: ColorManager.primary,
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: scheme.groupedFill,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              children: [
+                                Text(
+                                  ServerChallengeStrings.currentAmountLabel,
+                                  style: Theme.of(dialogContext)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(color: scheme.textMuted),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  ServerChallengeStrings.formatAmount(
+                                    currentAmount,
+                                  ),
+                                  style: Theme.of(dialogContext)
+                                      .textTheme
+                                      .titleLarge
+                                      ?.copyWith(
+                                        color: scheme.dataGreen,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: amountController,
+                            decoration: InputDecoration(
+                              labelText: ServerChallengeStrings.addAmountLabel,
+                              hintText: ServerChallengeStrings.addAmountHint,
+                              prefixIcon: const Icon(CupertinoIcons.add),
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            autofocus: true,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            ServerChallengeStrings.creatorTargetLine(
+                              me?.targetAmount?.toStringAsFixed(2) ?? '0.00',
+                            ),
+                            style: Theme.of(dialogContext)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(color: scheme.textMuted),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: saving
+                                  ? null
+                                  : () => Navigator.pop(dialogContext),
+                              child: Text(ServerChallengeStrings.cancel),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: AppLoadingButton(
+                              isLoading: saving,
+                              label: ServerChallengeStrings.addAmountSubmit,
+                              onPressed: () async {
+                                final amountToAdd = double.tryParse(
+                                  amountController.text.trim(),
+                                );
+                                if (amountToAdd == null || amountToAdd <= 0) {
+                                  ScaffoldMessenger.of(dialogContext)
+                                      .showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        ServerChallengeStrings
+                                            .invalidAmountSnack,
+                                      ),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                setLocalState(() => saving = true);
+                                await _addProgress(challenge, amountToAdd);
+                                if (dialogContext.mounted) {
+                                  Navigator.pop(dialogContext);
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: amountController,
-              decoration: InputDecoration(
-                labelText: ServerChallengeStrings.addAmountLabel,
-                hintText: ServerChallengeStrings.addAmountHint,
-                prefixIcon: const Icon(Icons.add),
-                border: const OutlineInputBorder(),
-              ),
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              autofocus: true,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              ServerChallengeStrings.creatorTargetLine(
-                challenge.participants
-                        .firstWhere(
-                          (p) => p.id == challenge.creatorId,
-                          orElse: () => challenge.participants.first,
-                        )
-                        .targetAmount
-                        ?.toStringAsFixed(2) ??
-                    '0.00',
-              ),
-              style: getRegularStyle(
-                fontSize: FontSize.s14,
-                color: ColorManager.grey1,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(ServerChallengeStrings.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final amountToAdd = double.tryParse(amountController.text.trim());
-              if (amountToAdd != null && amountToAdd > 0) {
-                Navigator.pop(context);
-                await _addProgress(challenge, amountToAdd);
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(ServerChallengeStrings.invalidAmountSnack),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
-              }
-            },
-            child: Text(ServerChallengeStrings.addAmountSubmit),
-          ),
-        ],
-      ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -725,14 +705,13 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
                   ServerChallengeStrings.participantsTitle(
                     challenge.participants.length,
                   ),
-                  style: getBoldStyle(
-                    fontSize: FontSize.s16,
-                    color: ColorManager.darkGrey,
-                  ),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
                 TextButton.icon(
                   onPressed: () => _showInviteDialog(challenge),
-                  icon: const Icon(Icons.person_add, size: 18),
+                  icon: const Icon(CupertinoIcons.person_add, size: 18),
                   label: Text(ServerChallengeStrings.inviteButton),
                 ),
               ],
@@ -755,78 +734,113 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
 
   void _showInviteDialog(ChallengeModel challenge) {
     final emailController = TextEditingController();
+    var saving = false;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(ServerChallengeStrings.inviteDialogTitle),
-        content: TextField(
-          controller: emailController,
-          decoration: InputDecoration(
-            labelText: ServerChallengeStrings.inviteEmailLabel,
-            hintText: ServerChallengeStrings.inviteEmailHint,
-            prefixIcon: const Icon(Icons.email),
-          ),
-          keyboardType: TextInputType.emailAddress,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(ServerChallengeStrings.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final email = emailController.text.trim();
-              final isValidEmail = RegExp(
-                r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
-              ).hasMatch(email);
-              if (!isValidEmail) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(ServerChallengeStrings.inviteInvalidEmail),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
-                return;
-              }
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setLocalState) {
+            return Dialog(
+              shape: IOSDialogStyle.dialogShape(),
+              child: Container(
+                width: MediaQuery.of(dialogContext).size.width * 0.9,
+                constraints: const BoxConstraints(maxWidth: 400),
+                decoration: IOSDialogStyle.surfaceDecoration(dialogContext),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IOSDialogStyle.header(
+                      dialogContext,
+                      title: ServerChallengeStrings.inviteDialogTitle,
+                      icon: CupertinoIcons.person_add,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+                      child: TextField(
+                        controller: emailController,
+                        decoration: InputDecoration(
+                          labelText: ServerChallengeStrings.inviteEmailLabel,
+                          hintText: ServerChallengeStrings.inviteEmailHint,
+                          prefixIcon: const Icon(CupertinoIcons.mail),
+                        ),
+                        keyboardType: TextInputType.emailAddress,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: saving
+                                  ? null
+                                  : () => Navigator.pop(dialogContext),
+                              child: Text(ServerChallengeStrings.cancel),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: AppLoadingButton(
+                              isLoading: saving,
+                              label: ServerChallengeStrings.inviteButton,
+                              onPressed: () {
+                                final email = emailController.text.trim();
+                                final isValidEmail = RegExp(
+                                  r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                                ).hasMatch(email);
+                                if (!isValidEmail) {
+                                  ScaffoldMessenger.of(dialogContext)
+                                      .showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        ServerChallengeStrings
+                                            .inviteInvalidEmail,
+                                      ),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                  return;
+                                }
 
-              Navigator.pop(context);
-              ref
-                  .read(challengeOperationProvider.notifier)
-                  .inviteUser(challengeId: challenge.id, email: email);
-            },
-            child: Text(ServerChallengeStrings.inviteButton),
-          ),
-        ],
-      ),
+                                setLocalState(() => saving = true);
+                                Navigator.pop(dialogContext);
+                                ref
+                                    .read(
+                                      challengeOperationProvider.notifier,
+                                    )
+                                    .inviteUser(
+                                      challengeId: challenge.id,
+                                      email: email,
+                                    );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
-  void _removeParticipant(ChallengeModel challenge, int userId) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(ServerChallengeStrings.removeParticipantTitle),
-        content: Text(ServerChallengeStrings.removeParticipantBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(ServerChallengeStrings.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ref
-                  .read(challengeOperationProvider.notifier)
-                  .removeParticipant(challengeId: challenge.id, userId: userId);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: ColorManager.error,
-            ),
-            child: Text(ServerChallengeStrings.removeButton),
-          ),
-        ],
-      ),
+  Future<void> _removeParticipant(ChallengeModel challenge, int userId) async {
+    final confirmed = await AppConfirmDialog.show(
+      context,
+      title: ServerChallengeStrings.removeParticipantTitle,
+      message: ServerChallengeStrings.removeParticipantBody,
+      confirmLabel: ServerChallengeStrings.removeButton,
+      cancelLabel: ServerChallengeStrings.cancel,
     );
+    if (confirmed == true && mounted) {
+      ref
+          .read(challengeOperationProvider.notifier)
+          .removeParticipant(challengeId: challenge.id, userId: userId);
+    }
   }
 }

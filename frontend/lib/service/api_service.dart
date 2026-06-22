@@ -8,9 +8,7 @@ import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/hive_service.dart';
 import 'package:mudabbir/service/security/auth_token_secure_store.dart';
 
-/// Laravel Sanctum often returns `token` as `{ plainTextToken: "..." }`;
-/// some APIs return a plain string. Register already used `plainTextToken`;
-/// login must do the same or Hive stores a Map and [didLogin] breaks.
+/// Laravel Sanctum often returns `token` as `{ plainTextToken: "..." }`.
 String _plainTokenFromAuthJson(dynamic tokenField) {
   if (tokenField == null) {
     throw FormatException('Missing token in auth response');
@@ -32,17 +30,9 @@ class ApiService {
     String email,
     String password,
   ) async {
-    return await requestData(
-      method: HttpMethod.POST,
-      body: {'email': email, 'password': password},
+    return _authRequest(
       url: '${ApiConstants.baseUrl}/api/login',
-      parser: (json) {
-        final userJson = json['user'];
-        final user = UserModel.fromJson(userJson);
-
-        storeTokenAndUser(user, _plainTokenFromAuthJson(json['token']));
-        return user;
-      },
+      body: {'email': email, 'password': password},
     );
   }
 
@@ -52,32 +42,50 @@ class ApiService {
     String password,
     String passwordConfirmation,
   ) async {
-    return await requestData(
-      method: HttpMethod.POST,
+    return _authRequest(
+      url: '${ApiConstants.baseUrl}/api/register',
       body: {
         'email': email,
         'name': name,
         'password': password,
         'password_confirmation': passwordConfirmation,
       },
-      url: '${ApiConstants.baseUrl}/api/register',
-      parser: (json) {
-        final userJson = json['user'];
-        final user = UserModel.fromJson(userJson);
+    );
+  }
 
-        storeTokenAndUser(user, _plainTokenFromAuthJson(json['token']));
-        return user;
+  Future<Either<Failure, UserModel>> _authRequest({
+    required String url,
+    required Map<String, dynamic> body,
+  }) async {
+    final result = await requestData<Map<String, dynamic>>(
+      method: HttpMethod.POST,
+      body: body,
+      url: url,
+      parser: (json) => Map<String, dynamic>.from(json as Map),
+    );
+
+    return await result.fold<Future<Either<Failure, UserModel>>>(
+      (failure) async => Left(failure),
+      (json) async {
+        try {
+          final user = UserModel.fromJson(json['user']);
+          final token = _plainTokenFromAuthJson(json['token']);
+          await storeTokenAndUser(user, token);
+          return Right(user);
+        } catch (e) {
+          return Left(UnknownFailure(e.toString()));
+        }
       },
     );
   }
 
   Future<void> storeTokenAndUser(UserModel user, String token) async {
     final hive = getIt<HiveService>();
-    await hive.setValue(HiveConstants.savedToken, token);
     await getIt<AuthTokenSecureStore>().writeToken(token);
+    await hive.deleteValue(HiveConstants.savedToken);
 
-    // Save user info for HomePage green-dot
     await hive.setValue(HiveConstants.savedUserInfo, {
+      'id': user.id,
       'email': user.email,
       'name': user.name,
     });

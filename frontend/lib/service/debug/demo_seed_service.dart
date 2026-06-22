@@ -147,7 +147,7 @@ class DemoSeedService {
         'name': 'صندوق الطوارئ',
         'target': 30000.0,
         'current_amount': 12000.0,
-        'type': 'قصير المدى',
+        'type': 'ادخار',
         'start_date': DateTime(now.year, now.month - 1, 1).toIso8601String(),
         'end_date': DateTime(now.year + 1, now.month, 1).toIso8601String(),
       });
@@ -155,7 +155,7 @@ class DemoSeedService {
         'name': 'سيارة',
         'target': 90000.0,
         'current_amount': 24000.0,
-        'type': 'متوسط المدى',
+        'type': 'استثمار',
         'start_date': DateTime(now.year, now.month - 2, 1).toIso8601String(),
         'end_date': DateTime(now.year + 2, now.month, 1).toIso8601String(),
       });
@@ -163,7 +163,7 @@ class DemoSeedService {
         'name': 'استثمار',
         'target': 150000.0,
         'current_amount': 35000.0,
-        'type': 'طويل المدى',
+        'type': 'دين',
         'start_date': DateTime(now.year, now.month - 3, 1).toIso8601String(),
         'end_date': DateTime(now.year + 3, now.month, 1).toIso8601String(),
       });

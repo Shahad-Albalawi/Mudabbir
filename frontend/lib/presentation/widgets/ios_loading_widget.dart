@@ -13,7 +13,7 @@ class IOSLoadingWidget extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return CupertinoActivityIndicator(
       radius: size / 2.8,
-      color: scheme.primary,
+      color: scheme.chromeIcon,
     );
   }
 }

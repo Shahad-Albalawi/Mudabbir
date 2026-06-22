@@ -1,6 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:mudabbir/constants/app_flags.dart';
 import 'package:mudabbir/constants/hive_constants.dart';
+import 'package:mudabbir/data/local/budget_hive_cache.dart';
 import 'package:mudabbir/data/local/challenge_hive_cache.dart';
 import 'package:mudabbir/data/local/expense_hive_cache.dart';
 import 'package:mudabbir/data/local/goal_hive_cache.dart';
@@ -11,6 +10,8 @@ import 'package:mudabbir/service/hive_service.dart';
 import 'package:mudabbir/service/security/auth_token_secure_store.dart';
 import 'package:mudabbir/utils/dev_log.dart';
 import 'package:mudabbir/utils/local_db_user_id.dart';
+import 'package:flutter/material.dart';
+import 'package:mudabbir/constants/app_flags.dart';
 
 class AuthNotifier extends ChangeNotifier {
   final HiveService _hiveService = getIt<HiveService>();
@@ -20,38 +21,30 @@ class AuthNotifier extends ChangeNotifier {
   bool get isLoggedIn => _isLoggedIn;
   bool get isInitialized => _isInitialized;
 
-  /// The constructor is the entry point for this class.
   AuthNotifier() {
     _checkLoginStatusAtStartup();
   }
 
-  /// This private method runs only once when the app starts.
   Future<void> _checkLoginStatusAtStartup() async {
-    final raw = _hiveService.getValue(HiveConstants.savedToken);
-    String? tokenStr = raw is String && raw.isNotEmpty ? raw : null;
-
-    if (tokenStr == null) {
-      final fromSecure = await getIt<AuthTokenSecureStore>().readToken();
-      if (fromSecure != null && fromSecure.isNotEmpty) {
-        await _hiveService.setValue(HiveConstants.savedToken, fromSecure);
-        tokenStr = fromSecure;
-      }
-    }
+    final tokenStr = await getIt<AuthTokenSecureStore>().readToken();
 
     if (tokenStr != null && tokenStr.isNotEmpty) {
-      _isLoggedIn = true;
-
-      // Initialize the database for the existing user session.
       final user = _hiveService.getValue(HiveConstants.savedUserInfo);
       if (user != null && user is Map) {
+        _isLoggedIn = true;
         await LocalDatabase.instance.initForUser(resolveLocalDbUserId(user));
         if (AppFlags.enableDemoSeed) {
           await DemoSeedService.seedIfDatabaseEmpty();
         }
         devLog('Database initialized for existing user: ${user['name']}');
+      } else {
+        await getIt<AuthTokenSecureStore>().clearToken();
+        await _hiveService.deleteValue(HiveConstants.savedToken);
+        _isLoggedIn = false;
       }
     } else {
       _isLoggedIn = false;
+      await _hiveService.deleteValue(HiveConstants.savedToken);
       if (AppFlags.allowGuestHome) {
         final guestUser = resolveLocalDbUserId(
           _hiveService.getValue(HiveConstants.savedUserInfo),
@@ -69,15 +62,12 @@ class AuthNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Call this from your LoginView AFTER a successful API login.
   Future<void> didLogin(Map<String, dynamic> user, String token) async {
     try {
-      // 1. Save session data to Hive.
-      await _hiveService.setValue(HiveConstants.savedToken, token);
-      await _hiveService.setValue(HiveConstants.savedUserInfo, user);
       await getIt<AuthTokenSecureStore>().writeToken(token);
+      await _hiveService.setValue(HiveConstants.savedUserInfo, user);
+      await _hiveService.deleteValue(HiveConstants.savedToken);
 
-      // 2. Initialize the database for the new user session.
       final dbUserId = resolveLocalDbUserId(user);
       await LocalDatabase.instance.initForUser(dbUserId);
       if (AppFlags.enableDemoSeed) {
@@ -85,17 +75,11 @@ class AuthNotifier extends ChangeNotifier {
       }
       devLog('Database initialized for new user: $dbUserId');
 
-      // 3. Update the state.
       _isLoggedIn = true;
-
-      // 4. Notify listeners immediately
       notifyListeners();
-
       devLog('Auth state updated: isLoggedIn = $_isLoggedIn');
     } catch (e) {
       devLog('Error during login: $e');
-      // Rollback on error
-      await _hiveService.deleteValue(HiveConstants.savedToken);
       await _hiveService.deleteValue(HiveConstants.savedUserInfo);
       await getIt<AuthTokenSecureStore>().clearToken();
       _isLoggedIn = false;
@@ -104,18 +88,16 @@ class AuthNotifier extends ChangeNotifier {
     }
   }
 
-  /// Call this from your UI when the user logs out.
   Future<void> didLogout() async {
-    // 1. Clear session data from Hive + secure storage.
-    await _hiveService.deleteValue(HiveConstants.savedToken);
     await _hiveService.deleteValue(HiveConstants.savedUserInfo);
+    await _hiveService.deleteValue(HiveConstants.savedToken);
     await getIt<AuthTokenSecureStore>().clearToken();
 
     await getIt<ExpenseHiveCache>().clearAll();
     await getIt<GoalHiveCache>().clearAll();
+    await getIt<BudgetHiveCache>().clearAll();
     await getIt<ChallengeHiveCache>().clearAll();
 
-    // 2. Guest DB for offline home, or close DB when login is required.
     if (AppFlags.allowGuestHome) {
       await LocalDatabase.instance.initForUser('guest_user');
       if (AppFlags.enableDemoSeed) {
@@ -125,10 +107,7 @@ class AuthNotifier extends ChangeNotifier {
       await LocalDatabase.instance.close();
     }
 
-    // 3. Update state and notify the router.
     _isLoggedIn = false;
     notifyListeners();
   }
-
-  // Remove the refresh method as it's not needed
 }

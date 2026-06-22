@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
+import 'package:mudabbir/presentation/resources/design_tokens.dart';
+import 'package:mudabbir/presentation/resources/font_manager.dart';
 import 'package:mudabbir/presentation/widgets/app_brand_logo.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 
-/// Flat splash — iOS launch screen style.
+/// Minimal iOS launch screen — grouped canvas, app mark, no navy wash.
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
 
@@ -13,19 +16,17 @@ class SplashView extends StatefulWidget {
 
 class _SplashViewState extends State<SplashView>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
+  late final AnimationController _controller;
+  late final Animation<double> _fade;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 450),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
     _controller.forward();
   }
 
@@ -38,37 +39,87 @@ class _SplashViewState extends State<SplashView>
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      backgroundColor: scheme.surface,
-      body: SafeArea(
-        child: Center(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
+    final isDark = scheme.brightness == Brightness.dark;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        backgroundColor: scheme.pageBackground,
+        body: FadeTransition(
+          opacity: _fade,
+          child: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const AppBrandLogo(height: 72),
-                const SizedBox(height: 20),
+                _LaunchIcon(isDark: isDark),
+                const SizedBox(height: 22),
                 Text(
                   AppStrings.title,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: -0.3,
+                  style: TextStyle(
+                    fontFamily: FontConstants.thmanyahFamily,
+                    fontFamilyFallback: FontConstants.fontFamilyFallback,
+                    fontSize: AppTypographyScale.pageTitle,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: AppTypographyScale.headlineTracking,
                     color: scheme.onSurface,
+                    height: AppTypographyScale.headlineHeight,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
-                  AppStrings.loginSubtitle,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  AppStrings.splashTagline,
+                  style: TextStyle(
+                    fontFamily: FontConstants.thmanyahFamily,
+                    fontFamilyFallback: FontConstants.fontFamilyFallback,
+                    fontSize: AppTypographyScale.subhead,
+                    fontWeight: FontWeight.w400,
                     color: scheme.textMuted,
+                    height: 1.3,
                   ),
-                  textAlign: TextAlign.center,
                 ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// iOS-style app icon tile on launch — white (or elevated) rounded square.
+class _LaunchIcon extends StatelessWidget {
+  final bool isDark;
+
+  const _LaunchIcon({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final tileColor = isDark ? scheme.surface : Colors.white;
+
+    return Container(
+      width: 88,
+      height: 88,
+      decoration: BoxDecoration(
+        color: tileColor,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(
+          color: scheme.outline.withValues(alpha: isDark ? 0.35 : 0.12),
+        ),
+        boxShadow: isDark
+            ? const []
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+      ),
+      padding: const EdgeInsets.all(18),
+      child: const AppBrandLogo(
+        height: 52,
+        tone: BrandMarkTone.onLight,
       ),
     );
   }

@@ -1,259 +1,248 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mudabbir/presentation/chatbot/chatbot_viewmodel.dart';
+import 'package:mudabbir/presentation/chatbot/widgets/chatbot_empty_state.dart';
+import 'package:mudabbir/presentation/resources/app_icons.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/chatbot_ui_strings.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/presentation/resources/values_manager.dart';
+import 'package:mudabbir/presentation/widgets/app_grouped_scaffold.dart';
 import 'package:mudabbir/presentation/widgets/ios_dialog_style.dart';
-import 'package:stacked/stacked.dart';
-import 'chatbot_viewmodel.dart';
-
 TextDirection get _chatTextDirection =>
     AppStrings.isEnglishLocale ? TextDirection.ltr : TextDirection.rtl;
 
-class ChatbotView extends StatelessWidget {
+class ChatbotView extends ConsumerWidget {
   const ChatbotView({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(chatbotProvider);
+    final notifier = ref.read(chatbotProvider.notifier);
     final scheme = Theme.of(context).colorScheme;
-    return ViewModelBuilder<ChatbotViewModel>.reactive(
-      viewModelBuilder: () => ChatbotViewModel(),
-      onViewModelReady: (model) => model.initialize(),
-      builder: (context, model, child) => Scaffold(
-        backgroundColor: scheme.surfaceContainerHighest,
-        appBar: AppBar(
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          backgroundColor: scheme.surfaceContainerHighest,
-          title: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: scheme.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.psychology_outlined,
-                  size: 20,
-                  color: scheme.primary,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                AppStrings.chatbotTitle,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: scheme.onSurface,
-                ),
-              ),
-            ],
+
+    final hasUserMessages = state.messages.any((m) => m.isUser);
+
+    return AppGroupedScaffold(
+      onBackPressed: () => context.pop(),
+      largeTitle: true,
+      title: Text(AppStrings.chatbotTitle),
+      centerTitle: true,
+      actions: [
+        if (state.messages.isNotEmpty)
+          IconButton(
+            icon: const Icon(CupertinoIcons.refresh),
+            onPressed: () => _showClearDialog(context, notifier),
+            tooltip: AppStrings.clearChat,
           ),
-          centerTitle: true,
-          actions: [
-            if (model.messages.isNotEmpty)
-              IconButton(
-                icon: const Icon(Icons.refresh_rounded),
-                onPressed: () => _showClearDialog(context, model),
-                tooltip: AppStrings.clearChat,
-              ),
-            const SizedBox(width: 8),
-          ],
-        ),
-        body: Column(
-          children: [
-            Expanded(
-              child: model.isBusy
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CircularProgressIndicator(color: scheme.primary),
-                          const SizedBox(height: 16),
-                          Text(
-                            AppStrings.loading,
-                            style: TextStyle(
-                              color: scheme.textMuted,
-                              fontSize: 14,
-                            ),
+        const SizedBox(width: 8),
+      ],
+      body: Column(
+        children: [
+          Expanded(
+            child: DecoratedBox(
+              decoration: BoxDecoration(color: scheme.pageBackground),
+              child: state.isLoading
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(color: scheme.chromeIcon),
+                        const SizedBox(height: 16),
+                        Text(
+                          AppStrings.loading,
+                          style: TextStyle(
+                            color: scheme.textMuted,
+                            fontSize: 14,
                           ),
-                        ],
-                      ),
-                    )
-                  : model.messages.isEmpty
-                  ? _buildEmptyState(context)
-                  : ListView.builder(
-                      controller: model.scrollController,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppPadding.p16,
-                        vertical: AppPadding.p20,
-                      ),
-                      itemCount: model.messages.length,
-                      itemBuilder: (context, index) {
-                        final message = model.messages[index];
-                        return _buildMessageBubble(context, message);
-                      },
-                    ),
-            ),
-            if (model.isLoadingResponse)
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: scheme.surface,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: scheme.outline.withValues(alpha: 0.35),
                         ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: scheme.primary,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            AppStrings.typing,
-                            style: TextStyle(
-                              color: scheme.onSurface,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          _buildTypingDots(context),
-                        ],
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-            SizedBox(
-              height: 48,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                  )
+                : ListView.builder(
+                    controller: notifier.scrollController,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppPadding.p16,
+                      vertical: AppPadding.p20,
+                    ),
+                    itemCount: state.messages.length +
+                        (hasUserMessages ? 0 : 1),
+                    itemBuilder: (context, index) {
+                      if (!hasUserMessages && index == state.messages.length) {
+                        return ChatbotEmptyState(
+                          onSuggestionTap: notifier.sendSuggestedMessage,
+                        );
+                      }
+                      return _buildMessageBubble(
+                        context,
+                        state.messages[index],
+                      );
+                    },
+                  ),
+            ),
+          ),
+          if (state.isLoadingResponse)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
                 children: [
-                  _actionChip(
-                    context,
-                    title: ChatbotUi.quickCreateGoal,
-                    icon: Icons.flag_rounded,
-                    onTap: () => model.handleQuickAction(
-                      ChatQuickAction.createGoal,
-                      context,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: scheme.surface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: scheme.outline.withValues(alpha: 0.35),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: scheme.chromeIcon,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          AppStrings.typing,
+                          style: TextStyle(
+                            color: scheme.onSurface,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _buildTypingDots(context),
+                      ],
                     ),
                   ),
-                  _actionChip(
-                    context,
-                    title: ChatbotUi.quickAdjustBudget,
-                    icon: Icons.account_balance_wallet_rounded,
-                    onTap: () => model.handleQuickAction(
-                      ChatQuickAction.adjustBudget,
-                      context,
-                    ),
-                  ),
-                  _actionChip(
-                    context,
-                    title: ChatbotUi.quickReduceCategory,
-                    icon: Icons.trending_down_rounded,
-                    onTap: () => model.handleQuickAction(
-                      ChatQuickAction.reduceCategory,
-                      context,
-                    ),
-                  ),
-                  _actionChip(
-                    context,
-                    title: ChatbotUi.quickPdf,
-                    icon: Icons.picture_as_pdf_rounded,
-                    onTap: () => model.handleQuickAction(
-                      ChatQuickAction.exportReport,
-                      context,
-                    ),
-                  ),
-                  if (model.canUndoLastAction)
-                    _actionChip(
-                      context,
-                      title: ChatbotUi.quickUndo,
-                      icon: Icons.undo_rounded,
-                      onTap: () => model.undoLastAction(),
-                    ),
                 ],
               ),
             ),
-            Container(
-              padding: const EdgeInsets.all(AppLayout.pageGutter),
-              decoration: BoxDecoration(
-                color: scheme.surface,
-                border: Border(
-                  top: BorderSide(
-                    color: scheme.outline.withValues(alpha: 0.3),
+          SizedBox(
+            height: 48,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              children: [
+                _actionChip(
+                  context,
+                  title: ChatbotUi.quickCreateGoal,
+                  icon: AppIcons.goals,
+                  onTap: () => notifier.handleQuickAction(
+                    ChatQuickAction.createGoal,
+                    context,
                   ),
                 ),
+                _actionChip(
+                  context,
+                  title: ChatbotUi.quickAdjustBudget,
+                  icon: AppIcons.wallet,
+                  onTap: () => notifier.handleQuickAction(
+                    ChatQuickAction.adjustBudget,
+                    context,
+                  ),
+                ),
+                _actionChip(
+                  context,
+                  title: ChatbotUi.quickReduceCategory,
+                  icon: CupertinoIcons.arrow_down_right,
+                  onTap: () => notifier.handleQuickAction(
+                    ChatQuickAction.reduceCategory,
+                    context,
+                  ),
+                ),
+                _actionChip(
+                  context,
+                  title: ChatbotUi.quickPdf,
+                  icon: CupertinoIcons.doc_text,
+                  onTap: () => notifier.handleQuickAction(
+                    ChatQuickAction.exportReport,
+                    context,
+                  ),
+                ),
+                if (notifier.canUndoLastAction)
+                  _actionChip(
+                    context,
+                    title: ChatbotUi.quickUndo,
+                    icon: CupertinoIcons.arrow_uturn_left,
+                    onTap: () => notifier.undoLastAction(),
+                  ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(AppLayout.pageGutter),
+            decoration: BoxDecoration(
+              color: scheme.surface,
+              border: Border(
+                top: BorderSide(
+                  color: scheme.outline.withValues(alpha: 0.3),
+                ),
               ),
-              child: SafeArea(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: Container(
-                        constraints: const BoxConstraints(maxHeight: 120),
-                        decoration: BoxDecoration(
-                          color: scheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: scheme.outline.withValues(alpha: 0.25),
-                          ),
-                        ),
-                        child: TextField(
-                          controller: model.messageController,
-                          maxLines: null,
-                          textDirection: TextDirection.rtl,
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: scheme.onSurface,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: AppStrings.chatHint,
-                            hintTextDirection: TextDirection.rtl,
-                            hintStyle: TextStyle(
-                              color: scheme.textMuted,
-                              fontSize: 14,
-                            ),
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 14,
-                            ),
-                          ),
-                          onSubmitted: (value) {
-                            if (value.trim().isNotEmpty) {
-                              model.sendMessage();
-                            }
-                          },
+            ),
+            child: SafeArea(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: Container(
+                      constraints: const BoxConstraints(maxHeight: 120),
+                      decoration: BoxDecoration(
+                        color: scheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: scheme.outline.withValues(alpha: 0.25),
                         ),
                       ),
+                      child: TextField(
+                        controller: notifier.messageController,
+                        maxLines: null,
+                        textDirection: _chatTextDirection,
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: scheme.onSurface,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: AppStrings.chatHint,
+                          hintTextDirection: _chatTextDirection,
+                          hintStyle: TextStyle(
+                            color: scheme.textMuted,
+                            fontSize: 14,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 14,
+                          ),
+                        ),
+                        onSubmitted: (value) {
+                          if (value.trim().isNotEmpty) {
+                            notifier.sendMessage();
+                          }
+                        },
+                      ),
                     ),
-                    const SizedBox(width: 12),
-                    Material(
+                  ),
+                  const SizedBox(width: 12),
+                  Semantics(
+                    label: AppStrings.sendMessage,
+                    button: true,
+                    child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        onTap: model.isLoadingResponse
+                        onTap: state.isLoadingResponse
                             ? null
-                            : () => model.sendMessage(),
+                            : () => notifier.sendMessage(),
                         borderRadius: BorderRadius.circular(50),
                         child: Container(
                           padding: const EdgeInsets.all(14),
@@ -262,19 +251,19 @@ class ChatbotView extends StatelessWidget {
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                            Icons.send_rounded,
+                            CupertinoIcons.paperplane_fill,
                             color: scheme.onPrimary,
                             size: 20,
                           ),
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -289,10 +278,10 @@ class ChatbotView extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: ActionChip(
-        avatar: Icon(icon, size: 16, color: scheme.primary),
+        avatar: Icon(icon, size: 16, color: scheme.chromeIcon),
         label: Text(title),
         onPressed: onTap,
-        backgroundColor: scheme.primary.withValues(alpha: 0.1),
+        backgroundColor: scheme.groupedFill,
         labelStyle: TextStyle(
           color: scheme.onSurface,
           fontWeight: FontWeight.w600,
@@ -303,141 +292,17 @@ class ChatbotView extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(32),
-              decoration: BoxDecoration(
-                color: scheme.primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.psychology_rounded,
-                size: 80,
-                color: scheme.primary,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              AppStrings.emptyChatTitle,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: scheme.onSurface,
-              ),
-              textDirection: _chatTextDirection,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              AppStrings.emptyChatSubtitle,
-              style: TextStyle(
-                fontSize: 16,
-                color: scheme.textMuted,
-                fontWeight: FontWeight.w500,
-              ),
-              textDirection: _chatTextDirection,
-            ),
-            const SizedBox(height: 32),
-            _buildSuggestionCard(
-              context: context,
-              icon: Icons.account_balance_wallet_rounded,
-              title: ChatbotUi.suggestBalanceTitle,
-              subtitle: ChatbotUi.suggestBalanceSubtitle,
-            ),
-            const SizedBox(height: 12),
-            _buildSuggestionCard(
-              context: context,
-              icon: Icons.trending_up_rounded,
-              title: ChatbotUi.suggestExpenseTitle,
-              subtitle: ChatbotUi.suggestExpenseSubtitle,
-            ),
-            const SizedBox(height: 12),
-            _buildSuggestionCard(
-              context: context,
-              icon: Icons.flag_rounded,
-              title: ChatbotUi.suggestGoalsTitle,
-              subtitle: ChatbotUi.suggestGoalsSubtitle,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSuggestionCard({
-    required BuildContext context,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: scheme.outline.withValues(alpha: 0.35)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: scheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: scheme.primary, size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: scheme.onSurface,
-                  ),
-                  textDirection: _chatTextDirection,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: scheme.textMuted,
-                  ),
-                  textDirection: _chatTextDirection,
-                ),
-              ],
-            ),
-          ),
-          Icon(
-            AppStrings.isEnglishLocale
-                ? Icons.arrow_forward_ios_rounded
-                : Icons.arrow_back_ios_rounded,
-            size: 16,
-            color: scheme.textMuted,
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildMessageBubble(BuildContext context, ChatMessage message) {
     final scheme = Theme.of(context).colorScheme;
     final isUser = message.isUser;
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
+      child: Semantics(
+        container: true,
+        label: isUser
+            ? '${AppStrings.chatUserMessage}: ${message.text}'
+            : '${AppStrings.chatAssistantMessage}: ${message.text}',
+        child: Row(
         mainAxisAlignment: isUser
             ? MainAxisAlignment.end
             : MainAxisAlignment.start,
@@ -447,12 +312,12 @@ class ChatbotView extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: scheme.primary.withValues(alpha: 0.12),
+                color: scheme.chromeIconFill,
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                Icons.psychology_rounded,
-                color: scheme.primary,
+                CupertinoIcons.sparkles,
+                color: scheme.chromeIcon,
                 size: 20,
               ),
             ),
@@ -498,13 +363,14 @@ class ChatbotView extends StatelessWidget {
                 ),
               ),
               child: Icon(
-                Icons.person_rounded,
+                CupertinoIcons.person_fill,
                 color: scheme.textMuted,
                 size: 20,
               ),
             ),
           ],
         ],
+        ),
       ),
     );
   }
@@ -526,7 +392,7 @@ class ChatbotView extends StatelessWidget {
     );
   }
 
-  void _showClearDialog(BuildContext context, ChatbotViewModel model) {
+  void _showClearDialog(BuildContext context, ChatbotNotifier notifier) {
     IOSDialogStyle.showConfirm(
       context: context,
       title: ChatbotUi.clearDialogTitle,
@@ -534,16 +400,7 @@ class ChatbotView extends StatelessWidget {
       confirmLabel: ChatbotUi.clearDialogConfirm,
       cancelLabel: ChatbotUi.dlgCancel,
       isDestructive: true,
-      onConfirm: model.clearMessages,
+      onConfirm: notifier.clearMessages,
     );
   }
-}
-
-class ChatMessage {
-  final String text;
-  final bool isUser;
-  final DateTime timestamp;
-
-  ChatMessage({required this.text, required this.isUser, DateTime? timestamp})
-    : timestamp = timestamp ?? DateTime.now();
 }

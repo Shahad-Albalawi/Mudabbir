@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mudabbir/presentation/resources/design_tokens.dart';
 import 'package:mudabbir/presentation/resources/ios_style_constants.dart';
 
 /// Wraps a child with press scale animation and haptic feedback.
@@ -57,8 +58,13 @@ class _IOSPressableState extends State<IOSPressable> {
       child: AnimatedScale(
         scale: _isPressed ? widget.scaleDown : 1.0,
         duration: const Duration(milliseconds: IOSStyleConstants.durationFast),
-        curve: Curves.easeOutCubic,
-        child: widget.child,
+        curve: AppMotion.standard,
+        child: AnimatedOpacity(
+          opacity: _isPressed ? IOSStyleConstants.pressOpacity : 1,
+          duration: const Duration(milliseconds: IOSStyleConstants.durationFast),
+          curve: AppMotion.standard,
+          child: widget.child,
+        ),
       ),
     );
   }

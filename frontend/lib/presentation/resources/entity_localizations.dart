@@ -25,6 +25,32 @@ class EntityLocalizations {
     'ملغي': 'Cancelled',
   };
 
+  static const _categoryEmojis = <String, String>{
+    'طعام': '🍽️',
+    'نقل': '🚗',
+    'تسوق': '🛍️',
+    'فواتير': '🧾',
+    'صحة': '💊',
+    'ترفيه': '🎬',
+    'راتب': '💰',
+    'مكافأة': '🎁',
+    'هبه': '🎁',
+    'اخرى': '📌',
+  };
+
+  static String categoryEmoji(String? raw) {
+    if (raw == null || raw.isEmpty) return '📊';
+    final direct = _categoryEmojis[raw];
+    if (direct != null) return direct;
+
+    for (final entry in _categories.entries) {
+      if (entry.value.toLowerCase() == raw.toLowerCase()) {
+        return _categoryEmojis[entry.key] ?? '📊';
+      }
+    }
+    return '📊';
+  }
+
   static String categoryName(String? raw) {
     if (raw == null || raw.isEmpty) return '';
     if (AppStrings.isEnglishLocale) {

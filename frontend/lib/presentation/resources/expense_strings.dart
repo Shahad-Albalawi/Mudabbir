@@ -12,9 +12,7 @@ class ExpenseStrings {
   static String get title => _e ? 'Expenses' : 'المصروفات';
   static String get addExpense => _e ? 'Add expense' : 'إضافة مصروف';
   static String get editExpense => _e ? 'Edit expense' : 'تعديل مصروف';
-  static String get deleteExpense => _e ? 'Delete' : 'حذف';
   static String get save => _e ? 'Save' : 'حفظ';
-  static String get cancel => _e ? 'Cancel' : 'إلغاء';
   static String get emptyTitle =>
       _e ? 'No expenses yet' : 'لا توجد مصروفات بعد';
   static String get emptySubtitle => _e
@@ -35,19 +33,39 @@ class ExpenseStrings {
   static String get notes => _e ? 'Notes' : 'ملاحظات';
   static String get requiredField => _e ? 'Required' : 'مطلوب';
   static String get invalidAmount => _e ? 'Invalid amount' : 'مبلغ غير صحيح';
+  static String get amountTooLarge =>
+      _e ? 'Amount is too large.' : 'المبلغ كبير جداً.';
+  static String get dateRequired =>
+      _e ? 'Date is required.' : 'التاريخ مطلوب.';
+  static String get dateInvalid =>
+      _e ? 'Invalid date.' : 'تاريخ غير صالح.';
+  static String get dateCannotBeFuture => _e
+      ? 'Date cannot be in the future.'
+      : 'لا يمكن اختيار تاريخ في المستقبل.';
+  static String get notesTooLong => _e
+      ? 'Notes are too long (max 500 characters).'
+      : 'الملاحظات طويلة جداً (الحد الأقصى 500 حرف).';
+  static String get accountRequired =>
+      _e ? 'Select an account.' : 'اختر حساباً.';
+  static String get categoryRequired =>
+      _e ? 'Select a category.' : 'اختر فئة.';
+  static String get textTooLong => _e
+      ? 'Text is too long (max 255 characters).'
+      : 'النص طويل جداً (الحد الأقصى 255 حرف).';
   static String get loadFailed =>
       _e ? 'Failed to load expenses.' : 'تعذر تحميل المصروفات.';
+  static String get syncFailed =>
+      _e ? 'Expense sync failed.' : 'فشلت مزامنة المصروفات.';
   static String get saveFailed =>
       _e ? 'Failed to save expense.' : 'تعذر حفظ المصروف.';
   static String get updateFailed =>
       _e ? 'Failed to update expense.' : 'تعذر تحديث المصروف.';
   static String get deleteFailed =>
       _e ? 'Failed to delete expense.' : 'تعذر حذف المصروف.';
-  static String get deleteConfirmTitle =>
-      _e ? 'Delete expense?' : 'حذف المصروف؟';
-  static String get deleteConfirmBody => _e
-      ? 'This action cannot be undone.'
-      : 'لا يمكن التراجع عن هذا الإجراء.';
+  static String get deleteConfirmTitle => AppStrings.expenseDeleteConfirmTitle;
+  static String get deleteConfirmBody => AppStrings.expenseDeleteConfirmBody;
+  static String get cancel => AppStrings.txCancel;
+  static String get deleteExpense => AppStrings.delete;
   static String get savedSuccess =>
       _e ? 'Expense saved.' : 'تم حفظ المصروف.';
   static String get updatedSuccess =>
@@ -69,9 +87,7 @@ class ExpenseStrings {
   static String get totalFiltered =>
       _e ? 'Filtered total' : 'إجمالي الفلتر';
   static String get recurringBadge => _e ? 'Recurring' : 'متكرر';
-  static String get offlineBanner => _e
-      ? 'Offline — showing cached expenses. Changes will sync when you reconnect.'
-      : 'وضع عدم الاتصال — عرض مصروفات محفوظة. ستُزامَن التغييرات عند عودة الشبكة.';
+  static String get offlineBanner => AppStrings.expenseOfflineBanner;
   static String get savedOffline => _e
       ? 'Saved locally. Will sync when online.'
       : 'حُفظ محلياً. سيُزامَن عند عودة الاتصال.';

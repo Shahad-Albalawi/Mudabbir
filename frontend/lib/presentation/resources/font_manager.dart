@@ -11,12 +11,12 @@ class FontConstants {
 }
 
 class FontWeightManager {
-  static const FontWeight light = FontWeight.w300;
   static const FontWeight regular = FontWeight.w400;
-  // mediem semibold bold
   static const FontWeight medium = FontWeight.w500;
-  static const FontWeight semibold = FontWeight.w600;
-  static const FontWeight bold = FontWeight.w700;
+  // Only 400/500 globally (premium fintech consistency).
+  static const FontWeight semibold = medium;
+  static const FontWeight bold = medium;
+  static const FontWeight light = regular;
 }
 
 // font sizes now

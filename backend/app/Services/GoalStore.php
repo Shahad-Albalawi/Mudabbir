@@ -2,13 +2,14 @@
 
 namespace App\Services;
 
+use App\Services\Concerns\ManagesJsonFileStore;
 use App\Services\Concerns\ResolvesSyncConflicts;
 use App\Services\Concerns\UsesJsonStorePath;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\File;
 
 class GoalStore
 {
+    use ManagesJsonFileStore;
     use ResolvesSyncConflicts;
     use UsesJsonStorePath;
 
@@ -20,79 +21,93 @@ class GoalStore
         $this->path = $this->jsonStorePath('goals.json');
     }
 
+    protected function emptyDocument(): array
+    {
+        return [
+            'next_goal_id' => 1,
+            'next_contribution_id' => 1,
+            'goals' => [],
+        ];
+    }
+
+    protected function collectionKey(): string
+    {
+        return 'goals';
+    }
+
     public function all(int $userId): array
     {
-        $data = $this->read();
+        $data = $this->mutateStore(fn (array $data): array => $data);
 
         $owned = array_values(array_filter(
             $data['goals'],
-            function (array $goal) use ($userId): bool {
-                return (int) ($goal['user_id'] ?? 0) === $userId;
-            }
+            fn (array $goal): bool => (int) ($goal['user_id'] ?? 0) === $userId
         ));
 
-        return array_values(array_map(function (array $goal): array {
-            return $this->normalizeGoal($goal);
-        }, $owned));
+        return array_values(array_map(
+            fn (array $goal): array => $this->normalizeGoal($goal),
+            $owned
+        ));
     }
 
     public function find(int $id, int $userId): ?array
     {
-        $data = $this->read();
-        foreach ($data['goals'] as $goal) {
-            if ((int) $goal['id'] === $id && (int) ($goal['user_id'] ?? 0) === $userId) {
-                return $this->normalizeGoal($goal);
+        return $this->mutateStore(function (array $data) use ($id, $userId): ?array {
+            foreach ($data['goals'] as $goal) {
+                if ((int) $goal['id'] === $id && (int) ($goal['user_id'] ?? 0) === $userId) {
+                    return $this->normalizeGoal($goal);
+                }
             }
-        }
 
-        return null;
+            return null;
+        });
     }
 
     public function create(array $payload, int $userId): array
     {
-        $data = $this->read();
-        $id = (int) $data['next_goal_id'];
-        $data['next_goal_id'] = $id + 1;
+        return $this->mutateStore(function (array &$data) use ($payload, $userId): array {
+            $id = (int) $data['next_goal_id'];
+            $data['next_goal_id'] = $id + 1;
 
-        $current = (float) ($payload['current_amount'] ?? 0);
-        $target = (float) $payload['target'];
-        $reached = $current >= $target;
-        $now = Carbon::now();
+            $current = (float) ($payload['current_amount'] ?? 0);
+            $target = (float) $payload['target'];
+            $reached = $current >= $target;
+            $now = Carbon::now();
 
-        $contributions = [];
-        if ($current > 0) {
-            $contribId = (int) $data['next_contribution_id'];
-            $data['next_contribution_id'] = $contribId + 1;
-            $contributions[] = [
-                'id' => $contribId,
-                'goal_id' => $id,
-                'amount' => $current,
-                'contributed_at' => $now->toISOString(),
-                'note' => null,
-            ];
-        }
+            $contributions = [];
+            if ($current > 0) {
+                $contribId = (int) $data['next_contribution_id'];
+                $data['next_contribution_id'] = $contribId + 1;
+                $contributions[] = [
+                    'id' => $contribId,
+                    'goal_id' => $id,
+                    'amount' => $current,
+                    'contributed_at' => $now->toISOString(),
+                    'note' => null,
+                ];
+            }
 
-        $goal = $this->normalizeGoal([
-            'id' => $id,
-            'user_id' => $userId,
-            'name' => (string) $payload['name'],
-            'target' => $target,
-            'current_amount' => min($current, $target),
-            'type' => (string) ($payload['type'] ?? 'Saving'),
-            'start_date' => (string) $payload['start_date'],
-            'end_date' => (string) $payload['end_date'],
-            'image_path' => $payload['image_path'] ?? null,
-            'is_completed' => $reached,
-            'completed_at' => $reached ? $now->toISOString() : null,
-            'contributions' => $contributions,
-            'created_at' => $now->toISOString(),
-            'updated_at' => $now->toISOString(),
-        ]);
+            $goal = $this->normalizeGoal([
+                'id' => $id,
+                'user_id' => $userId,
+                'name' => (string) $payload['name'],
+                'target' => $target,
+                'current_amount' => min($current, $target),
+                'type' => (string) ($payload['type'] ?? 'Saving'),
+                'start_date' => (string) $payload['start_date'],
+                'end_date' => (string) $payload['end_date'],
+                'image_path' => $payload['image_path'] ?? null,
+                'is_completed' => $reached,
+                'completed_at' => $reached ? $now->toISOString() : null,
+                'contributions' => $contributions,
+                'created_at' => $now->toISOString(),
+                'updated_at' => $now->toISOString(),
+            ]);
 
-        $data['goals'][] = $goal;
-        $this->write($data);
+            $data['goals'][] = $goal;
 
-        return $goal;
+            return $goal;
+        });
     }
 
     /**
@@ -100,116 +115,109 @@ class GoalStore
      */
     public function update(int $id, array $updates, int $userId, ?string $clientUpdatedAt = null): ?array
     {
-        $data = $this->read();
-        foreach ($data['goals'] as $idx => $goal) {
-            if ((int) $goal['id'] !== $id || (int) ($goal['user_id'] ?? 0) !== $userId) {
-                continue;
+        return $this->mutateStore(function (array &$data) use ($id, $updates, $userId, $clientUpdatedAt): ?array {
+            foreach ($data['goals'] as $idx => $goal) {
+                if ((int) $goal['id'] !== $id || (int) ($goal['user_id'] ?? 0) !== $userId) {
+                    continue;
+                }
+
+                $conflict = $this->resolveUpdateConflict(
+                    $goal,
+                    $clientUpdatedAt,
+                    fn (array $row): array => $this->normalizeGoal($row)
+                );
+                if ($conflict !== null) {
+                    return $conflict;
+                }
+
+                $merged = array_merge($goal, $this->filterUpdatable($updates));
+                $target = (float) $merged['target'];
+                $current = min((float) $merged['current_amount'], $target);
+                $reached = $current >= $target && $target > 0;
+
+                $merged['target'] = $target;
+                $merged['current_amount'] = $current;
+                $merged['is_completed'] = $reached;
+                $merged['completed_at'] = $reached
+                    ? ($goal['completed_at'] ?? Carbon::now()->toISOString())
+                    : null;
+                $merged['updated_at'] = Carbon::now()->toISOString();
+
+                $data['goals'][$idx] = $this->normalizeGoal($merged);
+
+                return [
+                    'conflict' => false,
+                    'data' => $data['goals'][$idx],
+                ];
             }
 
-            $conflict = $this->resolveUpdateConflict(
-                $goal,
-                $clientUpdatedAt,
-                fn (array $row): array => $this->normalizeGoal($row)
-            );
-            if ($conflict !== null) {
-                return $conflict;
-            }
-
-            $merged = array_merge($goal, $this->filterUpdatable($updates));
-            $target = (float) $merged['target'];
-            $current = min((float) $merged['current_amount'], $target);
-            $reached = $current >= $target && $target > 0;
-
-            $merged['target'] = $target;
-            $merged['current_amount'] = $current;
-            $merged['is_completed'] = $reached;
-            $merged['completed_at'] = $reached
-                ? ($goal['completed_at'] ?? Carbon::now()->toISOString())
-                : null;
-            $merged['updated_at'] = Carbon::now()->toISOString();
-
-            $data['goals'][$idx] = $this->normalizeGoal($merged);
-            $this->write($data);
-
-            return [
-                'conflict' => false,
-                'data' => $data['goals'][$idx],
-            ];
-        }
-
-        return null;
+            return null;
+        });
     }
 
     public function addContribution(int $goalId, array $payload, int $userId): ?array
     {
-        $data = $this->read();
-        foreach ($data['goals'] as $idx => $goal) {
-            if ((int) $goal['id'] !== $goalId || (int) ($goal['user_id'] ?? 0) !== $userId) {
-                continue;
+        return $this->mutateStore(function (array &$data) use ($goalId, $payload, $userId): ?array {
+            foreach ($data['goals'] as $idx => $goal) {
+                if ((int) $goal['id'] !== $goalId || (int) ($goal['user_id'] ?? 0) !== $userId) {
+                    continue;
+                }
+
+                if (! empty($goal['is_completed'])) {
+                    return null;
+                }
+
+                $amount = (float) $payload['amount'];
+                $remaining = max(0.0, (float) $goal['target'] - (float) $goal['current_amount']);
+                $applied = min($amount, $remaining);
+                if ($applied <= 0) {
+                    return $this->normalizeGoal($goal);
+                }
+
+                $contribId = (int) $data['next_contribution_id'];
+                $data['next_contribution_id'] = $contribId + 1;
+
+                $contributions = $goal['contributions'] ?? [];
+                $contributions[] = [
+                    'id' => $contribId,
+                    'goal_id' => $goalId,
+                    'amount' => $applied,
+                    'contributed_at' => Carbon::now()->toISOString(),
+                    'note' => $payload['note'] ?? null,
+                ];
+
+                $newAmount = min(
+                    (float) $goal['current_amount'] + $applied,
+                    (float) $goal['target']
+                );
+                $reached = $newAmount >= (float) $goal['target'];
+
+                $goal['contributions'] = $contributions;
+                $goal['current_amount'] = $newAmount;
+                $goal['is_completed'] = $reached;
+                $goal['completed_at'] = $reached ? Carbon::now()->toISOString() : null;
+                $goal['updated_at'] = Carbon::now()->toISOString();
+
+                $data['goals'][$idx] = $this->normalizeGoal($goal);
+
+                return $data['goals'][$idx];
             }
 
-            if (! empty($goal['is_completed'])) {
-                return null;
-            }
-
-            $amount = (float) $payload['amount'];
-            $remaining = max(0.0, (float) $goal['target'] - (float) $goal['current_amount']);
-            $applied = min($amount, $remaining);
-            if ($applied <= 0) {
-                return $this->normalizeGoal($goal);
-            }
-
-            $contribId = (int) $data['next_contribution_id'];
-            $data['next_contribution_id'] = $contribId + 1;
-
-            $contributions = $goal['contributions'] ?? [];
-            $contributions[] = [
-                'id' => $contribId,
-                'goal_id' => $goalId,
-                'amount' => $applied,
-                'contributed_at' => Carbon::now()->toISOString(),
-                'note' => $payload['note'] ?? null,
-            ];
-
-            $newAmount = min(
-                (float) $goal['current_amount'] + $applied,
-                (float) $goal['target']
-            );
-            $reached = $newAmount >= (float) $goal['target'];
-
-            $goal['contributions'] = $contributions;
-            $goal['current_amount'] = $newAmount;
-            $goal['is_completed'] = $reached;
-            $goal['completed_at'] = $reached ? Carbon::now()->toISOString() : null;
-            $goal['updated_at'] = Carbon::now()->toISOString();
-
-            $data['goals'][$idx] = $this->normalizeGoal($goal);
-            $this->write($data);
-
-            return $data['goals'][$idx];
-        }
-
-        return null;
+            return null;
+        });
     }
 
     public function delete(int $id, int $userId): bool
     {
-        $data = $this->read();
-        $before = count($data['goals']);
-        $data['goals'] = array_values(array_filter(
-            $data['goals'],
-            function (array $goal) use ($id, $userId): bool {
-                return ! ((int) $goal['id'] === $id && (int) ($goal['user_id'] ?? 0) === $userId);
-            }
-        ));
+        return $this->mutateStore(function (array &$data) use ($id, $userId): bool {
+            $before = count($data['goals']);
+            $data['goals'] = array_values(array_filter(
+                $data['goals'],
+                fn (array $goal): bool => ! ((int) $goal['id'] === $id && (int) ($goal['user_id'] ?? 0) === $userId)
+            ));
 
-        if (count($data['goals']) === $before) {
-            return false;
-        }
-
-        $this->write($data);
-
-        return true;
+            return count($data['goals']) < $before;
+        });
     }
 
     private function filterUpdatable(array $updates): array
@@ -254,36 +262,5 @@ class GoalStore
             'created_at' => $goal['created_at'] ?? null,
             'updated_at' => $goal['updated_at'] ?? null,
         ];
-    }
-
-    private function read(): array
-    {
-        if (! File::exists($this->path)) {
-            $seed = [
-                'next_goal_id' => 1,
-                'next_contribution_id' => 1,
-                'goals' => [],
-            ];
-            $this->write($seed);
-
-            return $seed;
-        }
-
-        $decoded = json_decode((string) File::get($this->path), true);
-        if (! is_array($decoded) || ! isset($decoded['goals'])) {
-            return [
-                'next_goal_id' => 1,
-                'next_contribution_id' => 1,
-                'goals' => [],
-            ];
-        }
-
-        return $decoded;
-    }
-
-    private function write(array $payload): void
-    {
-        File::ensureDirectoryExists(dirname($this->path));
-        File::put($this->path, json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
     }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
+import 'package:mudabbir/presentation/widgets/app_confirm_dialog.dart';
 
 /// Shared flat iOS-style dialog chrome for popups across the app.
 class IOSDialogStyle {
@@ -88,34 +89,16 @@ class IOSDialogStyle {
     required VoidCallback onConfirm,
     bool isDestructive = false,
   }) async {
-    final scheme = Theme.of(context).colorScheme;
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: dialogShape(),
-        backgroundColor: scheme.surface,
-        title: Text(title, style: Theme.of(ctx).textTheme.titleMedium),
-        content: Text(message, style: Theme.of(ctx).textTheme.bodyMedium),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(cancelLabel),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              onConfirm();
-            },
-            child: Text(
-              confirmLabel,
-              style: TextStyle(
-                color: isDestructive ? scheme.error : scheme.primary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
+    final confirmed = await AppConfirmDialog.show(
+      context,
+      title: title,
+      message: message,
+      confirmLabel: confirmLabel,
+      cancelLabel: cancelLabel,
+      destructive: isDestructive,
     );
+    if (confirmed) {
+      onConfirm();
+    }
   }
 }

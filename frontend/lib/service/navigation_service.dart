@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:mudabbir/presentation/resources/design_tokens.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
 
 enum SnackbarType { success, error, warning, info }
+
+/// Standard auto-dismiss duration for in-app feedback.
+const Duration kAppSnackbarDuration = Duration(seconds: 5);
 
 class _SnackbarConfig {
   final Color accentColor;
@@ -73,35 +77,38 @@ class NavigationService {
     required String title,
     required String body,
     required SnackbarType type,
-    Duration duration = const Duration(seconds: 4),
+    Duration duration = kAppSnackbarDuration,
     String? actionLabel,
     VoidCallback? onActionPressed,
-    bool showCloseButton = true,
+    bool showCloseButton = false,
     EdgeInsets? margin,
   }) {
     final context = navigatorKey.currentContext;
     if (context == null) return;
 
-    // Hide any existing snackbars
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
-    // Get theme configuration
     final scheme = Theme.of(context).colorScheme;
     final config = _getSnackbarConfig(scheme, type);
+    final resolvedMargin = margin ?? _bottomMargin(context);
 
     final snackBar = SnackBar(
       duration: duration,
       backgroundColor: Colors.transparent,
       elevation: 0,
       behavior: SnackBarBehavior.floating,
-      margin: margin ?? const EdgeInsets.all(16),
+      margin: resolvedMargin,
+      dismissDirection: DismissDirection.down,
       content: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           color: scheme.surface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           border: Border.all(
-            color: config.accentColor.withValues(alpha: 0.35),
+            color: scheme.outline.withValues(alpha: 0.2),
+          ),
+          boxShadow: AppElevation.cardShadow(
+            isDark: scheme.brightness == Brightness.dark,
           ),
         ),
         child: Row(
@@ -187,6 +194,16 @@ class NavigationService {
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
+  EdgeInsets _bottomMargin(BuildContext context) {
+    final inset = MediaQuery.of(context).padding.bottom;
+    return EdgeInsets.fromLTRB(
+      AppLayout.pageGutter,
+      0,
+      AppLayout.pageGutter,
+      AppLayout.bottomNavHeight + inset + AppLayout.sectionGap,
+    );
+  }
+
   // Helper method to get configuration based on type
   _SnackbarConfig _getSnackbarConfig(ColorScheme scheme, SnackbarType type) {
     switch (type) {
@@ -224,14 +241,16 @@ class NavigationService {
     Duration? duration,
     String? actionLabel,
     VoidCallback? onActionPressed,
+    bool showCloseButton = false,
   }) {
     showSnackbar(
       title: title,
       body: body,
       type: SnackbarType.success,
-      duration: duration ?? const Duration(seconds: 3),
+      duration: duration ?? kAppSnackbarDuration,
       actionLabel: actionLabel,
       onActionPressed: onActionPressed,
+      showCloseButton: showCloseButton,
     );
   }
 
@@ -241,14 +260,16 @@ class NavigationService {
     Duration? duration,
     String? actionLabel,
     VoidCallback? onActionPressed,
+    bool showCloseButton = false,
   }) {
     showSnackbar(
       title: title,
       body: body,
       type: SnackbarType.error,
-      duration: duration ?? const Duration(seconds: 6),
+      duration: duration ?? kAppSnackbarDuration,
       actionLabel: actionLabel,
       onActionPressed: onActionPressed,
+      showCloseButton: showCloseButton,
     );
   }
 
@@ -258,14 +279,16 @@ class NavigationService {
     Duration? duration,
     String? actionLabel,
     VoidCallback? onActionPressed,
+    bool showCloseButton = false,
   }) {
     showSnackbar(
       title: title,
       body: body,
       type: SnackbarType.warning,
-      duration: duration ?? const Duration(seconds: 4),
+      duration: duration ?? kAppSnackbarDuration,
       actionLabel: actionLabel,
       onActionPressed: onActionPressed,
+      showCloseButton: showCloseButton,
     );
   }
 
@@ -275,14 +298,16 @@ class NavigationService {
     Duration? duration,
     String? actionLabel,
     VoidCallback? onActionPressed,
+    bool showCloseButton = false,
   }) {
     showSnackbar(
       title: title,
       body: body,
       type: SnackbarType.info,
-      duration: duration ?? const Duration(seconds: 4),
+      duration: duration ?? kAppSnackbarDuration,
       actionLabel: actionLabel,
       onActionPressed: onActionPressed,
+      showCloseButton: showCloseButton,
     );
   }
 }

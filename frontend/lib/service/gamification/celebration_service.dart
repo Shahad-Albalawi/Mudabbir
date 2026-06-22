@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
+import 'package:mudabbir/presentation/widgets/ios_dialog_style.dart';
+import 'package:mudabbir/service/getit_init.dart';
+import 'package:mudabbir/service/haptic_service.dart';
+import 'package:mudabbir/service/navigation_service.dart';
 
 /// Service to handle all celebration animations and effects
 class CelebrationService {
@@ -35,6 +39,22 @@ class CelebrationService {
     return null;
   }
 
+  /// Auto bottom snackbar when a journey milestone is reached.
+  static void showMilestoneSnackbar(
+    MilestoneType milestone,
+    String goalName,
+  ) {
+    final context = getIt<NavigationService>().navigatorKey.currentContext;
+    if (context == null) return;
+
+    final info = getMilestoneInfo(milestone, Theme.of(context).colorScheme);
+    HapticService.success();
+    getIt<NavigationService>().showSuccessSnackbar(
+      title: '${info.emoji} ${info.title}',
+      body: goalName.isEmpty ? info.message : '$goalName — ${info.message}',
+    );
+  }
+
   /// Show milestone achievement dialog
   static void showMilestoneDialog(
     BuildContext context,
@@ -50,35 +70,38 @@ class CelebrationService {
   }
 
   /// Get milestone info
-  static MilestoneInfo getMilestoneInfo(MilestoneType type) {
+  static MilestoneInfo getMilestoneInfo(
+    MilestoneType type,
+    ColorScheme scheme,
+  ) {
     switch (type) {
       case MilestoneType.twentyFive:
         return MilestoneInfo(
           title: AppStrings.milestone25Title,
           message: AppStrings.milestone25Body,
           emoji: '🎯',
-          color: Colors.blue,
+          color: scheme.primary,
         );
       case MilestoneType.fifty:
         return MilestoneInfo(
           title: AppStrings.milestone50Title,
           message: AppStrings.milestone50Body,
           emoji: '🔥',
-          color: Colors.orange,
+          color: scheme.warning,
         );
       case MilestoneType.seventyFive:
         return MilestoneInfo(
           title: AppStrings.milestone75Title,
           message: AppStrings.milestone75Body,
           emoji: '⚡',
-          color: Colors.purple,
+          color: scheme.tertiary,
         );
       case MilestoneType.completed:
         return MilestoneInfo(
           title: AppStrings.milestone100Title,
           message: AppStrings.milestone100Body,
           emoji: '🏆',
-          color: Colors.green,
+          color: scheme.success,
         );
     }
   }
@@ -152,23 +175,24 @@ class _MilestoneDialogState extends State<MilestoneDialog>
 
   @override
   Widget build(BuildContext context) {
-    final info = CelebrationService.getMilestoneInfo(widget.milestone);
     final scheme = Theme.of(context).colorScheme;
+    final info = CelebrationService.getMilestoneInfo(widget.milestone, scheme);
 
     return Dialog(
+      shape: IOSDialogStyle.dialogShape(),
       backgroundColor: Colors.transparent,
+      elevation: 0,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
       child: ScaleTransition(
         scale: _scaleAnimation,
         child: Container(
           padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: scheme.surface,
-            borderRadius: BorderRadius.circular(20),
+          decoration: IOSDialogStyle.surfaceDecoration(context).copyWith(
             boxShadow: [
               BoxShadow(
-                color: info.color.withValues(alpha: 0.3),
+                color: info.color.withValues(alpha: 0.25),
                 blurRadius: 20,
-                spreadRadius: 5,
+                spreadRadius: 2,
               ),
             ],
           ),
@@ -193,55 +217,46 @@ class _MilestoneDialogState extends State<MilestoneDialog>
               // Title
               Text(
                 info.title,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: info.color,
-                ),
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: info.color,
+                    ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
 
-              // Goal name
               Text(
                 widget.goalName,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: scheme.onSurface,
-                ),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
 
-              // Message
               Text(
                 info.message,
-                style: TextStyle(fontSize: 16, color: scheme.textMuted),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: scheme.textMuted,
+                    ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
 
-              // Close button
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: info.color,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 12,
+              Semantics(
+                button: true,
+                label: AppStrings.milestoneAwesome,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: info.color,
+                    foregroundColor: scheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 12,
+                    ),
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text(
-                  AppStrings.milestoneAwesome,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(AppStrings.milestoneAwesome),
                 ),
               ),
             ],

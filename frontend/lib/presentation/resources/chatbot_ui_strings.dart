@@ -1,6 +1,6 @@
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 
-/// All bilingual strings used by [ChatbotViewModel] and chat UI.
+/// All bilingual strings used by chatbot notifier and chat UI.
 class ChatbotUi {
   ChatbotUi._();
 
@@ -378,6 +378,18 @@ class ChatbotUi {
 
   static String get suggestGoalsSubtitle =>
       _e ? 'See progress toward your goals' : 'اعرف تقدمك نحو أهدافك';
+
+  static String get suggestBalancePrompt => _e
+      ? 'What is my balance this month?'
+      : 'ما رصيدي هذا الشهر؟';
+
+  static String get suggestExpensePrompt => _e
+      ? 'Analyze my spending this month'
+      : 'حلل مصروفاتي هذا الشهر';
+
+  static String get suggestGoalsPrompt => _e
+      ? 'How are my savings goals progressing?'
+      : 'كيف تسير أهداف ادخاري؟';
 
   static String get clearDialogTitle => _e ? 'Clear chat' : 'مسح المحادثة';
 

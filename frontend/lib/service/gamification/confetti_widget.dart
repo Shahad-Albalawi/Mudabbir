@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:mudabbir/presentation/resources/app_colors.dart';
 
 /// Confetti celebration widget
 class ConfettiWidget extends StatefulWidget {
@@ -44,11 +45,11 @@ class _ConfettiWidgetState extends State<ConfettiWidget>
 
   void _startConfetti() {
     _particles.clear();
-    // Generate particles
+    final palette = GamificationPalette.confetti;
     for (int i = 0; i < 50; i++) {
       _particles.add(
         ConfettiParticle(
-          color: _getRandomColor(),
+          color: palette[_random.nextInt(palette.length)],
           x: _random.nextDouble(),
           y: -0.1,
           velocityX: _random.nextDouble() * 2 - 1,
@@ -63,20 +64,6 @@ class _ConfettiWidgetState extends State<ConfettiWidget>
 
   void _stopConfetti() {
     _controller.stop();
-  }
-
-  Color _getRandomColor() {
-    final colors = [
-      Colors.red,
-      Colors.blue,
-      Colors.green,
-      Colors.yellow,
-      Colors.purple,
-      Colors.orange,
-      Colors.pink,
-      Colors.teal,
-    ];
-    return colors[_random.nextInt(colors.length)];
   }
 
   @override

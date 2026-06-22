@@ -85,7 +85,7 @@ class ChallengeHiveCache {
   Future<void> queuePendingProgress({
     required int challengeId,
     required double amount,
-    int userId = 1,
+    required int userId,
   }) async {
     final ops = getPendingProgressOps()
       ..add({

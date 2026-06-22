@@ -1,25 +1,23 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mudabbir/constants/hive_constants.dart';
-import 'package:mudabbir/presentation/chatbot/chatbot_view.dart';
 import 'package:mudabbir/presentation/home/home_viewmodel.dart';
 import 'package:mudabbir/presentation/home/widgets/modern_bottom_navbar.dart';
+import 'package:mudabbir/presentation/resources/app_icons.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
+import 'package:mudabbir/presentation/resources/design_tokens.dart';
 import 'package:mudabbir/presentation/resources/modern_gradient_appbar.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
-import 'package:mudabbir/presentation/widgets/app_brand_logo.dart';
 import 'package:mudabbir/service/getit_init.dart';
-import 'package:mudabbir/service/hive_service.dart';
 import 'package:mudabbir/service/haptic_service.dart';
-import 'package:mudabbir/service/navigation_service.dart';
-import 'package:mudabbir/service/routing_service/auth_notifier.dart';
+import 'package:mudabbir/service/hive_service.dart';
+import 'package:mudabbir/service/routing_service/app_routes.dart';
 import 'package:mudabbir/utils/user_display_name.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
-  /// Display name from Hive; strips legacy placeholder labels (e.g. preview).
   String _getUserDisplayName(HiveService hive) {
     try {
       return UserDisplayName.fromSavedUserInfo(
@@ -28,6 +26,17 @@ class HomePage extends ConsumerWidget {
     } catch (_) {
       return '';
     }
+  }
+
+  String _titleForTab(int index, String userName) {
+    return switch (index) {
+      0 => userName.isNotEmpty
+          ? '${AppStrings.homeText1}، $userName'
+          : AppStrings.navHome,
+      1 => AppStrings.navStatistics,
+      2 => AppStrings.navGoals,
+      _ => AppStrings.title,
+    };
   }
 
   @override
@@ -39,52 +48,54 @@ class HomePage extends ConsumerWidget {
     final userName = _getUserDisplayName(hive);
 
     return Scaffold(
-      backgroundColor: scheme.surfaceContainerHighest,
+      backgroundColor: scheme.pageBackground,
+      extendBody: true,
       appBar: ModernGradientAppBar(
         showBackButton: false,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const AppBrandLogo(height: 26),
-            if (userName.isNotEmpty) ...[
-              const SizedBox(width: 10),
-              Text(
-                userName,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: scheme.homeGreen,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ],
-        ),
+        largeTitle: true,
+        title: Text(_titleForTab(homeState.currentIndex, userName)),
         centerTitle: false,
         actions: [
-          IconButton(
-            onPressed: () async {
-              await getIt<AuthNotifier>().didLogout();
-            },
-            icon: const Icon(CupertinoIcons.square_arrow_right),
-            tooltip: AppStrings.logout,
+          Semantics(
+            label: AppStrings.settingsOpenLabel,
+            button: true,
+            child: IconButton(
+              onPressed: () {
+                HapticService.light();
+                context.push(AppRoutes.settings);
+              },
+              icon: const Icon(AppIcons.settings, size: 22),
+              tooltip: AppStrings.settingsOpenLabel,
+            ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          HapticService.medium();
-          getIt<NavigationService>().navigate(ChatbotView());
-        },
-        backgroundColor: scheme.primary,
-        foregroundColor: scheme.onPrimary,
-        elevation: 1,
-        child: const Icon(CupertinoIcons.chat_bubble, size: 22),
+      floatingActionButton: Semantics(
+        label: AppStrings.chatbotFabLabel,
+        button: true,
+        child: FloatingActionButton(
+          onPressed: () {
+            HapticService.medium();
+            context.push(AppRoutes.chatbot);
+          },
+          backgroundColor: scheme.primary,
+          foregroundColor: scheme.onPrimary,
+          elevation: 0,
+          highlightElevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+          child: const Icon(AppIcons.chatFilled, size: 22),
+        ),
       ),
-      body: homeViewModel.pages[homeState.currentIndex],
+      body: Column(
+        children: [
+          Expanded(child: homeViewModel.pages[homeState.currentIndex]),
+        ],
+      ),
       bottomNavigationBar: ModernBottomNavBar(
         currentIndex: homeState.currentIndex,
-        onTap: (value) {
-          homeViewModel.changeNavBar(value);
-        },
+        onTap: homeViewModel.changeNavBar,
       ),
     );
   }

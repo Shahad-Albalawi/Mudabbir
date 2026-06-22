@@ -11,27 +11,16 @@ class SkipButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.only(right: 16),
-      child: TextButton.icon(
+      padding: const EdgeInsets.only(right: 8),
+      child: TextButton(
         onPressed: onTap,
         style: TextButton.styleFrom(
           foregroundColor: scheme.textMuted,
-          backgroundColor: scheme.surface.withValues(alpha: 0.85),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(25),
-            side: BorderSide(color: scheme.outline.withValues(alpha: 0.3)),
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         ),
-        icon: Icon(
-          AppStrings.isEnglishLocale
-              ? Icons.arrow_forward
-              : Icons.arrow_back,
-          size: 16,
-        ),
-        label: Text(
+        child: Text(
           AppStrings.skip,
-          style: const TextStyle(fontWeight: FontWeight.w600),
+          style: const TextStyle(fontWeight: FontWeight.w500),
         ),
       ),
     );

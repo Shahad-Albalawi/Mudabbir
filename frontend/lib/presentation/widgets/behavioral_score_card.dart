@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:mudabbir/presentation/resources/app_icons.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/behavioral_strings.dart';
+import 'package:mudabbir/presentation/resources/design_tokens.dart';
 import 'package:mudabbir/presentation/widgets/app_card.dart';
 import 'package:mudabbir/presentation/widgets/score_ring_widget.dart';
 
-/// Behavioral score summary — used on analysis & statistics screens.
+/// Financial health summary — statistics preview with optional link to analysis screen.
 class BehavioralScoreCard extends StatelessWidget {
   final int score;
   final String rating;
@@ -30,27 +32,24 @@ class BehavioralScoreCard extends StatelessWidget {
 
     return AppCard(
       margin: EdgeInsets.zero,
-      onTap: onTap,
-      color: scheme.brightness == Brightness.light
-          ? scheme.homeBannerFill.withValues(alpha: 0.35)
-          : scheme.surface,
+      onTap: null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             BehavioralStrings.behavioralScoreTitle,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: scheme.textOnCard,
-            ),
+                  fontWeight: FontWeight.w700,
+                  color: scheme.textOnCard,
+                ),
           ),
           const SizedBox(height: 4),
           Text(
             BehavioralStrings.behavioralScoreSubtitle,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: scheme.textMuted,
-              height: 1.35,
-            ),
+                  color: scheme.textMuted,
+                  height: 1.35,
+                ),
           ),
           SizedBox(height: compact ? 12 : 16),
           Row(
@@ -69,44 +68,88 @@ class BehavioralScoreCard extends StatelessWidget {
                     Text(
                       rating,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: accentColor,
-                      ),
+                            fontWeight: FontWeight.w700,
+                            color: accentColor,
+                          ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       summary,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: scheme.textMuted,
-                        height: 1.45,
-                      ),
+                            color: scheme.textMuted,
+                            height: 1.45,
+                          ),
                     ),
-                    if (onTap != null) ...[
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Text(
-                            BehavioralStrings.viewDetailsLabel,
-                            style: Theme.of(context).textTheme.labelMedium
-                                ?.copyWith(
-                              color: scheme.homeGreen,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Icon(
-                            Icons.arrow_forward_ios_rounded,
-                            size: 12,
-                            color: scheme.homeGreen,
-                          ),
-                        ],
-                      ),
-                    ],
                   ],
                 ),
               ),
             ],
           ),
+          if (onTap != null) ...[
+            const SizedBox(height: 14),
+            Divider(
+              height: 1,
+              color: scheme.outline.withValues(alpha: 0.18),
+            ),
+            const SizedBox(height: 10),
+            Material(
+              color: scheme.groupedFill,
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.smd,
+                    vertical: AppSpacing.smd,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        AppIcons.statistics,
+                        size: 20,
+                        color: scheme.primary,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              BehavioralStrings.viewDetailsLabel,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleSmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: scheme.onSurface,
+                                  ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              BehavioralStrings.viewDetailsHint,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: scheme.textMuted,
+                                    height: 1.3,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        AppIcons.chevron,
+                        size: 16,
+                        color: scheme.textMuted,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:mudabbir/data/local/budget_hive_cache.dart';
 import 'package:mudabbir/data/local/challenge_hive_cache.dart';
 import 'package:mudabbir/data/local/expense_hive_cache.dart';
 import 'package:mudabbir/data/local/goal_hive_cache.dart';
+import 'package:mudabbir/l10n/app_localizations.dart';
+import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/presentation/resources/app_fonts.dart';
 import 'package:mudabbir/presentation/resources/font_manager.dart';
 import 'package:mudabbir/presentation/resources/theme_manager.dart';
@@ -13,6 +15,7 @@ import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/hive_service.dart';
 import 'package:mudabbir/service/language/app_language_controller.dart';
 import 'package:mudabbir/service/notifications/push_notification_service.dart';
+import 'package:mudabbir/service/debug/dev_api_bootstrap.dart';
 import 'package:mudabbir/service/debug/instant_browse_bootstrap.dart';
 import 'package:mudabbir/service/routing_service/app_router.dart';
 import 'package:mudabbir/service/theme/app_theme_controller.dart';
@@ -34,9 +37,11 @@ Future<void> main() async {
       Hive.box('myBox').toMap(),
     );
     await getIt<ExpenseHiveCache>().init();
+    await getIt<BudgetHiveCache>().init();
     await getIt<GoalHiveCache>().init();
     await AppFonts.ensureLoaded();
     await InstantBrowseBootstrap.applyIfEnabled();
+    await DevApiBootstrap.logAndProbe();
     await PushNotificationService.instance.initializeIfConfigured();
   } catch (e, stack) {
     devLog('Initialization error: $e\n$stack');
@@ -58,32 +63,34 @@ class MyApp extends StatelessWidget {
       ]),
       builder: (context, _) {
         final lang = getIt<AppLanguageController>();
-        final isRtl = lang.locale.languageCode == 'ar';
         return MaterialApp.router(
           debugShowCheckedModeBanner: false,
           theme: getApplicationTheme(),
           darkTheme: getApplicationDarkTheme(),
           themeMode: getIt<AppThemeController>().themeMode,
-          // Avoid TextStyle lerp crashes from mixed inherited styles while toggling theme.
-          themeAnimationDuration: Duration.zero,
-          themeAnimationCurve: Curves.linear,
+          // Short cross-fade when switching light/dark (avoids TextStyle lerp glitches).
+          themeAnimationDuration: const Duration(milliseconds: 220),
+          themeAnimationCurve: Curves.easeOutCubic,
           routerConfig: AppRouter.router,
           locale: lang.locale,
-          localizationsDelegates: const [
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: const [Locale('ar'), Locale('en')],
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           builder: (context, child) {
+            AppStrings.bind(AppLocalizations.of(context));
+            final rtl = lang.locale.languageCode == 'ar';
+            final scaledChild = MediaQuery.withClampedTextScaling(
+              minScaleFactor: 0.85,
+              maxScaleFactor: 1.35,
+              child: child ?? const SizedBox.shrink(),
+            );
             return Directionality(
-              textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
+              textDirection: rtl ? TextDirection.rtl : TextDirection.ltr,
               child: DefaultTextStyle(
                 style: const TextStyle(
                   fontFamily: FontConstants.thmanyahFamily,
                   fontFamilyFallback: FontConstants.fontFamilyFallback,
                 ),
-                child: child ?? const SizedBox.shrink(),
+                child: scaledChild,
               ),
             );
           },

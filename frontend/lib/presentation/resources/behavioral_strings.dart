@@ -9,14 +9,18 @@ class BehavioralStrings {
   static bool get _en => AppStrings.isEnglishLocale;
 
   static String get behavioralScoreTitle =>
-      _en ? 'Behavioral score' : 'النقاط السلوكية';
+      _en ? 'Financial analysis' : 'التحليل المالي';
 
   static String get behavioralScoreSubtitle => _en
-      ? 'Based on this month\'s spending patterns'
-      : 'مبني على أنماط إنفاقك هذا الشهر';
+      ? 'Quick snapshot of your spending health this month'
+      : 'ملخص سريع لصحة إنفاقك هذا الشهر';
 
   static String get viewDetailsLabel =>
-      _en ? 'View full analysis' : 'عرض التحليل الكامل';
+      _en ? 'Detailed analysis' : 'التحليل التفصيلي';
+
+  static String get viewDetailsHint => _en
+      ? 'Comparisons, patterns & tips'
+      : 'مقارنات، أنماط، وتوصيات';
 
   static String get monthComparisonTitle =>
       _en ? 'Month-over-month comparison' : 'مقارنة بالأشهر السابقة';

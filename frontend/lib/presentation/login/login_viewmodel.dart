@@ -39,7 +39,7 @@ class LoginViewModel extends StateNotifier<LoginState> {
     String email,
     String password,
   ) async {
-    state = state.copyWith(isLoading: true);
+    state = state.copyWith(isLoading: true, failure: null);
 
     final result = await userRepository.login(email, password);
 
@@ -55,6 +55,7 @@ class LoginViewModel extends StateNotifier<LoginState> {
         await getIt<HiveService>().setValue(HiveConstants.savedUserInfo, {
           'email': userEmail,
           'name': userName,
+          'id': userModel.id,
         });
         await LocalDatabase.instance.initForUser(userName);
         state = state.copyWith(isLoading: false, user: userModel);

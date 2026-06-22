@@ -1,9 +1,11 @@
 import 'package:get_it/get_it.dart';
+import 'package:mudabbir/data/local/budget_hive_cache.dart';
 import 'package:mudabbir/data/local/challenge_hive_cache.dart';
 import 'package:mudabbir/data/local/database_helper.dart';
 import 'package:mudabbir/data/local/expense_hive_cache.dart';
 import 'package:mudabbir/data/local/goal_hive_cache.dart';
 import 'package:mudabbir/data/local/local_database.dart';
+import 'package:mudabbir/data/remote/budget_api_service.dart';
 import 'package:mudabbir/data/remote/expense_api_service.dart';
 import 'package:mudabbir/data/remote/goal_api_service.dart';
 import 'package:mudabbir/domain/repository/behavioral_analysis_repository/behavioral_analysis_repository.dart';
@@ -12,10 +14,10 @@ import 'package:mudabbir/domain/repository/expense_repository/expense_repository
 import 'package:mudabbir/domain/repository/goals_repository/goals_repository.dart';
 import 'package:mudabbir/domain/repository/home_repository/home_repository.dart';
 import 'package:mudabbir/domain/repository/server_challenge_repository/server_challenge_repository.dart';
+import 'package:mudabbir/domain/repository/synced_budget_repository/synced_budget_repository.dart';
 import 'package:mudabbir/domain/repository/synced_expense_repository/synced_expense_repository.dart';
 import 'package:mudabbir/domain/repository/synced_goals_repository/synced_goals_repository.dart';
 import 'package:mudabbir/domain/repository/user_repository/user_repository.dart';
-import 'package:mudabbir/presentation/chatbot/chatbot_viewmodel.dart';
 import 'package:mudabbir/presentation/server_challenges/services/challenge_service.dart';
 import 'package:mudabbir/presentation/server_challenges/utils/dio_client.dart';
 import 'package:mudabbir/service/api_service.dart';
@@ -64,7 +66,6 @@ void setupLocator() {
   getIt.registerLazySingleton<TransactionPopup>(() => TransactionPopup());
   getIt.registerLazySingleton<BudgetPopup>(() => BudgetPopup());
   getIt.registerLazySingleton<GoalPopup>(() => GoalPopup());
-  getIt.registerLazySingleton<ChatbotViewModel>(() => ChatbotViewModel());
   getIt.registerLazySingleton<DioClient>(() => DioClient());
   getIt.registerLazySingleton<ChallengeService>(
     () => ChallengeService(getIt<DioClient>()),
@@ -73,13 +74,20 @@ void setupLocator() {
   getIt.registerLazySingleton<ServerChallengeRepository>(
     () => ServerChallengeRepository(),
   );
+  getIt.registerLazySingleton<BudgetHiveCache>(() => BudgetHiveCache());
   getIt.registerLazySingleton<ExpenseHiveCache>(() => ExpenseHiveCache());
   getIt.registerLazySingleton<GoalHiveCache>(() => GoalHiveCache());
   getIt.registerLazySingleton<ExpenseApiService>(
     () => ExpenseApiService(getIt<DioClient>()),
   );
+  getIt.registerLazySingleton<BudgetApiService>(
+    () => BudgetApiService(getIt<DioClient>()),
+  );
   getIt.registerLazySingleton<GoalApiService>(
     () => GoalApiService(getIt<DioClient>()),
+  );
+  getIt.registerLazySingleton<SyncedBudgetRepository>(
+    () => SyncedBudgetRepository(),
   );
   getIt.registerLazySingleton<SyncedExpenseRepository>(
     () => SyncedExpenseRepository(),

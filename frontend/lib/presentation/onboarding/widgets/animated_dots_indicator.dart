@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:mudabbir/presentation/resources/app_colors.dart';
 
-class AnimatedDotsIndicator extends StatefulWidget {
+/// iOS UIPageControl-style dots — same size, subtle inactive fill.
+class AnimatedDotsIndicator extends StatelessWidget {
   final int currentIndex;
   final int totalDots;
-  final Function(int) onDotTapped;
+  final ValueChanged<int> onDotTapped;
 
   const AnimatedDotsIndicator({
     super.key,
@@ -13,34 +15,34 @@ class AnimatedDotsIndicator extends StatefulWidget {
   });
 
   @override
-  State<AnimatedDotsIndicator> createState() => _AnimatedDotsIndicatorState();
-}
-
-class _AnimatedDotsIndicatorState extends State<AnimatedDotsIndicator> {
-  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final isDark = scheme.brightness == Brightness.dark;
+    final active = isDark ? DarkAppColors.textPrimary : BrandPalette.brandPrimary;
+    final inactive = scheme.outline.withValues(alpha: isDark ? 0.45 : 0.35);
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(
-        widget.totalDots,
-        (index) => GestureDetector(
-          onTap: () => widget.onDotTapped(index),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeInOut,
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            width: index == widget.currentIndex ? 24 : 8,
-            height: 8,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(4),
-              color: index == widget.currentIndex
-                  ? scheme.primary
-                  : scheme.outline.withValues(alpha: 0.45),
+      children: List.generate(totalDots, (index) {
+        final selected = index == currentIndex;
+        return GestureDetector(
+          onTap: () => onDotTapped(index),
+          behavior: HitTestBehavior.opaque,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              width: 7,
+              height: 7,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: selected ? active : inactive,
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      }),
     );
   }
 }

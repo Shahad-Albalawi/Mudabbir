@@ -11,6 +11,75 @@ class FinancialAggregator {
   static const _balanceExpr =
       "SUM(CASE WHEN type = 'income' THEN amount WHEN type = 'expense' THEN -amount ELSE 0 END)";
 
+  /// Single query for lifetime income and expense totals.
+  Future<({double income, double expense})> incomeAndExpenseTotals({
+    String? startDate,
+    String? endDate,
+    int? accountId,
+  }) async {
+    final clauses = <String>[];
+    final args = <dynamic>[];
+
+    if (startDate != null && endDate != null) {
+      clauses.add('date(date) BETWEEN date(?) AND date(?)');
+      args.addAll([startDate, endDate]);
+    }
+    if (accountId != null) {
+      clauses.add('account_id = ?');
+      args.add(accountId);
+    }
+
+    final where = clauses.isEmpty ? null : clauses.join(' AND ');
+    final result = await _db.complexQuery(
+      table: 'transactions',
+      columns: [
+        "SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as income",
+        "SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as expense",
+      ],
+      where: where,
+      whereArgs: args.isEmpty ? null : args,
+    );
+
+    return result.fold(
+      (_) => (income: 0.0, expense: 0.0),
+      (rows) {
+        final row = rows.first;
+        return (
+          income: (row['income'] as num?)?.toDouble() ?? 0.0,
+          expense: (row['expense'] as num?)?.toDouble() ?? 0.0,
+        );
+      },
+    );
+  }
+
+  /// Spent amount per budget id in one grouped query.
+  Future<Map<int, double>> spentAmountPerBudget() async {
+    final result = await _db.complexQuery(
+      table: 'budgets b',
+      columns: [
+        'b.id as budget_id',
+        'b.amount as budget_amount',
+        'COALESCE(SUM(t.amount), 0) as spent',
+      ],
+      joinClause: '''
+LEFT JOIN transactions t
+  ON t.account_id = b.account_id
+  AND t.type = 'expense'
+  AND date(t.date) BETWEEN date(b.start_date) AND date(b.end_date)
+''',
+      groupBy: 'b.id, b.amount',
+    );
+
+    return result.fold(
+      (_) => <int, double>{},
+      (rows) => {
+        for (final r in rows)
+          (r['budget_id'] as num).toInt():
+              (r['spent'] as num?)?.toDouble() ?? 0.0,
+      },
+    );
+  }
+
   Future<double> sumByType(
     String type, {
     String? startDate,

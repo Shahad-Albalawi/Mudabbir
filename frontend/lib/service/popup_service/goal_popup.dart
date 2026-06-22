@@ -7,7 +7,9 @@ import 'package:mudabbir/domain/models/savings_goal.dart';
 import 'package:mudabbir/presentation/goals/goals_viewmodel.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/goal_strings.dart';
+import 'package:mudabbir/presentation/widgets/app_loading_button.dart';
 import 'package:mudabbir/presentation/widgets/ios_dialog_style.dart';
+import 'package:mudabbir/service/haptic_service.dart';
 import 'package:mudabbir/service/popup_service/popup_widgets.dart';
 
 class GoalPopup {
@@ -32,9 +34,16 @@ class GoalPopup {
     await showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => StatefulBuilder(
-        builder: (context, setLocalState) {
-          return Dialog(
+      builder: (dialogContext) => Consumer(
+        builder: (context, ref, _) {
+          final isSubmitting = ref.watch(
+            goalViewmodelProvider.select((s) => s.isSubmitting),
+          );
+          return PopScope(
+            canPop: !isSubmitting,
+            child: StatefulBuilder(
+              builder: (context, setLocalState) {
+                return Dialog(
             shape: IOSDialogStyle.dialogShape(),
             elevation: 0,
             child: Container(
@@ -223,14 +232,22 @@ class GoalPopup {
                       child: Row(
                         children: [
                           Expanded(
-                            child: OutlinedButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: Text(GoalStrings.cancel),
+                            child: Semantics(
+                              button: true,
+                              label: GoalStrings.cancel,
+                              child: OutlinedButton(
+                                onPressed: isSubmitting
+                                    ? null
+                                    : () => Navigator.pop(context),
+                                child: Text(GoalStrings.cancel),
+                              ),
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: ElevatedButton(
+                            child: AppLoadingButton(
+                              isLoading: isSubmitting,
+                              label: GoalStrings.createButton,
                               onPressed: () async {
                                 if (!(formKey.currentState?.validate() ??
                                     false)) {
@@ -250,13 +267,24 @@ class GoalPopup {
                                 );
 
                                 if (!context.mounted) return;
+                                final error =
+                                    ref.read(goalViewmodelProvider).error;
+                                if (error != null &&
+                                    error != GoalStrings.savedOffline) {
+                                  PopupWidgets.showErrorSnackBar(
+                                    context,
+                                    GoalStrings.createFailed,
+                                  );
+                                  return;
+                                }
+
+                                HapticService.success();
                                 Navigator.pop(context);
                                 PopupWidgets.showSuccessSnackBar(
                                   context,
                                   GoalStrings.createdSuccess,
                                 );
                               },
-                              child: Text(GoalStrings.createButton),
                             ),
                           ),
                         ],
@@ -265,6 +293,9 @@ class GoalPopup {
                   ],
                 ),
               ),
+            ),
+          );
+              },
             ),
           );
         },
@@ -289,7 +320,7 @@ class GoalPopup {
       text: goal.endDate.toIso8601String().split('T').first,
     );
 
-    String? selectedType = goal.type;
+    String? selectedType = GoalStrings.resolveGoalTypeForDropdown(goal.type);
     String? imagePath = goal.imagePath;
 
     final goalViewmodel = ref.read(goalViewmodelProvider.notifier);
@@ -297,9 +328,16 @@ class GoalPopup {
     await showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => StatefulBuilder(
-        builder: (context, setLocalState) {
-          return Dialog(
+      builder: (dialogContext) => Consumer(
+        builder: (context, ref, _) {
+          final isSubmitting = ref.watch(
+            goalViewmodelProvider.select((s) => s.isSubmitting),
+          );
+          return PopScope(
+            canPop: !isSubmitting,
+            child: StatefulBuilder(
+              builder: (context, setLocalState) {
+                return Dialog(
             shape: IOSDialogStyle.dialogShape(),
             elevation: 0,
             child: Container(
@@ -405,14 +443,22 @@ class GoalPopup {
                       child: Row(
                         children: [
                           Expanded(
-                            child: OutlinedButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: Text(GoalStrings.cancel),
+                            child: Semantics(
+                              button: true,
+                              label: GoalStrings.cancel,
+                              child: OutlinedButton(
+                                onPressed: isSubmitting
+                                    ? null
+                                    : () => Navigator.pop(context),
+                                child: Text(GoalStrings.cancel),
+                              ),
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: ElevatedButton(
+                            child: AppLoadingButton(
+                              isLoading: isSubmitting,
+                              label: GoalStrings.saveButton,
                               onPressed: () async {
                                 if (!(formKey.currentState?.validate() ??
                                     false)) {
@@ -430,13 +476,24 @@ class GoalPopup {
                                 );
 
                                 if (!context.mounted) return;
+                                final error =
+                                    ref.read(goalViewmodelProvider).error;
+                                if (error != null &&
+                                    error != GoalStrings.savedOffline) {
+                                  PopupWidgets.showErrorSnackBar(
+                                    context,
+                                    GoalStrings.updateFailed,
+                                  );
+                                  return;
+                                }
+
+                                HapticService.success();
                                 Navigator.pop(context);
                                 PopupWidgets.showSuccessSnackBar(
                                   context,
                                   GoalStrings.updatedSuccess,
                                 );
                               },
-                              child: Text(GoalStrings.saveButton),
                             ),
                           ),
                         ],
@@ -445,6 +502,9 @@ class GoalPopup {
                   ],
                 ),
               ),
+            ),
+          );
+              },
             ),
           );
         },

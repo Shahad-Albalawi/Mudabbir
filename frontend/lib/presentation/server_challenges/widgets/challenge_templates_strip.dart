@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mudabbir/presentation/resources/color_manager.dart';
-import 'package:mudabbir/presentation/resources/font_manager.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/server_challenge_strings.dart';
-import 'package:mudabbir/presentation/resources/styles_manager.dart';
 import 'package:mudabbir/presentation/server_challenges/models/challenge_model.dart';
 import 'package:mudabbir/presentation/server_challenges/providers/challenge_provider.dart';
+import 'package:mudabbir/presentation/widgets/app_card.dart';
+import 'package:mudabbir/presentation/widgets/app_skeleton.dart';
+import 'package:mudabbir/service/haptic_service.dart';
 
 class ChallengeTemplatesStrip extends ConsumerWidget {
   const ChallengeTemplatesStrip({super.key});
@@ -27,12 +28,19 @@ class ChallengeTemplatesStrip extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
     final templatesAsync = ref.watch(challengeTemplatesProvider);
 
     return templatesAsync.when(
-      loading: () => const SizedBox(
-        height: 120,
-        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      loading: () => const Padding(
+        padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+        child: Row(
+          children: [
+            AppSkeletonBox(height: 132, width: 220),
+            SizedBox(width: 12),
+            AppSkeletonBox(height: 132, width: 220),
+          ],
+        ),
       ),
       error: (_, __) => const SizedBox.shrink(),
       data: (templates) {
@@ -48,17 +56,15 @@ class ChallengeTemplatesStrip extends ConsumerWidget {
                 children: [
                   Text(
                     ServerChallengeStrings.templatesTitle,
-                    style: getBoldStyle(
-                      fontSize: FontSize.s16,
-                      color: ColorManager.darkGrey,
-                    ),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                   Text(
                     ServerChallengeStrings.templatesSubtitle,
-                    style: getRegularStyle(
-                      fontSize: FontSize.s12,
-                      color: ColorManager.grey1,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: scheme.textMuted,
+                        ),
                   ),
                 ],
               ),
@@ -88,6 +94,7 @@ class ChallengeTemplatesStrip extends ConsumerWidget {
   }
 
   Future<void> _startTemplate(WidgetRef ref, String templateId) async {
+    HapticService.medium();
     await ref
         .read(challengeOperationProvider.notifier)
         .createFromTemplate(templateId);
@@ -108,37 +115,28 @@ class _TemplateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final scheme = Theme.of(context).colorScheme;
+
+    return SizedBox(
       width: 220,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: ColorManager.primary.withValues(alpha: 0.15)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: AppCard(
+        margin: EdgeInsets.zero,
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Row(
             children: [
-              Icon(icon, color: ColorManager.primary, size: 20),
+              Icon(icon, color: scheme.chromeIcon, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   template.localizedName,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: getSemiBoldStyle(
-                    fontSize: FontSize.s12,
-                    color: ColorManager.darkGrey,
-                  ),
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
               ),
             ],
@@ -149,10 +147,9 @@ class _TemplateCard extends StatelessWidget {
               template.localizedDescription,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: getRegularStyle(
-                fontSize: FontSize.s12,
-                color: ColorManager.grey1,
-              ),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: scheme.textMuted,
+                  ),
             ),
           ),
           const SizedBox(height: 8),
@@ -160,10 +157,10 @@ class _TemplateCard extends StatelessWidget {
             children: [
               Text(
                 ServerChallengeStrings.templateDays(template.durationDays),
-                style: getRegularStyle(
-                  fontSize: FontSize.s12,
-                  color: ColorManager.primary,
-                ),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: scheme.textMuted,
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
               const Spacer(),
               TextButton(
@@ -172,7 +169,8 @@ class _TemplateCard extends StatelessWidget {
               ),
             ],
           ),
-        ],
+          ],
+        ),
       ),
     );
   }

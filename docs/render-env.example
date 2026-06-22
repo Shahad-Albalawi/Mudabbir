@@ -18,3 +18,5 @@ QUEUE_CONNECTION=sync
 # AI coach (optional — chatbot works with local fallback if empty)
 AI_PROVIDER=gemini
 GEMINI_API_KEY=
+
+TRUSTED_PROXIES=*

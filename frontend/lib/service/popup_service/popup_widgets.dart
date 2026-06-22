@@ -122,7 +122,7 @@ class PopupWidgets {
         ? scheme.success
         : type == 'expense'
         ? scheme.error
-        : scheme.primary;
+        : scheme.chromeIcon;
     return Row(
       children: [
         Icon(

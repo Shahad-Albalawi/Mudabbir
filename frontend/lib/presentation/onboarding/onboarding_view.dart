@@ -1,16 +1,19 @@
 import 'package:go_router/go_router.dart';
 import 'package:mudabbir/constants/hive_constants.dart';
 import 'package:mudabbir/presentation/onboarding/onboarding_viewmodel.dart';
-import 'package:mudabbir/presentation/onboarding/widgets/animated_background.dart';
-import 'package:mudabbir/presentation/onboarding/widgets/modern_bottom_navigation.dart';
+import 'package:mudabbir/presentation/onboarding/widgets/animated_dots_indicator.dart';
 import 'package:mudabbir/presentation/onboarding/widgets/onboarding_page_widget.dart';
 import 'package:mudabbir/presentation/onboarding/widgets/skip_button.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
+import 'package:mudabbir/presentation/resources/design_tokens.dart';
+import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/hive_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// iOS first-run walkthrough — grouped background, calm typography, one CTA.
 class OnboardingView extends ConsumerStatefulWidget {
   const OnboardingView({super.key});
 
@@ -18,153 +21,110 @@ class OnboardingView extends ConsumerStatefulWidget {
   ConsumerState<OnboardingView> createState() => _OnboardingViewState();
 }
 
-class _OnboardingViewState extends ConsumerState<OnboardingView>
-    with TickerProviderStateMixin {
+class _OnboardingViewState extends ConsumerState<OnboardingView> {
   late final PageController _pageController;
-  late final AnimationController _fadeController;
-  late final AnimationController _scaleController;
 
   @override
   void initState() {
     super.initState();
-
-    _pageController = PageController(initialPage: 0);
-
-    _fadeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
-
-    _scaleController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-
-    _fadeController.forward();
-    _scaleController.forward();
+    _pageController = PageController();
   }
 
   @override
   void dispose() {
     _pageController.dispose();
-    _fadeController.dispose();
-    _scaleController.dispose();
     super.dispose();
   }
 
-  /// Handle skip button or last page
-  void _handleSkip() {
+  void _completeOnboarding() {
     HapticFeedback.lightImpact();
-
-    // Save onboarding completion
     getIt<HiveService>().setValue(HiveConstants.savedFirstTime, true);
-
-    // Trigger GoRouter redirect
-    // getIt<AuthNotifier>().refresh();
     context.go('/login');
   }
 
-  void _handlePageChanged(int index) {
-    ref.read(onboardingViewModelProvider.notifier).onPageChanged(index);
-
-    // Reset and restart animations for smooth transitions
-    _scaleController.reset();
-    _scaleController.forward();
-  }
-
-  void _animateToPage(int index) {
+  void _goToPage(int index) {
     _pageController.animateToPage(
       index,
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeInOutCubic,
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutCubic,
     );
+  }
+
+  void _onNext(SliderViewObject state) {
+    HapticFeedback.selectionClick();
+    if (state.currentIndex == state.numOfSlides - 1) {
+      _completeOnboarding();
+      return;
+    }
+    final next = state.currentIndex + 1;
+    ref.read(onboardingViewModelProvider.notifier).onPageChanged(next);
+    _goToPage(next);
   }
 
   @override
   Widget build(BuildContext context) {
     final sliderViewObject = ref.watch(onboardingViewModelProvider);
     final viewModel = ref.read(onboardingViewModelProvider.notifier);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final overlay = isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark;
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = scheme.brightness == Brightness.dark;
+    final isLastPage =
+        sliderViewObject.currentIndex == sliderViewObject.numOfSlides - 1;
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        systemOverlayStyle: overlay,
-        actions: [
-          SkipButton(onTap: _handleSkip),
-        ],
-      ),
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Stack(
-        children: [
-          // Animated background
-          AnimatedBackground(
-            currentIndex: sliderViewObject.currentIndex,
-            totalPages: sliderViewObject.numOfSlides,
-          ),
-
-          // Main content
-          SafeArea(
-            child: Column(
-              children: [
-                // Page content
-                Expanded(
-                  child: PageView.builder(
-                    controller: _pageController,
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: sliderViewObject.numOfSlides,
-                    onPageChanged: _handlePageChanged,
-                    itemBuilder: (context, index) {
-                      return FadeTransition(
-                        opacity: _fadeController,
-                        child: ScaleTransition(
-                          scale: Tween<double>(begin: 0.8, end: 1.0).animate(
-                            CurvedAnimation(
-                              parent: _scaleController,
-                              curve: Curves.elasticOut,
-                            ),
-                          ),
-                          child: OnboardingPageWidget(
-                            sliderObject: viewModel.slides[index],
-                          ),
-                        ),
-                      );
-                    },
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        backgroundColor: scheme.pageBackground,
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: SkipButton(onTap: _completeOnboarding),
+              ),
+              Expanded(
+                child: PageView.builder(
+                  controller: _pageController,
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: sliderViewObject.numOfSlides,
+                  onPageChanged: viewModel.onPageChanged,
+                  itemBuilder: (context, index) {
+                    return OnboardingPageWidget(
+                      sliderObject: viewModel.slides[index],
+                      isWelcome: index == 0,
+                    );
+                  },
+                ),
+              ),
+              AnimatedDotsIndicator(
+                currentIndex: sliderViewObject.currentIndex,
+                totalDots: sliderViewObject.numOfSlides,
+                onDotTapped: (index) {
+                  HapticFeedback.selectionClick();
+                  viewModel.onPageChanged(index);
+                  _goToPage(index);
+                },
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppLayout.pageGutter,
+                  0,
+                  AppLayout.pageGutter,
+                  AppLayout.pageGutter,
+                ),
+                child: FilledButton(
+                  onPressed: () => _onNext(sliderViewObject),
+                  child: Text(
+                    isLastPage
+                        ? AppStrings.onboardingGetStarted
+                        : (AppStrings.isEnglishLocale ? 'Continue' : 'متابعة'),
                   ),
                 ),
-
-                // Bottom navigation
-                ModernBottomNavigation(
-                  sliderViewObject: sliderViewObject,
-                  onPrevious: () {
-                    HapticFeedback.selectionClick();
-                    viewModel.goPrevious();
-                    _animateToPage(sliderViewObject.currentIndex);
-                  },
-                  onNext: () {
-                    HapticFeedback.selectionClick();
-                    if (sliderViewObject.currentIndex ==
-                        sliderViewObject.numOfSlides - 1) {
-                      // Last page → complete onboarding
-                      _handleSkip();
-                    } else {
-                      viewModel.goNext();
-                      _animateToPage(sliderViewObject.currentIndex);
-                    }
-                  },
-                  onDotTapped: (index) {
-                    HapticFeedback.selectionClick();
-                    viewModel.onPageChanged(index);
-                    _animateToPage(index);
-                  },
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

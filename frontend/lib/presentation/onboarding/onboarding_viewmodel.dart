@@ -17,7 +17,7 @@ class OnBoardingViewModel extends StateNotifier<SliderViewObject> {
           SliderObject(
             AppStrings.onBoardingTitle1,
             AppStrings.onBoardingSubTitle1,
-            icon: CupertinoIcons.creditcard_fill,
+            icon: CupertinoIcons.creditcard,
           ),
           4,
           0,
@@ -32,22 +32,22 @@ class OnBoardingViewModel extends StateNotifier<SliderViewObject> {
     SliderObject(
       AppStrings.onBoardingTitle1,
       AppStrings.onBoardingSubTitle1,
-      icon: CupertinoIcons.creditcard_fill,
+      icon: CupertinoIcons.creditcard,
     ),
     SliderObject(
       AppStrings.onBoardingTitle2,
       AppStrings.onBoardingSubTitle2,
-      icon: CupertinoIcons.chart_pie_fill,
+      icon: CupertinoIcons.chart_pie,
     ),
     SliderObject(
       AppStrings.onBoardingTitle3,
       AppStrings.onBoardingSubTitle3,
-      icon: CupertinoIcons.chat_bubble_2_fill,
+      icon: CupertinoIcons.chat_bubble_2,
     ),
     SliderObject(
       AppStrings.onBoardingTitle4,
       AppStrings.onBoardingSubTitle4,
-      icon: CupertinoIcons.flag_fill,
+      icon: CupertinoIcons.flag,
     ),
   ];
 

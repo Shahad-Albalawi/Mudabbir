@@ -1,5 +1,16 @@
 <?php
 
+$corsOrigins = env('CORS_ALLOWED_ORIGINS');
+
+if ($corsOrigins === null) {
+    $allowedOrigins = env('APP_ENV', 'production') === 'local' ? ['*'] : [];
+} else {
+    $allowedOrigins = array_values(array_filter(array_map(
+        'trim',
+        explode(',', $corsOrigins)
+    )));
+}
+
 return [
 
     /*
@@ -15,15 +26,15 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    'paths' => ['api/*'],
 
-    'allowed_methods' => ['*'],
+    'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
-    'allowed_origins' => ['*'],
+    'allowed_origins' => $allowedOrigins,
 
     'allowed_origins_patterns' => [],
 
-    'allowed_headers' => ['*'],
+    'allowed_headers' => ['Authorization', 'Content-Type', 'Accept', 'X-Requested-With'],
 
     'exposed_headers' => [],
 

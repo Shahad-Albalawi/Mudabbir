@@ -40,7 +40,7 @@ class RegisterViewModel extends StateNotifier<RegisterState> {
     String password,
     String passwordConfirmation,
   ) async {
-    state = state.copyWith(isLoading: true);
+    state = state.copyWith(isLoading: true, failure: null);
 
     final result = await userRepository.register(
       name,
@@ -48,8 +48,6 @@ class RegisterViewModel extends StateNotifier<RegisterState> {
       password,
       passwordConfirmation,
     );
-
-    await Future.delayed(const Duration(seconds: 2));
 
     return result.fold(
       (failure) {

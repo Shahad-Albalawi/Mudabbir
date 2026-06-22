@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:mudabbir/domain/models/savings_goal.dart';
-import 'package:mudabbir/presentation/server_challenges/services/api_exception.dart';
+import 'package:mudabbir/data/network/api_exception.dart';
 import 'package:mudabbir/presentation/server_challenges/utils/dio_client.dart';
 
 /// REST client for savings goals.

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="brand_navy">#FF0A84FF</color>
+    <color name="brand_navy_dark">#FF0D1117</color>
+    <color name="launch_canvas">#FF0D1117</color>
+</resources>

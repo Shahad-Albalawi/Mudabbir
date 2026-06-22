@@ -1,75 +1,68 @@
-import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
+﻿import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:mudabbir/data/local/database_helper.dart';
-import 'package:mudabbir/service/chatbot/chatbot_context_loader.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mudabbir/constants/api_constants.dart';
+import 'package:mudabbir/data/local/database_helper.dart';
 import 'package:mudabbir/presentation/resources/chatbot_llm_prompt.dart';
 import 'package:mudabbir/presentation/resources/chatbot_ui_strings.dart';
-import 'package:mudabbir/domain/services/health_score_calculator.dart';
-import 'package:mudabbir/domain/services/insight_thresholds.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/presentation/server_challenges/utils/dio_client.dart';
-import 'package:dio/dio.dart';
-import 'package:mudabbir/service/chatbot/chatbot_api_result.dart';
+import 'package:mudabbir/service/chatbot/chatbot_api_client.dart';
+import 'package:mudabbir/service/chatbot/chatbot_context_loader.dart';
+import 'package:mudabbir/service/chatbot/chatbot_insights_engine.dart';
 import 'package:mudabbir/service/chatbot/chatbot_local_fallback.dart';
+import 'package:mudabbir/service/chatbot/chatbot_models.dart';
+import 'package:mudabbir/service/chatbot/chatbot_text_parser.dart';
+import 'package:mudabbir/presentation/widgets/app_loading_button.dart';
+import 'package:mudabbir/presentation/widgets/ios_dialog_style.dart';
 import 'package:mudabbir/service/getit_init.dart';
-import 'package:mudabbir/utils/dev_log.dart';
-import 'package:mudabbir/constants/hive_constants.dart';
-import 'package:mudabbir/service/hive_service.dart';
-import 'package:mudabbir/service/reporting/financial_report_builder.dart';
-import 'package:mudabbir/service/reporting/financial_report_service.dart';
-import 'package:mudabbir/utils/user_display_name.dart';
-import 'package:stacked/stacked.dart';
-import 'chatbot_view.dart';
+import 'package:mudabbir/service/reporting/financial_report_exporter.dart';
 
-enum ChatQuickAction { createGoal, adjustBudget, reduceCategory, exportReport }
+export 'package:mudabbir/service/chatbot/chatbot_models.dart';
 
-enum PendingCommandType { createGoal, createBudget }
+class ChatbotNotifier extends StateNotifier<ChatbotState> {
+  ChatbotNotifier() : super(const ChatbotState());
 
-class ExecutedCommand {
-  final String table;
-  final int rowId;
-  final String summary;
-
-  ExecutedCommand({
-    required this.table,
-    required this.rowId,
-    required this.summary,
-  });
-}
-
-class ChatbotViewModel extends BaseViewModel {
   final DbHelper _dbHelper = getIt<DbHelper>();
   final ChatbotContextLoader _contextLoader = ChatbotContextLoader();
   final TextEditingController messageController = TextEditingController();
   final ScrollController scrollController = ScrollController();
 
-  List<ChatMessage> messages = [];
-  bool isLoadingResponse = false;
-  final FinancialReportService _reportService = getIt<FinancialReportService>();
   PendingCommandType? _pendingCommandType;
   Map<String, dynamic>? _pendingCommandPayload;
-  ExecutedCommand? _lastExecutedCommand;
 
-  static const Duration _apiTimeout = Duration(seconds: 45);
+  late final ChatbotApiClient _apiClient = ChatbotApiClient(
+    dio: getIt<DioClient>().dio,
+    apiUrls: [
+      '${ApiConstants.baseUrl}/api/generate-content',
+      '${ApiConstants.baseUrl}/api/chatbot/generate-content',
+      '${ApiConstants.baseUrl}/api/chat',
+    ],
+  );
 
-  List<String> get _apiUrls => [
-    '${ApiConstants.baseUrl}/api/generate-content',
-    '${ApiConstants.baseUrl}/api/chatbot/generate-content',
-    '${ApiConstants.baseUrl}/api/chat',
-  ];
+  void _appendMessage(ChatMessage message) {
+    state = state.copyWith(messages: [...state.messages, message]);
+  }
+
+  void _setLoading(bool value) => state = state.copyWith(isLoading: value);
+
+  void _setLoadingResponse(bool value) =>
+      state = state.copyWith(isLoadingResponse: value);
+
+  void _setLastExecuted(ExecutedCommand? command) {
+    state = state.copyWith(
+      lastExecutedCommand: command,
+      clearLastExecutedCommand: command == null,
+    );
+  }
 
   Future<void> initialize() async {
-    setBusy(true);
-    // Add a welcome message
-    messages.add(
+    _setLoading(true);
+    _appendMessage(
       ChatMessage(text: AppStrings.chatWelcomeMessage, isUser: false),
     );
-    setBusy(false);
-    notifyListeners();
+    _setLoading(false);
   }
 
   Future<void> handleQuickAction(
@@ -79,30 +72,24 @@ class ChatbotViewModel extends BaseViewModel {
     switch (action) {
       case ChatQuickAction.createGoal:
         await _openCreateGoalDialog(context);
-        return;
       case ChatQuickAction.adjustBudget:
         await _openAdjustBudgetDialog(context);
-        return;
       case ChatQuickAction.reduceCategory:
-        messages.add(
+        _appendMessage(
           ChatMessage(text: ChatbotUi.reduceCategoryHint, isUser: false),
         );
-        notifyListeners();
         _scrollToBottom();
-        return;
       case ChatQuickAction.exportReport:
         await _exportPdfReport();
-        return;
     }
   }
 
-  bool get canUndoLastAction => _lastExecutedCommand != null;
+  bool get canUndoLastAction => state.lastExecutedCommand != null;
 
   Future<void> undoLastAction() async {
-    final last = _lastExecutedCommand;
+    final last = state.lastExecutedCommand;
     if (last == null) {
-      messages.add(ChatMessage(text: ChatbotUi.undoNone, isUser: false));
-      notifyListeners();
+      _appendMessage(ChatMessage(text: ChatbotUi.undoNone, isUser: false));
       _scrollToBottom();
       return;
     }
@@ -119,155 +106,111 @@ class ChatbotViewModel extends BaseViewModel {
             'summary': last.summary,
           },
         );
-        messages.add(
+        _appendMessage(
           ChatMessage(text: ChatbotUi.undoDone(last.summary), isUser: false),
         );
-        _lastExecutedCommand = null;
+        _setLastExecuted(null);
       } else {
-        messages.add(ChatMessage(text: ChatbotUi.undoMissing, isUser: false));
+        _appendMessage(ChatMessage(text: ChatbotUi.undoMissing, isUser: false));
       }
     } catch (_) {
-      messages.add(ChatMessage(text: ChatbotUi.undoError, isUser: false));
+      _appendMessage(ChatMessage(text: ChatbotUi.undoError, isUser: false));
     }
-    notifyListeners();
     _scrollToBottom();
   }
 
   Future<void> sendMessage() async {
     final userMessage = messageController.text.trim();
     if (userMessage.isEmpty) return;
-
-    // Add user message
-    messages.add(ChatMessage(text: userMessage, isUser: true));
     messageController.clear();
-    notifyListeners();
+    await _sendUserText(userMessage);
+  }
 
-    // Scroll to bottom
+  Future<void> sendSuggestedMessage(String text) async {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return;
+    await _sendUserText(trimmed);
+  }
+
+  Future<void> _sendUserText(String userMessage) async {
+    _appendMessage(ChatMessage(text: userMessage, isUser: true));
     _scrollToBottom();
 
-    // Confirm / cancel pending smart command before anything else.
     final pendingReply = await _handlePendingCommandReply(userMessage);
     if (pendingReply != null) {
-      messages.add(ChatMessage(text: pendingReply, isUser: false));
-      notifyListeners();
+      _appendMessage(ChatMessage(text: pendingReply, isUser: false));
       _scrollToBottom();
       return;
     }
 
-    // Smart parser: execute direct commands from user text.
     final smartActionReply = await _tryExecuteSmartTextCommand(userMessage);
     if (smartActionReply != null) {
-      messages.add(ChatMessage(text: smartActionReply, isUser: false));
-      notifyListeners();
+      _appendMessage(ChatMessage(text: smartActionReply, isUser: false));
       _scrollToBottom();
       return;
     }
 
-    // Check for simple general questions first (offline)
-    final simpleAnswer = _handleSimpleQuestions(userMessage);
+    final simpleAnswer = ChatbotInsightsEngine.handleSimpleQuestions(userMessage);
     if (simpleAnswer != null) {
-      messages.add(ChatMessage(text: simpleAnswer, isUser: false));
-      notifyListeners();
+      _appendMessage(ChatMessage(text: simpleAnswer, isUser: false));
       _scrollToBottom();
       return;
     }
 
-    // What-if calculator (phase 2): e.g. "لو اوفر 300 كل شهر متى اوصل هدفي؟"
-    if (_isWhatIfQuestion(userMessage)) {
-      isLoadingResponse = true;
-      notifyListeners();
-      try {
-        final contextData = await _getAllDatabaseContext();
-        final whatIfReply = _buildWhatIfReply(userMessage, contextData);
-        messages.add(ChatMessage(text: whatIfReply, isUser: false));
-      } catch (_) {
-        messages.add(ChatMessage(text: ChatbotUi.whatIfError, isUser: false));
-      } finally {
-        isLoadingResponse = false;
-        notifyListeners();
-        _scrollToBottom();
-      }
+    if (ChatbotTextParser.isWhatIfQuestion(userMessage)) {
+      await _replyWithContext(
+        (data) => ChatbotInsightsEngine.buildWhatIfReply(userMessage, data),
+        errorMessage: ChatbotUi.whatIfError,
+      );
       return;
     }
 
-    if (_isGoalOptimizerQuestion(userMessage)) {
-      isLoadingResponse = true;
-      notifyListeners();
-      try {
-        final contextData = await _getAllDatabaseContext();
-        final reply = _buildGoalOptimizerReply(contextData);
-        messages.add(ChatMessage(text: reply, isUser: false));
-      } finally {
-        isLoadingResponse = false;
-        notifyListeners();
-        _scrollToBottom();
-      }
+    if (ChatbotTextParser.isGoalOptimizerQuestion(userMessage)) {
+      await _replyWithContext(ChatbotInsightsEngine.buildGoalOptimizerReply);
       return;
     }
 
-    if (_isReportQuestion(userMessage)) {
+    if (ChatbotTextParser.isReportQuestion(userMessage)) {
       await _exportPdfReport();
       return;
     }
 
-    // Subscription detection (phase 2): repeated monthly-like expenses.
-    if (_isSubscriptionQuestion(userMessage)) {
-      isLoadingResponse = true;
-      notifyListeners();
-      try {
-        final contextData = await _getAllDatabaseContext();
-        final subscriptionReply = _buildSubscriptionsReply(contextData);
-        messages.add(ChatMessage(text: subscriptionReply, isUser: false));
-      } catch (_) {
-        messages.add(ChatMessage(text: ChatbotUi.subsError, isUser: false));
-      } finally {
-        isLoadingResponse = false;
-        notifyListeners();
-        _scrollToBottom();
-      }
+    if (ChatbotTextParser.isSubscriptionQuestion(userMessage)) {
+      await _replyWithContext(
+        ChatbotInsightsEngine.buildSubscriptionsReply,
+        errorMessage: ChatbotUi.subsError,
+      );
       return;
     }
 
-    // Phase 1: answer financial health / abnormal spending questions locally.
-    if (_isInsightQuestion(userMessage)) {
-      isLoadingResponse = true;
-      notifyListeners();
-      try {
-        final contextData = await _getAllDatabaseContext();
-        final insightReply = _buildInsightReply(contextData);
-        messages.add(ChatMessage(text: insightReply, isUser: false));
-      } catch (_) {
-        messages.add(ChatMessage(text: ChatbotUi.insightError, isUser: false));
-      } finally {
-        isLoadingResponse = false;
-        notifyListeners();
-        _scrollToBottom();
-      }
+    if (ChatbotTextParser.isInsightQuestion(userMessage)) {
+      await _replyWithContext(
+        ChatbotInsightsEngine.buildInsightReply,
+        errorMessage: ChatbotUi.insightError,
+      );
       return;
     }
 
-    // Set loading state
-    isLoadingResponse = true;
-    notifyListeners();
-
+    _setLoadingResponse(true);
     try {
-      // Get all data from database
       final contextData = await _getAllDatabaseContext();
-      contextData['financial_insights'] = _buildFinancialInsights(contextData);
-      contextData['subscription_insights'] = _buildSubscriptionInsights(
-        contextData,
+      contextData['financial_insights'] =
+          ChatbotInsightsEngine.buildFinancialInsights(contextData);
+      contextData['subscription_insights'] =
+          ChatbotInsightsEngine.buildSubscriptionInsights(contextData);
+
+      final completePrompt = ChatbotLlmPrompt.build(
+        contextData: contextData,
+        userMessage: userMessage,
+        formatJson: _formatJsonData,
       );
 
-      // Build the complete prompt with system instructions and user message
-      final completePrompt = _buildCompletePrompt(contextData, userMessage);
-
-      // Send to Laravel backend (falls back to local data on quota/network issues).
-      final apiResult = await _sendToBackend(completePrompt);
+      final apiResult = await _apiClient.send(completePrompt);
 
       if (apiResult.isSuccess && apiResult.message != null) {
-        messages.add(ChatMessage(text: apiResult.message!, isUser: false));
+        _appendMessage(ChatMessage(text: apiResult.message!, isUser: false));
       } else if (apiResult.useLocalFallback) {
-        messages.add(
+        _appendMessage(
           ChatMessage(
             text: _buildLocalFallbackMessage(
               userMessage: userMessage,
@@ -278,17 +221,17 @@ class ChatbotViewModel extends BaseViewModel {
           ),
         );
       } else {
-        messages.add(
+        _appendMessage(
           ChatMessage(
             text: apiResult.message ?? ChatbotUi.genericProcessError,
             isUser: false,
           ),
         );
       }
-    } catch (e) {
+    } catch (_) {
       try {
         final contextData = await _getAllDatabaseContext();
-        messages.add(
+        _appendMessage(
           ChatMessage(
             text: _buildLocalFallbackMessage(
               userMessage: userMessage,
@@ -299,13 +242,30 @@ class ChatbotViewModel extends BaseViewModel {
           ),
         );
       } catch (_) {
-        messages.add(
+        _appendMessage(
           ChatMessage(text: ChatbotUi.genericProcessError, isUser: false),
         );
       }
     } finally {
-      isLoadingResponse = false;
-      notifyListeners();
+      _setLoadingResponse(false);
+      _scrollToBottom();
+    }
+  }
+
+  Future<void> _replyWithContext(
+    String Function(Map<String, dynamic>) buildReply, {
+    String? errorMessage,
+  }) async {
+    _setLoadingResponse(true);
+    try {
+      final contextData = await _getAllDatabaseContext();
+      _appendMessage(ChatMessage(text: buildReply(contextData), isUser: false));
+    } catch (_) {
+      if (errorMessage != null) {
+        _appendMessage(ChatMessage(text: errorMessage, isUser: false));
+      }
+    } finally {
+      _setLoadingResponse(false);
       _scrollToBottom();
     }
   }
@@ -363,11 +323,11 @@ class ChatbotViewModel extends BaseViewModel {
           'start_date': payload['start_date'],
           'end_date': payload['end_date'],
         });
-        _lastExecutedCommand = ExecutedCommand(
+        _setLastExecuted(ExecutedCommand(
           table: 'goals',
           rowId: rowId,
           summary: ChatbotUi.goalCreatedSummary(payload['name'].toString()),
-        );
+        ));
         await _auditLog(
           action: 'create_goal',
           status: 'executed',
@@ -381,13 +341,13 @@ class ChatbotViewModel extends BaseViewModel {
           'end_date': payload['end_date'],
           'account_id': payload['account_id'],
         });
-        _lastExecutedCommand = ExecutedCommand(
+        _setLastExecuted(ExecutedCommand(
           table: 'budgets',
           rowId: rowId,
           summary: ChatbotUi.budgetCreatedSummary(
             payload['amount'].toStringAsFixed(0),
           ),
-        );
+        ));
         await _auditLog(
           action: 'create_budget',
           status: 'executed',
@@ -401,19 +361,16 @@ class ChatbotViewModel extends BaseViewModel {
     final q = message.trim();
     final lower = q.toLowerCase();
 
-    // Example supported phrases:
-    // "أنشئ هدف سيارة 25000 خلال 12 شهر"
-    // "create goal car 25000 in 12 months"
     if (lower.contains('أنشئ هدف') ||
         lower.contains('انشئ هدف') ||
         lower.contains('create goal')) {
-      final amount = _extractFirstNumber(q);
+      final amount = ChatbotTextParser.extractFirstNumber(q);
       if (amount == null || amount <= 0) {
         return ChatbotUi.needGoalAmount;
       }
 
-      final months = _extractMonths(q) ?? 12;
-      final goalName = _extractGoalName(q);
+      final months = ChatbotTextParser.extractMonths(q) ?? 12;
+      final goalName = ChatbotTextParser.extractGoalName(q);
       final now = DateTime.now();
       final end = DateTime(now.year, now.month + months, now.day);
       _pendingCommandType = PendingCommandType.createGoal;
@@ -432,14 +389,11 @@ class ChatbotViewModel extends BaseViewModel {
       return ChatbotUi.previewGoal(goalName, amount.toStringAsFixed(0), months);
     }
 
-    // Example:
-    // "أنشئ ميزانية 3000 الشهر القادم"
-    // "set budget 3000"
     if (lower.contains('أنشئ ميزانية') ||
         lower.contains('انشئ ميزانية') ||
         lower.contains('set budget') ||
         lower.contains('create budget')) {
-      final amount = _extractFirstNumber(q);
+      final amount = ChatbotTextParser.extractFirstNumber(q);
       if (amount == null || amount <= 0) {
         return ChatbotUi.needBudgetAmount;
       }
@@ -478,388 +432,15 @@ class ChatbotViewModel extends BaseViewModel {
     return null;
   }
 
-  int? _extractMonths(String text) {
-    final monthRegex = RegExp(
-      r'(\d+)\s*(شهر|شهور|months?|month)',
-      caseSensitive: false,
-    );
-    final match = monthRegex.firstMatch(text);
-    if (match == null) return null;
-    return int.tryParse(match.group(1)!);
-  }
-
-  String _extractGoalName(String text) {
-    final cleaned = text
-        .replaceAll(RegExp(r'create goal', caseSensitive: false), '')
-        .replaceAll('أنشئ هدف', '')
-        .replaceAll('انشئ هدف', '')
-        .trim();
-    // Remove first number and trailing duration phrase.
-    var name = cleaned.replaceFirst(RegExp(r'\d+(\.\d+)?'), '').trim();
-    name = name.replaceAll(
-      RegExp(
-        r'(خلال|in)\s*\d+\s*(شهر|شهور|months?|month)',
-        caseSensitive: false,
-      ),
-      '',
-    );
-    name = name.trim();
-    if (name.isEmpty) return ChatbotUi.defaultNewGoalName;
-    return name;
-  }
-
-  bool _isInsightQuestion(String message) {
-    final q = message.toLowerCase();
-    return q.contains('الصحة المالية') ||
-        q.contains('score') ||
-        q.contains('سكور') ||
-        q.contains('تقييمي') ||
-        q.contains('الانفاق مرتفع') ||
-        q.contains('غير طبيعي') ||
-        q.contains('تنبيه');
-  }
-
-  bool _isWhatIfQuestion(String message) {
-    final q = message.toLowerCase();
-    return q.contains('ماذا لو') ||
-        q.contains('لو ') ||
-        q.contains('what if') ||
-        q.contains('اوفر') ||
-        q.contains('أوفر') ||
-        q.contains('ادخر') ||
-        q.contains('أدخر');
-  }
-
-  bool _isSubscriptionQuestion(String message) {
-    final q = message.toLowerCase();
-    return q.contains('اشتراك') ||
-        q.contains('الاشتراكات') ||
-        q.contains('متكرر') ||
-        q.contains('شهري') ||
-        q.contains('subscription');
-  }
-
-  bool _isGoalOptimizerQuestion(String message) {
-    final q = message.toLowerCase();
-    return q.contains('goal optimizer') ||
-        q.contains('optimize') ||
-        q.contains('حسن اهدافي') ||
-        q.contains('وزع الادخار') ||
-        q.contains('خطة الأهداف');
-  }
-
-  bool _isReportQuestion(String message) {
-    final q = message.toLowerCase();
-    return q.contains('pdf') ||
-        q.contains('report') ||
-        q.contains('تقرير') ||
-        q.contains('تصدير');
-  }
-
-  String _buildInsightReply(Map<String, dynamic> contextData) {
-    final insights = _buildFinancialInsights(contextData);
-    final int score = insights['score'] as int;
-    final List<String> alerts = (insights['alerts'] as List<dynamic>)
-        .map((e) => e.toString())
-        .toList();
-    final status = ChatbotUi.insightStatus(score);
-    final alertText = alerts.isEmpty
-        ? ChatbotUi.noSpendingAlerts
-        : alerts.map((a) => '- $a').join('\n');
-    return ChatbotUi.insightBody(score, status, alertText);
-  }
-
-  String _buildWhatIfReply(
-    String userMessage,
-    Map<String, dynamic> contextData,
-  ) {
-    final amount = _extractFirstNumber(userMessage);
-    if (amount == null || amount <= 0) {
-      return ChatbotUi.whatIfNeedAmount;
-    }
-
-    final goalsRaw = contextData['goals'];
-    final goals = goalsRaw is List
-        ? goalsRaw.cast<dynamic>()
-        : const <dynamic>[];
-    if (goals.isEmpty) {
-      return ChatbotUi.whatIfNoGoals;
-    }
-
-    Map<String, dynamic>? nearestGoal;
-    double nearestRemaining = double.infinity;
-
-    for (final g in goals) {
-      if (g is! Map) continue;
-      final target = double.tryParse((g['target'] ?? '0').toString()) ?? 0;
-      final current =
-          double.tryParse((g['current_amount'] ?? '0').toString()) ?? 0;
-      final remaining = target - current;
-      if (remaining > 0 && remaining < nearestRemaining) {
-        nearestRemaining = remaining;
-        nearestGoal = Map<String, dynamic>.from(g);
-      }
-    }
-
-    if (nearestGoal == null) {
-      return ChatbotUi.whatIfAllGoalsDone;
-    }
-
-    final name = (nearestGoal['name'] ?? ChatbotUi.nextGoalFallback).toString();
-    final target =
-        double.tryParse((nearestGoal['target'] ?? '0').toString()) ?? 0;
-    final current =
-        double.tryParse((nearestGoal['current_amount'] ?? '0').toString()) ?? 0;
-    final remaining = (target - current).clamp(0, double.infinity);
-    final months = remaining / amount;
-    final roundedMonths = months.ceil();
-    final eta = DateTime.now().add(Duration(days: roundedMonths * 30));
-    final etaText =
-        '${eta.year}-${eta.month.toString().padLeft(2, '0')}-${eta.day.toString().padLeft(2, '0')}';
-
-    return ChatbotUi.whatIfScenario(
-      amount.toStringAsFixed(0),
-      name,
-      remaining.toStringAsFixed(0),
-      roundedMonths,
-      etaText,
-    );
-  }
-
-  String _buildGoalOptimizerReply(Map<String, dynamic> contextData) {
-    final goalsRaw = contextData['goals'];
-    final goals = goalsRaw is List
-        ? goalsRaw.cast<dynamic>()
-        : const <dynamic>[];
-    if (goals.isEmpty) {
-      return ChatbotUi.optimizerNoGoals;
-    }
-
-    final insights = _buildFinancialInsights(contextData);
-    final monthlyBalance =
-        (insights['monthly_balance'] as num?)?.toDouble() ?? 0;
-    final monthlySavings = monthlyBalance > 0 ? monthlyBalance : 0;
-    if (monthlySavings <= 0) {
-      return ChatbotUi.optimizerNoSurplus;
-    }
-
-    final parsed = <Map<String, dynamic>>[];
-    for (final g in goals) {
-      if (g is! Map) continue;
-      final rawName = (g['name'] ?? '').toString().trim();
-      final name = rawName.isEmpty ? ChatbotUi.defaultGoalWord : rawName;
-      final target = double.tryParse((g['target'] ?? '0').toString()) ?? 0;
-      final current =
-          double.tryParse((g['current_amount'] ?? '0').toString()) ?? 0;
-      final remaining = target - current;
-      if (remaining <= 0) continue;
-      final endDate = DateTime.tryParse((g['end_date'] ?? '').toString());
-      final daysLeft = endDate == null
-          ? 365
-          : endDate.difference(DateTime.now()).inDays;
-      parsed.add({
-        'name': name,
-        'remaining': remaining,
-        'daysLeft': daysLeft <= 0 ? 1 : daysLeft,
-      });
-    }
-
-    if (parsed.isEmpty) {
-      return ChatbotUi.optimizerGoalsDone;
-    }
-
-    parsed.sort(
-      (a, b) => (a['daysLeft'] as int).compareTo(b['daysLeft'] as int),
-    );
-    final weights = parsed.map((g) => 1 / (g['daysLeft'] as int)).toList();
-    final totalWeight = weights.reduce((a, b) => a + b);
-
-    final lines = <String>[];
-    for (int i = 0; i < parsed.length; i++) {
-      final goal = parsed[i];
-      final ratio = weights[i] / totalWeight;
-      final allocation = monthlySavings * ratio;
-      lines.add(
-        ChatbotUi.optimizerLine(
-          goal['name'] as String,
-          allocation.toStringAsFixed(0),
-          ((goal['remaining'] as num).toDouble()).toStringAsFixed(0),
-        ),
-      );
-    }
-
-    return ChatbotUi.optimizerIntro(monthlySavings.toStringAsFixed(0)) +
-        lines.join('\n');
-  }
-
-  double? _extractFirstNumber(String text) {
-    final match = RegExp(r'(\d+(?:\.\d+)?)').firstMatch(text);
-    if (match == null) return null;
-    return double.tryParse(match.group(1)!);
-  }
-
-  Map<String, dynamic> _buildFinancialInsights(
-    Map<String, dynamic> contextData,
-  ) {
-    final txRaw = contextData['transactions'];
-    final tx = txRaw is List ? txRaw.cast<dynamic>() : const <dynamic>[];
-    final now = DateTime.now();
-    final currentMonth = DateTime(now.year, now.month);
-    final previousMonth = DateTime(now.year, now.month - 1);
-
-    double monthlyIncome = 0;
-    double monthlyExpense = 0;
-    double previousExpense = 0;
-    double ledgerBalance = 0;
-
-    for (final item in tx) {
-      if (item is! Map) continue;
-      final date = DateTime.tryParse((item['date'] ?? '').toString());
-      if (date == null) continue;
-      final amount = double.tryParse((item['amount'] ?? '0').toString()) ?? 0;
-      final type = (item['type'] ?? '').toString().toLowerCase();
-      if (type == 'income') {
-        ledgerBalance += amount;
-      } else if (type == 'expense') {
-        ledgerBalance -= amount;
-      }
-      if (date.year == currentMonth.year && date.month == currentMonth.month) {
-        if (type == 'income') monthlyIncome += amount;
-        if (type == 'expense') monthlyExpense += amount;
-      }
-      if (date.year == previousMonth.year &&
-          date.month == previousMonth.month &&
-          type == 'expense') {
-        previousExpense += amount;
-      }
-    }
-
-    final monthlyBalance = monthlyIncome - monthlyExpense;
-    final score = HealthScoreCalculator.fromMonthly(
-      monthlyIncome: monthlyIncome,
-      monthlyExpense: monthlyExpense,
-    );
-
-    final alerts = <String>[];
-    if (monthlyIncome > 0 && monthlyExpense > monthlyIncome) {
-      alerts.add(ChatbotUi.alertExpenseOverIncome);
-    }
-    if (previousExpense > 0) {
-      final growth = (monthlyExpense - previousExpense) / previousExpense;
-      if (growth >= InsightThresholds.monthOverMonthSpendingAlert) {
-        alerts.add(
-          ChatbotUi.alertSpendingGrowth((growth * 100).toStringAsFixed(0)),
-        );
-      }
-    }
-
-    return {
-      'monthly_income': monthlyIncome,
-      'monthly_expense': monthlyExpense,
-      'monthly_balance': monthlyBalance,
-      'ledger_balance': ledgerBalance,
-      'score': score,
-      'alerts': alerts,
-    };
-  }
-
-  String _buildSubscriptionsReply(Map<String, dynamic> contextData) {
-    final insights = _buildSubscriptionInsights(contextData);
-    final items = (insights['subscriptions'] as List<dynamic>)
-        .cast<Map<String, dynamic>>();
-
-    if (items.isEmpty) {
-      return ChatbotUi.subsNone;
-    }
-
-    final total = items.fold<double>(
-      0,
-      (sum, item) => sum + ((item['avg_amount'] as num?)?.toDouble() ?? 0),
-    );
-    final lines = items
-        .take(5)
-        .map((item) {
-          final name = item['label'].toString();
-          final amount = ((item['avg_amount'] as num?)?.toDouble() ?? 0)
-              .toStringAsFixed(0);
-          final count = item['count'] is int
-              ? item['count'] as int
-              : int.tryParse(item['count'].toString()) ?? 0;
-          return ChatbotUi.subsLine(name, amount, count);
-        })
-        .join('\n');
-
-    return ChatbotUi.subsSummary(lines, total.toStringAsFixed(0));
-  }
-
-  Map<String, dynamic> _buildSubscriptionInsights(
-    Map<String, dynamic> contextData,
-  ) {
-    final txRaw = contextData['transactions'];
-    final tx = txRaw is List ? txRaw.cast<dynamic>() : const <dynamic>[];
-    final bucket = <String, List<double>>{};
-
-    for (final item in tx) {
-      if (item is! Map) continue;
-      final type = (item['type'] ?? '').toString().toLowerCase();
-      if (type != 'expense') continue;
-      final amount = double.tryParse((item['amount'] ?? '0').toString()) ?? 0;
-      if (amount <= 0) continue;
-
-      final rawNotes = (item['notes'] ?? '').toString().trim();
-      final label = rawNotes.isEmpty
-          ? ChatbotUi.unnamedRecurring
-          : rawNotes.toLowerCase();
-      bucket.putIfAbsent(label, () => <double>[]).add(amount);
-    }
-
-    final subscriptions = <Map<String, dynamic>>[];
-    bucket.forEach((label, amounts) {
-      if (amounts.length < 2) return;
-      final avg = amounts.reduce((a, b) => a + b) / amounts.length;
-      final varianceOk = amounts.every(
-        (a) => (a - avg).abs() <= (avg * 0.15 + 2),
-      );
-      if (!varianceOk) return;
-      subscriptions.add({
-        'label': label,
-        'count': amounts.length,
-        'avg_amount': avg,
-      });
-    });
-
-    subscriptions.sort(
-      (a, b) => ((b['avg_amount'] as num).toDouble()).compareTo(
-        (a['avg_amount'] as num).toDouble(),
-      ),
-    );
-
-    return {'subscriptions': subscriptions};
-  }
-
   Future<void> _exportPdfReport() async {
-    isLoadingResponse = true;
-    notifyListeners();
+    _setLoadingResponse(true);
     try {
-      final contextData = await _getAllDatabaseContext();
-      final insights = _buildFinancialInsights(contextData);
-      final categoryBreakdown = _buildCategoryExpenseBreakdown(contextData);
-      final userName = UserDisplayName.fromSavedUserInfo(
-        getIt<HiveService>().getValue(HiveConstants.savedUserInfo),
-      );
-      final reportData = FinancialReportBuilder.fromContext(
-        contextData: contextData,
-        insights: insights,
-        categoryBreakdown: categoryBreakdown,
-        userName: userName,
-      );
-      await _reportService.shareMonthlyReport(reportData);
-      messages.add(ChatMessage(text: ChatbotUi.pdfOk, isUser: false));
+      await FinancialReportExporter().shareMonthlyReport();
+      _appendMessage(ChatMessage(text: ChatbotUi.pdfOk, isUser: false));
     } catch (_) {
-      messages.add(ChatMessage(text: ChatbotUi.pdfFail, isUser: false));
+      _appendMessage(ChatMessage(text: ChatbotUi.pdfFail, isUser: false));
     } finally {
-      isLoadingResponse = false;
-      notifyListeners();
+      _setLoadingResponse(false);
       _scrollToBottom();
     }
   }
@@ -877,121 +458,130 @@ class ChatbotViewModel extends BaseViewModel {
         'created_at': DateTime.now().toIso8601String(),
       });
     } catch (_) {
-      // Keep feature non-blocking if audit log insert fails.
+      // Non-blocking audit trail.
     }
-  }
-
-  Map<String, double> _buildCategoryExpenseBreakdown(
-    Map<String, dynamic> contextData,
-  ) {
-    final txRaw = contextData['transactions'];
-    final tx = txRaw is List ? txRaw.cast<dynamic>() : const <dynamic>[];
-    final categoriesRaw = contextData['categories'];
-    final categories = categoriesRaw is List
-        ? categoriesRaw.cast<dynamic>()
-        : const <dynamic>[];
-
-    final catMap = <int, String>{};
-    for (final c in categories) {
-      if (c is! Map) continue;
-      final id = int.tryParse((c['id'] ?? '').toString());
-      final name = (c['name'] ?? '').toString();
-      if (id != null && name.isNotEmpty) {
-        catMap[id] = name;
-      }
-    }
-
-    final now = DateTime.now();
-    final bucket = <String, double>{};
-    for (final t in tx) {
-      if (t is! Map) continue;
-      final type = (t['type'] ?? '').toString().toLowerCase();
-      if (type != 'expense') continue;
-      final date = DateTime.tryParse((t['date'] ?? '').toString());
-      if (date == null || date.year != now.year || date.month != now.month) {
-        continue;
-      }
-      final amount = double.tryParse((t['amount'] ?? '0').toString()) ?? 0;
-      final catId = int.tryParse((t['category_id'] ?? '').toString());
-      final name = catId != null ? (catMap[catId] ?? 'Other') : 'Other';
-      bucket[name] = (bucket[name] ?? 0) + amount;
-    }
-    return bucket;
   }
 
   Future<void> _openCreateGoalDialog(BuildContext context) async {
     final nameCtrl = TextEditingController();
     final amountCtrl = TextEditingController();
     final formKey = GlobalKey<FormState>();
+    var saving = false;
 
     await showDialog<void>(
       context: context,
       builder: (ctx) {
-        return AlertDialog(
-          title: Text(ChatbotUi.dlgCreateGoalTitle),
-          content: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: nameCtrl,
-                  decoration: InputDecoration(
-                    labelText: ChatbotUi.dlgGoalNameLabel,
+        return StatefulBuilder(
+          builder: (ctx, setLocalState) {
+            return Dialog(
+              shape: IOSDialogStyle.dialogShape(),
+              child: Container(
+                width: MediaQuery.of(ctx).size.width * 0.9,
+                constraints: const BoxConstraints(maxWidth: 400),
+                decoration: IOSDialogStyle.surfaceDecoration(ctx),
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IOSDialogStyle.header(
+                        ctx,
+                        title: ChatbotUi.dlgCreateGoalTitle,
+                        icon: Icons.flag_outlined,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+                        child: Column(
+                          children: [
+                            TextFormField(
+                              controller: nameCtrl,
+                              decoration: InputDecoration(
+                                labelText: ChatbotUi.dlgGoalNameLabel,
+                              ),
+                              validator: (v) => (v == null || v.trim().isEmpty)
+                                  ? ChatbotUi.requiredField
+                                  : null,
+                            ),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: amountCtrl,
+                              keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true,
+                              ),
+                              decoration: InputDecoration(
+                                labelText: ChatbotUi.dlgGoalTargetLabel,
+                              ),
+                              validator: (v) {
+                                final n = double.tryParse(v ?? '');
+                                if (n == null || n <= 0) {
+                                  return ChatbotUi.invalidNumber;
+                                }
+                                return null;
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: saving
+                                    ? null
+                                    : () => Navigator.pop(ctx),
+                                child: Text(ChatbotUi.dlgCancel),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: AppLoadingButton(
+                                isLoading: saving,
+                                label: ChatbotUi.dlgCreate,
+                                onPressed: () async {
+                                  if (!(formKey.currentState?.validate() ??
+                                      false)) {
+                                    return;
+                                  }
+                                  setLocalState(() => saving = true);
+                                  final now = DateTime.now();
+                                  final end =
+                                      DateTime(now.year + 1, now.month, now.day);
+                                  await _dbHelper.insert('goals', {
+                                    'name': nameCtrl.text.trim(),
+                                    'target': double.parse(amountCtrl.text),
+                                    'current_amount': 0.0,
+                                    'type': 'Saving',
+                                    'start_date':
+                                        now.toIso8601String().split('T')[0],
+                                    'end_date':
+                                        end.toIso8601String().split('T')[0],
+                                  });
+                                  if (!ctx.mounted) return;
+                                  setLocalState(() => saving = false);
+                                  Navigator.pop(ctx);
+                                  _appendMessage(
+                                    ChatMessage(
+                                      text: ChatbotUi.goalCreatedDialog(
+                                        nameCtrl.text,
+                                      ),
+                                      isUser: false,
+                                    ),
+                                  );
+                                  _scrollToBottom();
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? ChatbotUi.requiredField
-                      : null,
                 ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: amountCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: InputDecoration(
-                    labelText: ChatbotUi.dlgGoalTargetLabel,
-                  ),
-                  validator: (v) {
-                    final n = double.tryParse(v ?? '');
-                    if (n == null || n <= 0) return ChatbotUi.invalidNumber;
-                    return null;
-                  },
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(ChatbotUi.dlgCancel),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (!(formKey.currentState?.validate() ?? false)) return;
-                final now = DateTime.now();
-                final end = DateTime(now.year + 1, now.month, now.day);
-                await _dbHelper.insert('goals', {
-                  'name': nameCtrl.text.trim(),
-                  'target': double.parse(amountCtrl.text),
-                  'current_amount': 0.0,
-                  'type': 'Saving',
-                  'start_date': now.toIso8601String().split('T')[0],
-                  'end_date': end.toIso8601String().split('T')[0],
-                });
-                if (ctx.mounted) Navigator.pop(ctx);
-                messages.add(
-                  ChatMessage(
-                    text: ChatbotUi.goalCreatedDialog(nameCtrl.text),
-                    isUser: false,
-                  ),
-                );
-                notifyListeners();
-                _scrollToBottom();
-              },
-              child: Text(ChatbotUi.dlgCreate),
-            ),
-          ],
+              ),
+            );
+          },
         );
       },
     );
@@ -1000,170 +590,137 @@ class ChatbotViewModel extends BaseViewModel {
   Future<void> _openAdjustBudgetDialog(BuildContext context) async {
     final amountCtrl = TextEditingController();
     final formKey = GlobalKey<FormState>();
+    var saving = false;
 
     await showDialog<void>(
       context: context,
       builder: (ctx) {
-        return AlertDialog(
-          title: Text(ChatbotUi.dlgAdjustBudgetTitle),
-          content: Form(
-            key: formKey,
-            child: TextFormField(
-              controller: amountCtrl,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: InputDecoration(
-                labelText: ChatbotUi.dlgMonthlyBudgetLabel,
-              ),
-              validator: (v) {
-                final n = double.tryParse(v ?? '');
-                if (n == null || n <= 0) return ChatbotUi.invalidNumber;
-                return null;
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(ChatbotUi.dlgCancel),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (!(formKey.currentState?.validate() ?? false)) return;
-                final accountsResult = await _dbHelper.queryAllRows('accounts');
-                final accountId = accountsResult.fold<int?>(
-                  (_) => null,
-                  (data) => data.isNotEmpty ? data.first['id'] as int? : null,
-                );
-                if (accountId == null) {
-                  messages.add(
-                    ChatMessage(
-                      text: ChatbotUi.noAccountForBudget,
-                      isUser: false,
-                    ),
-                  );
-                  notifyListeners();
-                  _scrollToBottom();
-                  if (ctx.mounted) Navigator.pop(ctx);
-                  return;
-                }
+        return StatefulBuilder(
+          builder: (ctx, setLocalState) {
+            return Dialog(
+              shape: IOSDialogStyle.dialogShape(),
+              child: Container(
+                width: MediaQuery.of(ctx).size.width * 0.9,
+                constraints: const BoxConstraints(maxWidth: 400),
+                decoration: IOSDialogStyle.surfaceDecoration(ctx),
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IOSDialogStyle.header(
+                        ctx,
+                        title: ChatbotUi.dlgAdjustBudgetTitle,
+                        icon: Icons.account_balance_wallet_outlined,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+                        child: TextFormField(
+                          controller: amountCtrl,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: InputDecoration(
+                            labelText: ChatbotUi.dlgMonthlyBudgetLabel,
+                          ),
+                          validator: (v) {
+                            final n = double.tryParse(v ?? '');
+                            if (n == null || n <= 0) {
+                              return ChatbotUi.invalidNumber;
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: saving
+                                    ? null
+                                    : () => Navigator.pop(ctx),
+                                child: Text(ChatbotUi.dlgCancel),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: AppLoadingButton(
+                                isLoading: saving,
+                                label: ChatbotUi.dlgSave,
+                                onPressed: () async {
+                                  if (!(formKey.currentState?.validate() ??
+                                      false)) {
+                                    return;
+                                  }
+                                  setLocalState(() => saving = true);
+                                  final accountsResult =
+                                      await _dbHelper.queryAllRows('accounts');
+                                  final accountId = accountsResult.fold<int?>(
+                                    (_) => null,
+                                    (data) => data.isNotEmpty
+                                        ? data.first['id'] as int?
+                                        : null,
+                                  );
+                                  if (accountId == null) {
+                                    setLocalState(() => saving = false);
+                                    _appendMessage(
+                                      ChatMessage(
+                                        text: ChatbotUi.noAccountForBudget,
+                                        isUser: false,
+                                      ),
+                                    );
+                                    _scrollToBottom();
+                                    if (ctx.mounted) Navigator.pop(ctx);
+                                    return;
+                                  }
 
-                final now = DateTime.now();
-                final start = DateTime(now.year, now.month + 1, 1);
-                final end = DateTime(now.year, now.month + 2, 0);
-                await _dbHelper.insert('budgets', {
-                  'amount': double.parse(amountCtrl.text),
-                  'start_date': start.toIso8601String().split('T')[0],
-                  'end_date': end.toIso8601String().split('T')[0],
-                  'account_id': accountId,
-                });
-                if (ctx.mounted) Navigator.pop(ctx);
-                messages.add(
-                  ChatMessage(
-                    text: ChatbotUi.budgetCreatedDialog(
-                      double.parse(amountCtrl.text).toStringAsFixed(0),
-                    ),
-                    isUser: false,
+                                  final now = DateTime.now();
+                                  final start =
+                                      DateTime(now.year, now.month + 1, 1);
+                                  final end =
+                                      DateTime(now.year, now.month + 2, 0);
+                                  await _dbHelper.insert('budgets', {
+                                    'amount': double.parse(amountCtrl.text),
+                                    'start_date':
+                                        start.toIso8601String().split('T')[0],
+                                    'end_date':
+                                        end.toIso8601String().split('T')[0],
+                                    'account_id': accountId,
+                                  });
+                                  if (!ctx.mounted) return;
+                                  setLocalState(() => saving = false);
+                                  Navigator.pop(ctx);
+                                  _appendMessage(
+                                    ChatMessage(
+                                      text: ChatbotUi.budgetCreatedDialog(
+                                        double.parse(amountCtrl.text)
+                                            .toStringAsFixed(0),
+                                      ),
+                                      isUser: false,
+                                    ),
+                                  );
+                                  _scrollToBottom();
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                );
-                notifyListeners();
-                _scrollToBottom();
-              },
-              child: Text(ChatbotUi.dlgSave),
-            ),
-          ],
+                ),
+              ),
+            );
+          },
         );
       },
     );
   }
 
-  String? _handleSimpleQuestions(String question) {
-    final q = question.toLowerCase().trim();
-    final now = DateTime.now();
-
-    // Handle name questions
-    if (q.contains('اسمك') ||
-        q.contains('من انت') ||
-        q.contains('من أنت') ||
-        q == 'اسمك؟' ||
-        q == 'ما اسمك' ||
-        q == 'ما اسمك؟' ||
-        (q.contains('what') && q.contains('name')) ||
-        q == 'who are you' ||
-        q == 'who are you?') {
-      return ChatbotUi.whoAmI;
-    }
-
-    // Handle greeting
-    if (q == 'مرحبا' ||
-        q == 'مرحباً' ||
-        q == 'السلام عليكم' ||
-        q == 'اهلا' ||
-        q == 'أهلا' ||
-        q == 'هاي' ||
-        q == 'hello' ||
-        q == 'hi' ||
-        q == 'hey') {
-      return ChatbotUi.greetBack;
-    }
-
-    // Handle time questions
-    if ((q.contains('كم الساعة') ||
-            q.contains('الوقت') ||
-            q.contains('what time') ||
-            q.contains('current time')) &&
-        !q.contains('معاملة') &&
-        !q.contains('تحويل')) {
-      final hour = now.hour;
-      final minute = now.minute.toString().padLeft(2, '0');
-      final isPm = hour >= 12;
-      final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
-      return ChatbotUi.timeNow(displayHour, minute, isPm);
-    }
-
-    // Handle date questions
-    if (q.contains('التاريخ') ||
-        q.contains('تاريخ اليوم') ||
-        q.contains('اليوم') && !q.contains('نفقات') && !q.contains('مصروفات') ||
-        q.contains('what date') ||
-        q.contains('today\'s date') ||
-        q == 'date' ||
-        q == 'date?') {
-      final dayName = ChatbotUi.weekdays[now.weekday % 7];
-      final monthName = ChatbotUi.months[now.month - 1];
-      return ChatbotUi.dateToday(dayName, now.day, monthName, now.year);
-    }
-
-    // Handle thank you
-    if (q.contains('شكرا') || q.contains('شكراً') || q.contains('thank')) {
-      return ChatbotUi.thanksReply;
-    }
-
-    // Handle how are you
-    if (q.contains('كيف حالك') ||
-        q.contains('كيفك') ||
-        q == 'how are you' ||
-        q == 'how are you?') {
-      return ChatbotUi.howAreYouReply;
-    }
-
-    return null; // Let AI handle it
-  }
-
   Future<Map<String, dynamic>> _getAllDatabaseContext() async {
     return _contextLoader.load();
-  }
-
-  String _buildCompletePrompt(
-    Map<String, dynamic> contextData,
-    String userMessage,
-  ) {
-    return ChatbotLlmPrompt.build(
-      contextData: contextData,
-      userMessage: userMessage,
-      formatJson: _formatJsonData,
-    );
   }
 
   String _formatJsonData(dynamic data) {
@@ -1172,7 +729,7 @@ class ChatbotViewModel extends BaseViewModel {
     }
     try {
       return const JsonEncoder.withIndent('  ').convert(data);
-    } catch (e) {
+    } catch (_) {
       return data.toString();
     }
   }
@@ -1182,7 +739,7 @@ class ChatbotViewModel extends BaseViewModel {
     required Map<String, dynamic> contextData,
     required bool quotaExceeded,
   }) {
-    final insights = _buildFinancialInsights(contextData);
+    final insights = ChatbotInsightsEngine.buildFinancialInsights(contextData);
     final notice = quotaExceeded
         ? ChatbotUi.localFallbackQuotaNotice
         : ChatbotUi.localFallbackOfflineNotice;
@@ -1192,173 +749,6 @@ class ChatbotViewModel extends BaseViewModel {
       insights: insights,
     );
     return '$notice\n\n$body';
-  }
-
-  Future<ChatbotApiResult> _sendToBackend(String content) async {
-    Object? lastError;
-    final dio = getIt<DioClient>().dio;
-
-    for (final url in _apiUrls) {
-      devLog('[Chatbot API] Trying $url (timeout: ${_apiTimeout.inSeconds}s)');
-
-      for (final body in _candidatePayloads(content)) {
-        try {
-          final stopwatch = Stopwatch()..start();
-          final response = await dio.post<List<int>>(
-            url,
-            data: body,
-            options: Options(
-              headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'User-Agent': 'MudabbirFlutter/1.0',
-              },
-              receiveTimeout: _apiTimeout,
-              sendTimeout: _apiTimeout,
-              responseType: ResponseType.bytes,
-            ),
-          );
-
-          stopwatch.stop();
-          final statusCode = response.statusCode ?? 0;
-          final bodyBytes = response.data ?? const <int>[];
-          devLog(
-            '[Chatbot API] $statusCode ${stopwatch.elapsedMilliseconds}ms body=$body',
-          );
-
-          if (statusCode == 200) {
-            final result = _parseApiResponse(bodyBytes);
-            if (result.isNotEmpty) {
-              return ChatbotApiResult.success(result);
-            }
-            return ChatbotApiResult.fallback();
-          }
-
-          if (statusCode == 429 || _isQuotaResponse(statusCode, bodyBytes)) {
-            return ChatbotApiResult.quotaExceeded();
-          }
-
-          if (statusCode >= 500) {
-            final serverMessage = _extractServerErrorMessage(bodyBytes);
-            if (_isQuotaMessage(serverMessage)) {
-              return ChatbotApiResult.quotaExceeded();
-            }
-            if (serverMessage.contains('53')) {
-              return ChatbotApiResult.failure(ChatbotUi.server53);
-            }
-            lastError = 'HTTP $statusCode: $serverMessage';
-            continue;
-          }
-
-          if (statusCode == 404 || statusCode == 405 || statusCode == 422) {
-            lastError = 'HTTP $statusCode';
-            continue;
-          }
-
-          return ChatbotApiResult.failure(
-            ChatbotUi.httpError(statusCode),
-          );
-        } on DioException catch (e) {
-          if (e.type == DioExceptionType.connectionTimeout ||
-              e.type == DioExceptionType.receiveTimeout ||
-              e.type == DioExceptionType.sendTimeout) {
-            return ChatbotApiResult.fallback();
-          }
-          if (e.type == DioExceptionType.connectionError) {
-            lastError = e;
-            continue;
-          }
-          lastError = e;
-          continue;
-        } on SocketException catch (e) {
-          lastError = e;
-          continue;
-        } catch (e) {
-          lastError = e;
-          continue;
-        }
-      }
-    }
-
-    devLog('[Chatbot API] All retries failed: $lastError');
-    if (lastError is SocketException ||
-        (lastError is DioException &&
-            lastError.type == DioExceptionType.connectionError)) {
-      return ChatbotApiResult.fallback();
-    }
-    return ChatbotApiResult.fallback();
-  }
-
-  bool _isQuotaResponse(int statusCode, List<int> bodyBytes) {
-    if (statusCode == 429) return true;
-    return _isQuotaMessage(_extractServerErrorMessage(bodyBytes));
-  }
-
-  bool _isQuotaMessage(String message) {
-    final lower = message.toLowerCase();
-    return lower.contains('quota') ||
-        lower.contains('rate limit') ||
-        lower.contains('resource exhausted') ||
-        lower.contains('quota_exceeded');
-  }
-
-  /// Parse API response - supports multiple backend formats.
-  String _parseApiResponse(List<int> bodyBytes) {
-    try {
-      final body = utf8.decode(bodyBytes, allowMalformed: true);
-      final json = jsonDecode(body) as Map<String, dynamic>;
-      // Try common response formats
-      final message =
-          json['message'] ??
-          json['data']?['message'] ??
-          json['text'] ??
-          json['response'] ??
-          json['content'];
-      if (message != null && message.toString().trim().isNotEmpty) {
-        return message.toString().trim();
-      }
-      if (json['data'] != null) {
-        final data = json['data'];
-        if (data is Map) {
-          final msg = data['message'] ?? data['text'] ?? data['content'];
-          if (msg != null) return msg.toString().trim();
-        }
-        if (data is String && data.trim().isNotEmpty) return data.trim();
-      }
-      return ChatbotUi.parseResponseFail;
-    } catch (_) {
-      return ChatbotUi.parseError;
-    }
-  }
-
-  List<Map<String, dynamic>> _candidatePayloads(String content) {
-    return [
-      {'content': content},
-      {'prompt': content},
-      {'message': content},
-      {'input': content},
-    ];
-  }
-
-  String _extractServerErrorMessage(List<int> bodyBytes) {
-    try {
-      final body = utf8.decode(bodyBytes, allowMalformed: true);
-      final decoded = jsonDecode(body);
-      if (decoded is Map<String, dynamic>) {
-        final error = decoded['error'];
-        if (error is Map<String, dynamic>) {
-          final code = error['code']?.toString() ?? '';
-          final msg = error['message']?.toString() ?? '';
-          if (code == 'QUOTA_EXCEEDED') return msg.isNotEmpty ? msg : 'QUOTA_EXCEEDED';
-          if (msg.isNotEmpty) return msg;
-        }
-        final msg = decoded['message'] ?? decoded['error'] ?? decoded['detail'];
-        if (msg != null) return msg.toString();
-      }
-      return body;
-    } catch (_) {
-      return 'Server error';
-    }
   }
 
   void _scrollToBottom() {
@@ -1374,9 +764,9 @@ class ChatbotViewModel extends BaseViewModel {
   }
 
   void clearMessages() {
-    messages.clear();
-    messages.add(ChatMessage(text: ChatbotUi.chatCleared, isUser: false));
-    notifyListeners();
+    state = state.copyWith(
+      messages: [ChatMessage(text: ChatbotUi.chatCleared, isUser: false)],
+    );
   }
 
   @override
@@ -1386,3 +776,8 @@ class ChatbotViewModel extends BaseViewModel {
     super.dispose();
   }
 }
+
+final chatbotProvider =
+    StateNotifierProvider.autoDispose<ChatbotNotifier, ChatbotState>((ref) {
+  return ChatbotNotifier()..initialize();
+});
