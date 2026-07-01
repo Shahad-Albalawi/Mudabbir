@@ -1,51 +1,98 @@
+import 'package:mudabbir/presentation/resources/design_tokens.dart';
 import 'package:mudabbir/presentation/resources/font_manager.dart';
 import 'package:flutter/material.dart';
 
-TextStyle _getStyle(double fontSize, FontWeight fontWeight, Color color) {
+TextStyle _getStyle(
+  double fontSize,
+  FontWeight fontWeight,
+  Color color, {
+  double height = AppTypographyScale.bodyHeight,
+  double letterSpacing = AppTypographyScale.bodyTracking,
+}) {
   return TextStyle(
-    fontFamily: FontConstants.thmanyahFamily,
+    inherit: false,
+    fontFamily: FontConstants.fontFamily,
     fontFamilyFallback: FontConstants.fontFamilyFallback,
     fontSize: fontSize,
     fontWeight: fontWeight,
     color: color,
-    height: 1.4,
-    letterSpacing: 0.15,
+    height: height,
+    letterSpacing: letterSpacing,
+    textBaseline: TextBaseline.alphabetic,
   );
 }
 
-// regular style
 TextStyle getRegularStyle({
   double fontSize = FontSize.s12,
   required Color color,
+  double? height,
+  double? letterSpacing,
 }) {
-  return _getStyle(fontSize, FontWeightManager.regular, color);
+  return _getStyle(
+    fontSize,
+    FontWeightManager.regular,
+    color,
+    height: height ?? AppTypographyScale.bodyHeight,
+    letterSpacing: letterSpacing ?? AppTypographyScale.bodyTracking,
+  );
 }
 
-// medium style
 TextStyle getMediumStyle({
   double fontSize = FontSize.s12,
   required Color color,
+  double? height,
+  double? letterSpacing,
 }) {
-  return _getStyle(fontSize, FontWeightManager.medium, color);
+  return _getStyle(
+    fontSize,
+    FontWeightManager.medium,
+    color,
+    height: height ?? AppTypographyScale.bodyHeight,
+    letterSpacing: letterSpacing ?? AppTypographyScale.bodyTracking,
+  );
 }
 
-// bold style
-TextStyle getBoldStyle({double fontSize = FontSize.s12, required Color color}) {
-  return _getStyle(fontSize, FontWeightManager.bold, color);
+TextStyle getBoldStyle({
+  double fontSize = FontSize.s12,
+  required Color color,
+  double? height,
+  double? letterSpacing,
+}) {
+  return _getStyle(
+    fontSize,
+    FontWeightManager.medium,
+    color,
+    height: height ?? AppTypographyScale.titleHeight,
+    letterSpacing: letterSpacing ?? AppTypographyScale.titleTracking,
+  );
 }
 
-// semi bold
 TextStyle getSemiBoldStyle({
   double fontSize = FontSize.s12,
   required Color color,
+  double? height,
+  double? letterSpacing,
 }) {
-  return _getStyle(fontSize, FontWeightManager.semibold, color);
+  return _getStyle(
+    fontSize,
+    FontWeightManager.medium,
+    color,
+    height: height ?? AppTypographyScale.titleHeight,
+    letterSpacing: letterSpacing ?? AppTypographyScale.titleTracking,
+  );
 }
 
-// light style
 TextStyle getLightStyle({
   double fontSize = FontSize.s12,
   required Color color,
+  double? height,
+  double? letterSpacing,
 }) {
-  return _getStyle(fontSize, FontWeightManager.light, color);
+  return _getStyle(
+    fontSize,
+    FontWeightManager.regular,
+    color,
+    height: height ?? AppTypographyScale.bodyHeight,
+    letterSpacing: letterSpacing ?? AppTypographyScale.bodyTracking,
+  );
 }

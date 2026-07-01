@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mudabbir/data/local/database_helper.dart';
 import 'package:mudabbir/domain/services/financial_aggregator.dart';
+import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/service/getit_init.dart';
 
 class StatisticsState {
@@ -15,7 +16,7 @@ class StatisticsState {
   final bool isLoading;
   final String? errorMessage;
 
-  StatisticsState({
+  const StatisticsState({
     this.totalIncome = 0,
     this.totalExpense = 0,
     this.currentBalance = 0,
@@ -24,9 +25,29 @@ class StatisticsState {
     this.accountsBalance = const {},
     this.goalsProgress = const {},
     this.budgetsProgress = const {},
-    this.isLoading = false,
+    this.isLoading = true,
     this.errorMessage,
   });
+
+  bool get hasMeaningfulData =>
+      totalIncome != 0 ||
+      totalExpense != 0 ||
+      expenseByCategory.isNotEmpty ||
+      incomeByCategory.isNotEmpty ||
+      goalsProgress.isNotEmpty ||
+      budgetsProgress.isNotEmpty;
+
+  /// Fingerprint for skipping redundant analysis rebuilds.
+  int get analysisFingerprint => Object.hash(
+        totalIncome,
+        totalExpense,
+        expenseByCategory.length,
+        incomeByCategory.length,
+        goalsProgress.length,
+        budgetsProgress.length,
+        Object.hashAll(expenseByCategory.entries.take(12)),
+        Object.hashAll(goalsProgress.entries.take(12)),
+      );
 
   StatisticsState copyWith({
     double? totalIncome,
@@ -39,6 +60,7 @@ class StatisticsState {
     Map<String, double>? budgetsProgress,
     bool? isLoading,
     String? errorMessage,
+    bool clearError = false,
   }) {
     return StatisticsState(
       totalIncome: totalIncome ?? this.totalIncome,
@@ -50,117 +72,139 @@ class StatisticsState {
       goalsProgress: goalsProgress ?? this.goalsProgress,
       budgetsProgress: budgetsProgress ?? this.budgetsProgress,
       isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
 }
 
 final statisticsProvider =
-    StateNotifierProvider<StatisticsViewModel, StatisticsState>(
-      (ref) => StatisticsViewModel(),
-    );
+    StateNotifierProvider<StatisticsViewModel, StatisticsState>((ref) {
+  ref.keepAlive();
+  return StatisticsViewModel();
+});
 
 class StatisticsViewModel extends StateNotifier<StatisticsState> {
   final DbHelper _dbHelper = getIt<DbHelper>();
   final FinancialAggregator _aggregator = FinancialAggregator();
 
-  StatisticsViewModel() : super(StatisticsState()) {
+  StatisticsViewModel() : super(const StatisticsState()) {
     loadStatistics();
   }
 
-  Future<void> loadStatistics() async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+  int? _cachedFingerprint;
+  StatisticsState? _cachedSnapshot;
+
+  Future<void> loadStatistics({bool force = false}) async {
+    if (!force &&
+        !state.isLoading &&
+        state.errorMessage == null &&
+        _cachedSnapshot != null &&
+        _cachedFingerprint == state.analysisFingerprint) {
+      return;
+    }
+
+    state = state.copyWith(isLoading: true, clearError: true);
 
     try {
-      final income = await _aggregator.sumByType('income');
-      final expense = await _aggregator.sumByType('expense');
-      final balance = income - expense;
+      final totalsFuture = _aggregator.incomeAndExpenseTotals();
+      final expByCatFuture = _categoryTotals('expense');
+      final incByCatFuture = _categoryTotals('income');
+      final accsFuture = _aggregator.balancesPerAccount();
+      final goalsFuture = _loadGoalsProgress();
+      final budgetsFuture = _loadBudgetsProgress();
 
-      final expByCatResult = await _dbHelper.complexQuery(
-        table: 'transactions t',
-        columns: [
-          "COALESCE(c.name, 'Uncategorized') as category",
-          'SUM(t.amount) as total',
-        ],
-        joinClause: 'LEFT JOIN categories c ON t.category_id = c.id',
-        where: 't.type = ?',
-        whereArgs: ['expense'],
-        groupBy: 'category',
-      );
-      final expByCat = expByCatResult.fold(
-        (_) => <String, double>{},
-        (rows) => {
-          for (var r in rows)
-            r['category'] as String: (r['total'] as num).toDouble(),
-        },
-      );
+      final results = await Future.wait([
+        totalsFuture,
+        expByCatFuture,
+        incByCatFuture,
+        accsFuture,
+        goalsFuture,
+        budgetsFuture,
+      ]);
 
-      final incByCatResult = await _dbHelper.complexQuery(
-        table: 'transactions t',
-        columns: [
-          "COALESCE(c.name, 'Uncategorized') as category",
-          'SUM(t.amount) as total',
-        ],
-        joinClause: 'LEFT JOIN categories c ON t.category_id = c.id',
-        where: 't.type = ?',
-        whereArgs: ['income'],
-        groupBy: 'category',
-      );
-      final incByCat = incByCatResult.fold(
-        (_) => <String, double>{},
-        (rows) => {
-          for (var r in rows)
-            r['category'] as String: (r['total'] as num).toDouble(),
-        },
-      );
+      final totals = results[0] as ({double income, double expense});
+      final expByCat = results[1] as Map<String, double>;
+      final incByCat = results[2] as Map<String, double>;
+      final accs = results[3] as Map<String, double>;
+      final goals = results[4] as Map<String, double>;
+      final budgets = results[5] as Map<String, double>;
 
-      final accs = await _aggregator.balancesPerAccount();
-
-      final goalsResult = await _dbHelper.queryAllRows('goals');
-      final goals = goalsResult.fold(
-        (_) => <String, double>{},
-        (rows) => {
-          for (var r in rows)
-            r['name'] as String: _goalProgressPercent(
-              (r['current_amount'] as num).toDouble(),
-              (r['target'] as num).toDouble(),
-            ),
-        },
-      );
-
-      final budgetResult = await _dbHelper.queryAllRows('budgets');
-      final budgets = <String, double>{};
-      await budgetResult.fold((_) async {}, (rows) async {
-        for (final r in rows) {
-          final id = r['id'];
-          final amount = (r['amount'] as num).toDouble();
-          final accountId = r['account_id'] as int;
-          final start = r['start_date']?.toString() ?? '';
-          final end = r['end_date']?.toString() ?? '';
-          final spent = await _aggregator.expensesInRange(
-            accountId: accountId,
-            startDate: start,
-            endDate: end,
-          );
-          budgets['Budget #$id'] =
-              amount <= 0 ? 0 : ((spent / amount) * 100).clamp(0, 999);
-        }
-      });
-
-      state = state.copyWith(
-        totalIncome: income,
-        totalExpense: expense,
-        currentBalance: balance,
+      final next = state.copyWith(
+        totalIncome: totals.income,
+        totalExpense: totals.expense,
+        currentBalance: totals.income - totals.expense,
         expenseByCategory: expByCat,
         incomeByCategory: incByCat,
         accountsBalance: accs,
         goalsProgress: goals,
         budgetsProgress: budgets,
         isLoading: false,
+        clearError: true,
       );
-    } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+
+      _cachedSnapshot = next;
+      _cachedFingerprint = next.analysisFingerprint;
+      state = next;
+    } catch (_) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: AppStrings.statsScreenLoadFailed,
+      );
     }
+  }
+
+  Future<Map<String, double>> _categoryTotals(String type) async {
+    final result = await _dbHelper.complexQuery(
+      table: 'transactions t',
+      columns: [
+        "COALESCE(c.name, 'Uncategorized') as category",
+        'SUM(t.amount) as total',
+      ],
+      joinClause: 'LEFT JOIN categories c ON t.category_id = c.id',
+      where: 't.type = ?',
+      whereArgs: [type],
+      groupBy: 'category',
+    );
+    return result.fold(
+      (_) => <String, double>{},
+      (rows) => {
+        for (final r in rows)
+          r['category'] as String: (r['total'] as num).toDouble(),
+      },
+    );
+  }
+
+  Future<Map<String, double>> _loadGoalsProgress() async {
+    final goalsResult = await _dbHelper.queryAllRows('goals');
+    return goalsResult.fold(
+      (_) => <String, double>{},
+      (rows) => {
+        for (final r in rows)
+          r['name'] as String: _goalProgressPercent(
+            (r['current_amount'] as num).toDouble(),
+            (r['target'] as num).toDouble(),
+          ),
+      },
+    );
+  }
+
+  Future<Map<String, double>> _loadBudgetsProgress() async {
+    final spentById = await _aggregator.spentAmountPerBudget();
+    final budgetResult = await _dbHelper.queryAllRows('budgets');
+    return budgetResult.fold(
+      (_) => <String, double>{},
+      (rows) {
+        final budgets = <String, double>{};
+        for (final r in rows) {
+          final id = (r['id'] as num).toInt();
+          final amount = (r['amount'] as num).toDouble();
+          final spent = spentById[id] ?? 0.0;
+          budgets['Budget #$id'] =
+              amount <= 0 ? 0 : ((spent / amount) * 100).clamp(0, 999);
+        }
+        return budgets;
+      },
+    );
   }
 
   static double _goalProgressPercent(double current, double target) {

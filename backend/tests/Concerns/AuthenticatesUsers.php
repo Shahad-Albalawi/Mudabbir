@@ -36,11 +36,12 @@ trait AuthenticatesUsers
 
         $response->assertCreated();
 
-        $token = (string) $response->json('token.plainTextToken');
+        $token = (string) ($response->json('data.token.plainTextToken')
+            ?? $response->json('token.plainTextToken'));
 
         return [
             'token' => $token,
-            'user' => $response->json('user'),
+            'user' => $response->json('data.user') ?? $response->json('user'),
             'headers' => ['Authorization' => 'Bearer '.$token],
         ];
     }

@@ -1,4 +1,7 @@
 class HiveConstants {
+  static const String prefsBox = 'prefs';
+  static const String onboardingSeenKey = 'onboarding_seen';
+
   static final String savedToken = 'savedToken';
   static final String savedFirstTime = 'firstTime';
   static final String savedUserInfo = 'userInfo';

@@ -3,7 +3,7 @@
 APP_NAME=Mudabbir
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://REPLACE-WITH-YOUR-RENDER-URL.onrender.com
+APP_URL=https://mudabbir-backend-api.onrender.com
 APP_KEY=REPLACE-WITH-key:generate-output
 
 LOG_CHANNEL=stderr
@@ -16,5 +16,13 @@ SESSION_DRIVER=file
 QUEUE_CONNECTION=sync
 
 # AI coach (optional — chatbot works with local fallback if empty)
-AI_PROVIDER=gemini
+AI_PROVIDER=openai
+OPENAI_API_KEY=
 GEMINI_API_KEY=
+
+# Budget push alerts (optional)
+FCM_SERVER_KEY=
+
+# On Render: add a Cron Job running `php artisan schedule:run` daily for budget alerts.
+
+TRUSTED_PROXIES=*

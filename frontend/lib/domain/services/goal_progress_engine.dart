@@ -19,18 +19,19 @@ class GoalProgressEngine {
 
     final remaining = targetAmount - currentAmount;
     final daysToDeadline = endDate.difference(now).inDays;
+    final requiredMonthly = requiredMonthlySavings(
+      remaining: remaining,
+      now: now,
+      endDate: endDate,
+    );
 
     if (daysToDeadline < 0) {
       return GoalEtaResult(
         status: GoalTrackStatus.overdue,
         daysToDeadline: daysToDeadline,
-        requiredMonthlyToDeadline: remaining,
+        requiredMonthlyToDeadline: requiredMonthly,
       );
     }
-
-    final requiredMonthly = daysToDeadline > 0
-        ? remaining / (daysToDeadline / 30.0)
-        : remaining;
 
     if (contributions.isEmpty) {
       return GoalEtaResult(
@@ -71,5 +72,25 @@ class GoalProgressEngine {
       requiredMonthlyToDeadline: requiredMonthly,
       daysToDeadline: daysToDeadline,
     );
+  }
+
+  /// Calendar months from [from] until [to] (minimum 1 when [to] is still ahead).
+  static int monthsRemainingUntil(DateTime from, DateTime to) {
+    if (!to.isAfter(from)) return 0;
+    var months = (to.year - from.year) * 12 + (to.month - from.month);
+    if (to.day < from.day) months--;
+    return months < 1 ? 1 : months;
+  }
+
+  /// (remaining amount) ÷ (months left until deadline).
+  static double requiredMonthlySavings({
+    required double remaining,
+    required DateTime now,
+    required DateTime endDate,
+  }) {
+    if (remaining <= 0) return 0;
+    final months = monthsRemainingUntil(now, endDate);
+    if (months <= 0) return remaining;
+    return remaining / months;
   }
 }

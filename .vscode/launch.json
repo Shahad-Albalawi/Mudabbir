@@ -1,0 +1,28 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Mudabbir (Emulator + Render API)",
+      "request": "launch",
+      "type": "dart",
+      "program": "frontend/lib/main.dart",
+      "cwd": "frontend",
+      "deviceId": "emulator-5554",
+      "toolArgs": [
+        "--dart-define=USE_PROD_API=true"
+      ]
+    },
+    {
+      "name": "Mudabbir (Emulator + Local API)",
+      "request": "launch",
+      "type": "dart",
+      "program": "frontend/lib/main.dart",
+      "cwd": "frontend",
+      "deviceId": "emulator-5554",
+      "toolArgs": [
+        "--dart-define=USE_LOCAL_API=true"
+      ],
+      "preLaunchTask": "mudabbir: ensure-backend"
+    }
+  ]
+}

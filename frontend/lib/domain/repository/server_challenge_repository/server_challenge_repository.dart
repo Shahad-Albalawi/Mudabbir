@@ -1,9 +1,12 @@
 import 'package:mudabbir/data/local/challenge_hive_cache.dart';
 import 'package:mudabbir/domain/models/challenge_sync_result.dart';
+import 'package:mudabbir/domain/services/repository_guard.dart';
+import 'package:mudabbir/presentation/server_challenges/challenge_copy_helpers.dart';
 import 'package:mudabbir/presentation/server_challenges/models/challenge_model.dart';
-import 'package:mudabbir/presentation/server_challenges/services/api_exception.dart';
+import 'package:mudabbir/data/network/api_exception.dart';
 import 'package:mudabbir/presentation/server_challenges/services/challenge_service.dart';
 import 'package:mudabbir/service/getit_init.dart';
+import 'package:mudabbir/utils/current_server_user_id.dart';
 
 /// Offline-first sync between Laravel challenges API and Hive cache.
 class ServerChallengeRepository {
@@ -16,91 +19,97 @@ class ServerChallengeRepository {
   })  : _remote = remote ?? getIt<ChallengeService>(),
         _cache = cache ?? getIt<ChallengeHiveCache>();
 
-  Future<ChallengeListSyncResult> getChallenges() async {
-    final cached = _cache.getChallengesList();
+  Future<ChallengeListSyncResult> getChallenges() {
+    return guardSyncedOperation(() async {
+      final cached = _cache.getChallengesList();
 
-    try {
-      final remote = await _remote.getChallenges();
-      await _cache.saveChallengesList(
-        remote.map((c) => c.toJson()).toList(),
-      );
-      await flushPendingProgress();
-      return ChallengeListSyncResult(challenges: remote);
-    } on ApiException catch (e) {
-      if (e.isNetworkError && cached != null) {
-        return ChallengeListSyncResult(
-          challenges: cached.map(ChallengeModel.fromJson).toList(),
-          fromCache: true,
-          isOffline: true,
+      try {
+        final remote = await _remote.getChallenges();
+        await _cache.saveChallengesList(
+          remote.map((c) => c.toJson()).toList(),
         );
+        await flushPendingProgress();
+        return ChallengeListSyncResult(challenges: remote);
+      } on ApiException catch (e) {
+        if (e.isNetworkError && cached != null) {
+          return ChallengeListSyncResult(
+            challenges: cached.map(ChallengeModel.fromJson).toList(),
+            fromCache: true,
+            isOffline: true,
+          );
+        }
+        rethrow;
       }
-      rethrow;
-    }
+    }, fallbackMessage: ServerChallengeStrings.loadFailed);
   }
 
-  Future<ChallengeSyncResult> getChallenge(int id) async {
-    final cachedMap = _cache.getChallenge(id);
+  Future<ChallengeSyncResult> getChallenge(int id) {
+    return guardSyncedOperation(() async {
+      final cachedMap = _cache.getChallenge(id);
 
-    try {
-      final remote = await _remote.getChallenge(id);
-      await _cache.upsertChallenge(remote.toJson());
-      return ChallengeSyncResult(challenge: remote);
-    } on ApiException catch (e) {
-      if (e.isNetworkError && cachedMap != null) {
-        return ChallengeSyncResult(
-          challenge: ChallengeModel.fromJson(cachedMap),
-          fromCache: true,
-          isOffline: true,
-        );
+      try {
+        final remote = await _remote.getChallenge(id);
+        await _cache.upsertChallenge(remote.toJson());
+        return ChallengeSyncResult(challenge: remote);
+      } on ApiException catch (e) {
+        if (e.isNetworkError && cachedMap != null) {
+          return ChallengeSyncResult(
+            challenge: ChallengeModel.fromJson(cachedMap),
+            fromCache: true,
+            isOffline: true,
+          );
+        }
+        rethrow;
       }
-      rethrow;
-    }
+    }, fallbackMessage: ServerChallengeStrings.loadFailed);
   }
 
   Future<ChallengeProgressResult> addProgress({
     required int challengeId,
     required double amount,
-    int userId = 1,
-  }) async {
-    final localBefore = progressForChallenge(challengeId, userId: userId);
-    final optimistic = localBefore + amount;
-    await _cache.setLocalProgress(challengeId, optimistic);
+  }) {
+    return guardSyncedOperation(() async {
+      final userId = requireCurrentServerUserId();
+      final localBefore = progressForChallenge(challengeId);
+      final optimistic = localBefore + amount;
+      await _cache.setLocalProgress(challengeId, optimistic);
 
-    try {
-      final challenge = await _remote.recordProgress(
-        challengeId: challengeId,
-        amount: amount,
-        userId: userId,
-      );
-      await _cache.upsertChallenge(challenge.toJson());
-      final progress = _progressFromChallenge(challenge, userId);
-      await _cache.setLocalProgress(challengeId, progress);
-      return ChallengeProgressResult(
-        currentProgress: progress,
-        challenge: challenge,
-        syncedToServer: true,
-      );
-    } on ApiException catch (e) {
-      if (e.isNetworkError) {
-        await _cache.queuePendingProgress(
+      try {
+        final challenge = await _remote.recordProgress(
           challengeId: challengeId,
           amount: amount,
-          userId: userId,
         );
+        await _cache.upsertChallenge(challenge.toJson());
+        final progress = _progressFromChallenge(challenge, userId);
+        await _cache.setLocalProgress(challengeId, progress);
         return ChallengeProgressResult(
-          currentProgress: optimistic,
-          syncedToServer: false,
-          queuedOffline: true,
+          currentProgress: progress,
+          challenge: challenge,
+          syncedToServer: true,
         );
+      } on ApiException catch (e) {
+        if (e.isNetworkError) {
+          await _cache.queuePendingProgress(
+            challengeId: challengeId,
+            amount: amount,
+            userId: userId,
+          );
+          return ChallengeProgressResult(
+            currentProgress: optimistic,
+            syncedToServer: false,
+            queuedOffline: true,
+          );
+        }
+        await _cache.setLocalProgress(challengeId, localBefore);
+        rethrow;
       }
-      await _cache.setLocalProgress(challengeId, localBefore);
-      rethrow;
-    }
+    }, fallbackMessage: ServerChallengeStrings.syncFailed);
   }
 
-  double progressForChallenge(int challengeId, {int userId = 1}) {
+  double progressForChallenge(int challengeId) {
+    final userId = tryCurrentServerUserId();
     final cached = _cache.getChallenge(challengeId);
-    if (cached != null) {
+    if (cached != null && userId != null) {
       final fromServer = _progressFromMap(cached, userId);
       if (fromServer > 0) return fromServer;
     }
@@ -113,17 +122,18 @@ class ServerChallengeRepository {
 
     final remaining = <Map<String, dynamic>>[];
     for (final op in ops) {
+      final userId = op['user_id'];
+      if (userId is! int && userId is! num) {
+        continue;
+      }
+      final resolvedUserId = userId is int ? userId : userId.toInt();
       try {
         final challenge = await _remote.recordProgress(
           challengeId: op['challenge_id'] as int,
           amount: (op['amount'] as num).toDouble(),
-          userId: op['user_id'] as int? ?? 1,
         );
         await _cache.upsertChallenge(challenge.toJson());
-        final progress = _progressFromChallenge(
-          challenge,
-          op['user_id'] as int? ?? 1,
-        );
+        final progress = _progressFromChallenge(challenge, resolvedUserId);
         await _cache.setLocalProgress(op['challenge_id'] as int, progress);
       } on ApiException catch (e) {
         if (e.isNetworkError) {
@@ -159,11 +169,9 @@ class ServerChallengeRepository {
 
   Future<ChallengeCheckInResult> checkIn({
     required int challengeId,
-    int userId = 1,
   }) async {
     final result = await _remote.checkIn(
       challengeId: challengeId,
-      userId: userId,
     );
     await _cache.upsertChallenge(result.challenge.toJson());
     return result;

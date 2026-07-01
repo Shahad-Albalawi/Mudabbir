@@ -6,6 +6,11 @@ use Tests\TestCase;
 
 class ChallengesApiTest extends TestCase
 {
+    public function test_challenges_require_authentication(): void
+    {
+        $this->getJson('/api/challenges')->assertUnauthorized();
+    }
+
     public function test_challenges_index_returns_success_shape(): void
     {
         $auth = $this->registerUser('challenges@example.com');

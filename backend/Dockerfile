@@ -16,6 +16,7 @@ WORKDIR /var/www/html
 ENV APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
 ENV APP_ENV=production
 ENV APP_DEBUG=false
+ENV APP_URL=https://mudabbir-backend-api.onrender.com
 ENV DB_CONNECTION=sqlite
 ENV LOG_CHANNEL=stderr
 

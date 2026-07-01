@@ -1,11 +1,13 @@
+import 'package:mudabbir/service/notifications/local_notification_service.dart';
 import 'package:mudabbir/utils/dev_log.dart';
 
-/// Placeholder for any future server-driven push channel.
+/// Entry point for notification setup (local alerts; FCM can be added later).
 class PushNotificationService {
   PushNotificationService._();
   static final PushNotificationService instance = PushNotificationService._();
 
   Future<void> initializeIfConfigured() async {
-    devLog('[Push] Server push not configured (no-op).');
+    await LocalNotificationService.instance.initialize();
+    devLog('[Push] Local notification service initialized.');
   }
 }

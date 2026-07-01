@@ -2,13 +2,14 @@
 
 namespace App\Services;
 
+use App\Services\Concerns\ManagesJsonFileStore;
 use App\Services\Concerns\ResolvesSyncConflicts;
 use App\Services\Concerns\UsesJsonStorePath;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\File;
 
 class ExpenseStore
 {
+    use ManagesJsonFileStore;
     use ResolvesSyncConflicts;
     use UsesJsonStorePath;
 
@@ -20,43 +21,61 @@ class ExpenseStore
         $this->path = $this->jsonStorePath('expenses.json');
     }
 
+    protected function emptyDocument(): array
+    {
+        return [
+            'next_expense_id' => 1,
+            'expenses' => [],
+        ];
+    }
+
+    protected function collectionKey(): string
+    {
+        return 'expenses';
+    }
+
     public function all(int $userId): array
     {
-        $data = $this->read();
+        $data = $this->mutateStore(fn (array $data): array => $data);
 
         $owned = array_values(array_filter(
             $data['expenses'],
-            function (array $expense) use ($userId): bool {
-                return (int) ($expense['user_id'] ?? 0) === $userId;
-            }
+            fn (array $expense): bool => (int) ($expense['user_id'] ?? 0) === $userId
         ));
 
-        return array_values(array_map(function (array $expense): array {
-            return $this->normalizeExpense($expense);
-        }, $owned));
+        return array_values(array_map(
+            fn (array $expense): array => $this->normalizeExpense($expense),
+            $owned
+        ));
     }
 
     public function find(int $id, int $userId): ?array
     {
-        $data = $this->read();
-        foreach ($data['expenses'] as $expense) {
-            if ((int) $expense['id'] === $id && (int) ($expense['user_id'] ?? 0) === $userId) {
-                return $this->normalizeExpense($expense);
+        return $this->mutateStore(function (array $data) use ($id, $userId): ?array {
+            foreach ($data['expenses'] as $expense) {
+                if ((int) $expense['id'] === $id && (int) ($expense['user_id'] ?? 0) === $userId) {
+                    return $this->normalizeExpense($expense);
+                }
             }
-        }
 
-        return null;
+            return null;
+        });
     }
 
     public function create(array $payload, int $userId): array
     {
-        $data = $this->read();
-        $id = (int) $data['next_expense_id'];
-        $data['next_expense_id'] = $id + 1;
+        $expense = $this->mutateStore(function (array &$data) use ($payload, $userId): array {
+            $id = (int) $data['next_expense_id'];
+            $data['next_expense_id'] = $id + 1;
+            $expense = $this->buildExpense($id, $payload, $userId);
+            $data['expenses'][] = $expense;
 
-        $expense = $this->buildExpense($id, $payload, $userId);
-        $data['expenses'][] = $expense;
-        $this->write($data);
+            app(ExpenseDatabaseSync::class)->upsertFromArray($expense);
+
+            return $expense;
+        });
+
+        DashboardCache::forgetForUser($userId);
 
         return $expense;
     }
@@ -66,53 +85,64 @@ class ExpenseStore
      */
     public function update(int $id, array $updates, int $userId, ?string $clientUpdatedAt = null): ?array
     {
-        $data = $this->read();
-        foreach ($data['expenses'] as $idx => $expense) {
-            if ((int) $expense['id'] !== $id || (int) ($expense['user_id'] ?? 0) !== $userId) {
-                continue;
+        $result = $this->mutateStore(function (array &$data) use ($id, $updates, $userId, $clientUpdatedAt): ?array {
+            foreach ($data['expenses'] as $idx => $expense) {
+                if ((int) $expense['id'] !== $id || (int) ($expense['user_id'] ?? 0) !== $userId) {
+                    continue;
+                }
+
+                $conflict = $this->resolveUpdateConflict(
+                    $expense,
+                    $clientUpdatedAt,
+                    fn (array $row): array => $this->normalizeExpense($row)
+                );
+                if ($conflict !== null) {
+                    return $conflict;
+                }
+
+                $merged = array_merge($expense, $this->filterUpdatable($updates));
+                $merged['updated_at'] = Carbon::now()->toISOString();
+                $data['expenses'][$idx] = $this->normalizeExpense($merged);
+
+                app(ExpenseDatabaseSync::class)->upsertFromArray($data['expenses'][$idx]);
+
+                return [
+                    'conflict' => false,
+                    'data' => $data['expenses'][$idx],
+                ];
             }
 
-            $conflict = $this->resolveUpdateConflict(
-                $expense,
-                $clientUpdatedAt,
-                fn (array $row): array => $this->normalizeExpense($row)
-            );
-            if ($conflict !== null) {
-                return $conflict;
-            }
+            return null;
+        });
 
-            $merged = array_merge($expense, $this->filterUpdatable($updates));
-            $merged['updated_at'] = Carbon::now()->toISOString();
-            $data['expenses'][$idx] = $this->normalizeExpense($merged);
-            $this->write($data);
-
-            return [
-                'conflict' => false,
-                'data' => $data['expenses'][$idx],
-            ];
+        if ($result !== null) {
+            DashboardCache::forgetForUser($userId);
         }
 
-        return null;
+        return $result;
     }
 
     public function delete(int $id, int $userId): bool
     {
-        $data = $this->read();
-        $before = count($data['expenses']);
-        $data['expenses'] = array_values(array_filter(
-            $data['expenses'],
-            function (array $expense) use ($id, $userId): bool {
-                return ! ((int) $expense['id'] === $id && (int) ($expense['user_id'] ?? 0) === $userId);
-            }
-        ));
+        $deleted = $this->mutateStore(function (array &$data) use ($id, $userId): bool {
+            $before = count($data['expenses']);
+            $data['expenses'] = array_values(array_filter(
+                $data['expenses'],
+                fn (array $expense): bool => ! ((int) $expense['id'] === $id && (int) ($expense['user_id'] ?? 0) === $userId)
+            ));
 
-        if (count($data['expenses']) === $before) {
-            return false;
+            if (count($data['expenses']) < $before) {
+                app(ExpenseDatabaseSync::class)->deleteById($id);
+            }
+
+            return count($data['expenses']) < $before;
+        });
+
+        if ($deleted) {
+            DashboardCache::forgetForUser($userId);
         }
 
-        $this->write($data);
-
-        return true;
+        return $deleted;
     }
 
     private function buildExpense(int $id, array $payload, int $userId): array
@@ -140,16 +170,8 @@ class ExpenseStore
     private function filterUpdatable(array $updates): array
     {
         $allowed = [
-            'amount',
-            'date',
-            'type',
-            'notes',
-            'account_id',
-            'category_id',
-            'account_name',
-            'category_name',
-            'is_recurring',
-            'recurrence_interval',
+            'amount', 'date', 'type', 'notes', 'account_id', 'category_id',
+            'account_name', 'category_name', 'is_recurring', 'recurrence_interval',
         ];
         $filtered = [];
         foreach ($allowed as $field) {
@@ -179,34 +201,5 @@ class ExpenseStore
             'created_at' => $expense['created_at'] ?? null,
             'updated_at' => $expense['updated_at'] ?? null,
         ];
-    }
-
-    private function read(): array
-    {
-        if (! File::exists($this->path)) {
-            $seed = [
-                'next_expense_id' => 1,
-                'expenses' => [],
-            ];
-            $this->write($seed);
-
-            return $seed;
-        }
-
-        $decoded = json_decode((string) File::get($this->path), true);
-        if (! is_array($decoded) || ! isset($decoded['expenses'])) {
-            return [
-                'next_expense_id' => 1,
-                'expenses' => [],
-            ];
-        }
-
-        return $decoded;
-    }
-
-    private function write(array $payload): void
-    {
-        File::ensureDirectoryExists(dirname($this->path));
-        File::put($this->path, json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
     }
 }

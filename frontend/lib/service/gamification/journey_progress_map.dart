@@ -1,7 +1,9 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:mudabbir/presentation/resources/color_manager.dart';
+import 'package:mudabbir/presentation/resources/app_colors.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
+import 'package:mudabbir/service/gamification/celebration_service.dart';
 
 /// Journey-style progress map with animated character traveling toward goal
 class JourneyProgressMap extends StatefulWidget {
@@ -15,8 +17,8 @@ class JourneyProgressMap extends StatefulWidget {
     super.key,
     required this.progress,
     required this.goalName,
-    this.primaryColor = Colors.blue,
-    this.secondaryColor = Colors.purple,
+    this.primaryColor = GamificationPalette.blue,
+    this.secondaryColor = GamificationPalette.purple,
     this.animationDuration = const Duration(milliseconds: 1200),
   });
 
@@ -31,6 +33,7 @@ class _JourneyProgressMapState extends State<JourneyProgressMap>
   late Animation<double> _progressAnimation;
   late Animation<double> _bounceAnimation;
   double _previousProgress = 0.0;
+  double _lastNotifiedProgress = 0.0;
 
   @override
   void initState() {
@@ -58,6 +61,23 @@ class _JourneyProgressMapState extends State<JourneyProgressMap>
     );
 
     _progressController.forward();
+    _lastNotifiedProgress = widget.progress;
+  }
+
+  void _notifyMilestoneIfNeeded(double from, double to) {
+    if (to <= from) return;
+
+    final milestone = CelebrationService.detectMilestone(
+      from * 100,
+      to * 100,
+      100,
+    );
+    if (milestone == null) return;
+    if (milestone == MilestoneType.completed) return;
+    if (to <= _lastNotifiedProgress) return;
+
+    _lastNotifiedProgress = to;
+    CelebrationService.showMilestoneSnackbar(milestone, widget.goalName);
   }
 
   @override
@@ -65,6 +85,7 @@ class _JourneyProgressMapState extends State<JourneyProgressMap>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.progress != widget.progress) {
       _previousProgress = oldWidget.progress;
+      _notifyMilestoneIfNeeded(_previousProgress, widget.progress);
       _progressAnimation =
           Tween<double>(begin: _previousProgress, end: widget.progress).animate(
             CurvedAnimation(
@@ -86,18 +107,7 @@ class _JourneyProgressMapState extends State<JourneyProgressMap>
     super.dispose();
   }
 
-  Color _getProgressColor(double progress) {
-    if (progress >= 1.0) {
-      return Colors.green;
-    } else if (progress >= 0.75) {
-      return Colors.purple;
-    } else if (progress >= 0.5) {
-      return Colors.orange;
-    } else if (progress >= 0.25) {
-      return Colors.blue;
-    }
-    return ColorManager.grey;
-  }
+  Color _getProgressColor(double progress) => GamificationPalette.progressColor(progress);
 
   String _getMotivationalMessage(double progress) {
     return AppStrings.journeyMotivation(progress);
@@ -108,6 +118,7 @@ class _JourneyProgressMapState extends State<JourneyProgressMap>
     return AnimatedBuilder(
       animation: Listenable.merge([_progressAnimation, _bounceAnimation]),
       builder: (context, child) {
+        final scheme = Theme.of(context).colorScheme;
         final animatedProgress = _progressAnimation.value.clamp(0.0, 1.0);
         final progressColor = _getProgressColor(animatedProgress);
         final message = _getMotivationalMessage(animatedProgress);
@@ -116,41 +127,47 @@ class _JourneyProgressMapState extends State<JourneyProgressMap>
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Progress percentage and message
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '$percentage%',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: progressColor,
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+              child: Row(
+                children: [
+                  Text(
+                    '$percentage%',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: progressColor,
+                        ),
                   ),
-                ),
-                Expanded(
-                  child: Text(
-                    message,
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: ColorManager.grey700,
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      message,
+                      textAlign: TextAlign.right,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: scheme.textOnCard,
+                          ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 16),
-
-            // Journey Map
             SizedBox(
               height: 120,
               child: CustomPaint(
                 painter: JourneyPathPainter(
                   progress: animatedProgress,
                   progressColor: progressColor,
+                  primaryColor: scheme.primary,
                   bounceValue: _bounceAnimation.value,
+                  trackColor: scheme.brightness == Brightness.dark
+                      ? const Color(0xFF475569)
+                      : const Color(0xFFCBD5E1),
+                  milestoneColors: GamificationPalette.milestones,
+                  upcomingFill: scheme.groupedFill,
+                  upcomingIcon: scheme.textTertiary,
+                  upcomingBorder: scheme.outline.withValues(alpha: 0.45),
                 ),
                 child: Container(),
               ),
@@ -166,24 +183,30 @@ class _JourneyProgressMapState extends State<JourneyProgressMap>
 class JourneyPathPainter extends CustomPainter {
   final double progress;
   final Color progressColor;
+  final Color primaryColor;
   final double bounceValue;
+  final Color trackColor;
+  final List<Color> milestoneColors;
+  final Color upcomingFill;
+  final Color upcomingIcon;
+  final Color upcomingBorder;
 
   JourneyPathPainter({
     required this.progress,
     required this.progressColor,
+    required this.primaryColor,
     required this.bounceValue,
+    required this.trackColor,
+    required this.milestoneColors,
+    required this.upcomingFill,
+    required this.upcomingIcon,
+    required this.upcomingBorder,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final pathPaint = Paint()
-      ..color = ColorManager.grey300
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 4.0
-      ..strokeCap = StrokeCap.round;
-
-    final progressPathPaint = Paint()
-      ..color = progressColor
+      ..color = trackColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4.0
       ..strokeCap = StrokeCap.round;
@@ -215,48 +238,28 @@ class JourneyPathPainter extends CustomPainter {
     // Draw the full path (background)
     canvas.drawPath(path, pathPaint);
 
-    // Draw the progress path (colored)
-    final pathMetrics = path.computeMetrics().first;
-    final progressPath = pathMetrics.extractPath(
-      0.0,
-      pathMetrics.length * progress,
-    );
-    canvas.drawPath(progressPath, progressPathPaint);
+    // Draw colored segments — each leg uses its milestone palette color
+    _drawSegmentedProgress(canvas, path, progress);
 
-    // Draw milestone markers
-    _drawMilestone(canvas, size, 0.0, Icons.flag, ColorManager.grey600, false);
-    _drawMilestone(
-      canvas,
-      size,
-      0.25,
+    const milestoneStops = [0.0, 0.25, 0.5, 0.75, 1.0];
+    const milestoneIcons = [
+      Icons.flag,
       Icons.location_on,
-      Colors.blue,
-      progress >= 0.25,
-    );
-    _drawMilestone(
-      canvas,
-      size,
-      0.5,
       Icons.star,
-      Colors.orange,
-      progress >= 0.5,
-    );
-    _drawMilestone(
-      canvas,
-      size,
-      0.75,
       Icons.bolt,
-      Colors.purple,
-      progress >= 0.75,
-    );
-    _drawMilestone(
-      canvas,
-      size,
-      1.0,
       Icons.emoji_events,
-      Colors.green,
-      progress >= 1.0,
-    );
+    ];
+
+    for (var i = 0; i < milestoneStops.length; i++) {
+      _drawMilestone(
+        canvas,
+        size,
+        milestoneStops[i],
+        milestoneIcons[i],
+        milestoneColors[i % milestoneColors.length],
+        _milestoneState(milestoneStops[i], progress),
+      );
+    }
 
     // Draw the animated traveler (character)
     if (progress > 0) {
@@ -266,16 +269,68 @@ class JourneyPathPainter extends CustomPainter {
 
       if (tangent != null) {
         final travelerPosition = tangent.position;
-
-        // Add bounce effect
         final bounceOffset = sin(bounceValue * pi) * 8;
+        final travelerColor = _travelerColor(progress);
 
         _drawTraveler(
           canvas,
           Offset(travelerPosition.dx, travelerPosition.dy - bounceOffset),
-          progressColor,
+          travelerColor,
         );
       }
+    }
+  }
+
+  /// Achieved = passed; current = en route to this stop; upcoming = not yet.
+  _MilestoneState _milestoneState(double position, double progress) {
+    if (position == 0.0) {
+      return progress > 0 ? _MilestoneState.achieved : _MilestoneState.upcoming;
+    }
+    if (progress >= position) return _MilestoneState.achieved;
+
+    const stops = [0.0, 0.25, 0.5, 0.75, 1.0];
+    final idx = stops.indexOf(position);
+    if (idx > 0 && progress > stops[idx - 1] && progress < position) {
+      return _MilestoneState.current;
+    }
+    return _MilestoneState.upcoming;
+  }
+
+  Color _travelerColor(double progress) {
+    if (progress >= 1.0) return milestoneColors[4 % milestoneColors.length];
+    if (progress >= 0.75) return milestoneColors[4 % milestoneColors.length];
+    if (progress >= 0.5) return milestoneColors[3 % milestoneColors.length];
+    if (progress >= 0.25) return milestoneColors[2 % milestoneColors.length];
+    if (progress > 0) return milestoneColors[1 % milestoneColors.length];
+    return milestoneColors[0];
+  }
+
+  void _drawSegmentedProgress(Canvas canvas, Path path, double progress) {
+    if (progress <= 0) return;
+
+    const stops = [0.0, 0.25, 0.5, 0.75, 1.0];
+    final metrics = path.computeMetrics().first;
+
+    for (var i = 0; i < stops.length - 1; i++) {
+      final segStart = stops[i];
+      final segEnd = stops[i + 1];
+      if (progress <= segStart) break;
+
+      final segProgress = min(progress, segEnd);
+      final startDist = metrics.length * segStart;
+      final endDist = metrics.length * segProgress;
+      if (endDist <= startDist) continue;
+
+      final segmentPath = metrics.extractPath(startDist, endDist);
+      final segmentColor = milestoneColors[i.clamp(0, milestoneColors.length - 1)];
+      canvas.drawPath(
+        segmentPath,
+        Paint()
+          ..color = segmentColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 4.5
+          ..strokeCap = StrokeCap.round,
+      );
     }
   }
 
@@ -285,7 +340,7 @@ class JourneyPathPainter extends CustomPainter {
     double position,
     IconData icon,
     Color color,
-    bool isAchieved,
+    _MilestoneState state,
   ) {
     final startX = 20.0;
     final endX = size.width - 20.0;
@@ -308,37 +363,56 @@ class JourneyPathPainter extends CustomPainter {
     final x = startX + (endX - startX) * position;
     final y = midY + yOffset;
 
-    // Draw glow effect for achieved milestones
-    if (isAchieved) {
-      final glowPaint = Paint()
-        ..color = color.withValues(alpha: 0.3)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-      canvas.drawCircle(Offset(x, y), 18, glowPaint);
+    final isAchieved = state == _MilestoneState.achieved;
+    final isCurrent = state == _MilestoneState.current;
+    final isUpcoming = state == _MilestoneState.upcoming;
+
+    if (isUpcoming) {
+      final fillPaint = Paint()
+        ..color = upcomingFill
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(Offset(x, y), 16, fillPaint);
+
+      final borderPaint = Paint()
+        ..color = upcomingBorder
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5;
+      canvas.drawCircle(Offset(x, y), 16, borderPaint);
+    } else {
+      if (isAchieved || isCurrent) {
+        final glowPaint = Paint()
+          ..color = color.withValues(alpha: isAchieved ? 0.38 : 0.28)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+        canvas.drawCircle(Offset(x, y), 18, glowPaint);
+      }
+
+      final nodeFill = isAchieved ? color : color.withValues(alpha: 0.92);
+
+      final circlePaint = Paint()
+        ..color = nodeFill
+        ..style = PaintingStyle.fill;
+
+      canvas.drawCircle(Offset(x, y), 16, circlePaint);
+
+      final borderPaint = Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2;
+
+      canvas.drawCircle(Offset(x, y), 16, borderPaint);
     }
 
-    // Draw milestone circle
-    final circlePaint = Paint()
-      ..color = isAchieved ? color : ColorManager.grey300
-      ..style = PaintingStyle.fill;
+    final iconColor = isUpcoming
+        ? upcomingIcon
+        : Colors.white;
 
-    canvas.drawCircle(Offset(x, y), 16, circlePaint);
-
-    // Draw border
-    final borderPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-
-    canvas.drawCircle(Offset(x, y), 16, borderPaint);
-
-    // Draw icon
     final textPainter = TextPainter(
       text: TextSpan(
         text: String.fromCharCode(icon.codePoint),
         style: TextStyle(
           fontSize: 20,
           fontFamily: icon.fontFamily,
-          color: Colors.white,
+          color: iconColor,
         ),
       ),
       textDirection: TextDirection.ltr,
@@ -408,6 +482,13 @@ class JourneyPathPainter extends CustomPainter {
   bool shouldRepaint(JourneyPathPainter oldDelegate) {
     return oldDelegate.progress != progress ||
         oldDelegate.progressColor != progressColor ||
-        oldDelegate.bounceValue != bounceValue;
+        oldDelegate.primaryColor != primaryColor ||
+        oldDelegate.bounceValue != bounceValue ||
+        oldDelegate.trackColor != trackColor ||
+        oldDelegate.upcomingFill != upcomingFill ||
+        oldDelegate.upcomingIcon != upcomingIcon ||
+        oldDelegate.upcomingBorder != upcomingBorder;
   }
 }
+
+enum _MilestoneState { achieved, current, upcoming }

@@ -88,6 +88,15 @@ if (-not (Test-Path ".env")) {
     Write-Host "Created .env from .env.example"
 }
 
+# Relative DB_DATABASE breaks artisan serve on Windows — use Laravel default path.
+$envPath = Join-Path $Backend ".env"
+$envText = Get-Content $envPath -Raw
+if ($envText -match '(?m)^DB_DATABASE=database/database\.sqlite\s*$') {
+    $envText = $envText -replace '(?m)^DB_DATABASE=database/database\.sqlite\s*$', '# DB_DATABASE='
+    Set-Content -Path $envPath -Value $envText -Encoding UTF8
+    Write-Host "Fixed DB_DATABASE in .env (use database_path default)"
+}
+
 & $Php artisan key:generate --force
 
 $Db = Join-Path $Backend "database\database.sqlite"

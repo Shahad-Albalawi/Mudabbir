@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mudabbir/presentation/resources/color_manager.dart';
-import 'package:mudabbir/presentation/resources/server_challenge_strings.dart';
-import 'package:mudabbir/presentation/resources/font_manager.dart';
-import 'package:mudabbir/presentation/resources/styles_manager.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
+import 'package:mudabbir/presentation/server_challenges/challenge_copy_helpers.dart';
 import 'package:mudabbir/presentation/server_challenges/providers/challenge_provider.dart';
 import 'package:mudabbir/presentation/server_challenges/providers/challenge_state.dart';
 import 'package:intl/intl.dart';
+import 'package:mudabbir/presentation/widgets/app_snackbar.dart';
+import 'package:mudabbir/presentation/widgets/app_grouped_scaffold.dart';
+import 'package:mudabbir/presentation/widgets/app_loading_button.dart';
+import 'package:mudabbir/service/routing_service/app_routes.dart';
 
 class CreateChallengeScreen extends ConsumerStatefulWidget {
   const CreateChallengeScreen({super.key});
@@ -38,87 +40,46 @@ class _CreateChallengeScreenState extends ConsumerState<CreateChallengeScreen> {
       next,
     ) {
       if (next is ChallengeOperationSuccess) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.message),
-            backgroundColor: const Color(0xFF4CAF50),
-          ),
-        );
-        Navigator.pop(context);
+        AppSnackbar.success(next.message);
+        context.pop();
       } else if (next is ChallengeOperationError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.message),
-            backgroundColor: ColorManager.error,
-          ),
-        );
+        AppSnackbar.error(next.message);
       }
     });
 
     final operationState = ref.watch(challengeOperationProvider);
     final isLoading = operationState is ChallengeOperationLoading;
 
-    final scheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      backgroundColor: scheme.surfaceContainerHighest,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildAppBar(context),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildSectionTitle(
-                            context,
-                            ServerChallengeStrings.sectionDetails,
-                          ),
-                          const SizedBox(height: 16),
-                          _buildNameField(),
-                          const SizedBox(height: 16),
-                          _buildAmountField(),
-                          const SizedBox(height: 24),
-                          _buildSectionTitle(
-                            context,
-                            ServerChallengeStrings.sectionSchedule,
-                          ),
-                          const SizedBox(height: 16),
-                          _buildDateFields(context),
-                          const SizedBox(height: 40),
-                          _buildCreateButton(isLoading),
-                        ],
-                      ),
-                    ),
-                  ),
-            ),
-          ],
+    return AppGroupedScaffold(
+      backFallbackRoute: AppRoutes.challenges,
+      titleText: ServerChallengeStrings.createTitle,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppLayout.pageGutter),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSectionTitle(
+                context,
+                ServerChallengeStrings.sectionDetails,
+              ),
+              const SizedBox(height: 16),
+              _buildNameField(),
+              const SizedBox(height: 16),
+              _buildAmountField(),
+              const SizedBox(height: 24),
+              _buildSectionTitle(
+                context,
+                ServerChallengeStrings.sectionSchedule,
+              ),
+              const SizedBox(height: 16),
+              _buildDateFields(context),
+              const SizedBox(height: 40),
+              _buildCreateButton(isLoading),
+            ],
+          ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildAppBar(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: Icon(Icons.arrow_back_ios, color: scheme.onSurface, size: 18),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            ServerChallengeStrings.createTitle,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -206,6 +167,7 @@ class _CreateChallengeScreenState extends ConsumerState<CreateChallengeScreen> {
     required DateTime? date,
     required VoidCallback onTap,
   }) {
+    final scheme = Theme.of(context).colorScheme;
     final dateFormat = DateFormat('MMMM d, yyyy');
 
     return InkWell(
@@ -221,15 +183,11 @@ class _CreateChallengeScreenState extends ConsumerState<CreateChallengeScreen> {
           date != null
               ? dateFormat.format(date)
               : ServerChallengeStrings.chooseDate,
-          style: date != null
-              ? getRegularStyle(
-                  fontSize: FontSize.s16,
-                  color: ColorManager.darkGrey,
-                )
-              : getRegularStyle(
-                  fontSize: FontSize.s16,
-                  color: ColorManager.grey,
-                ),
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: date != null
+                    ? scheme.onSurface
+                    : scheme.textMuted,
+              ),
         ),
       ),
     );
@@ -253,14 +211,9 @@ class _CreateChallengeScreenState extends ConsumerState<CreateChallengeScreen> {
       firstDate: firstDate,
       lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
       builder: (context, child) {
+        final scheme = Theme.of(context).colorScheme;
         return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: ColorManager.primary,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-            ),
-          ),
+          data: Theme.of(context).copyWith(colorScheme: scheme),
           child: child ?? const SizedBox.shrink(),
         );
       },
@@ -282,21 +235,10 @@ class _CreateChallengeScreenState extends ConsumerState<CreateChallengeScreen> {
   }
 
   Widget _buildCreateButton(bool isLoading) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: isLoading ? null : _handleCreate,
-        child: isLoading
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-            : Text(ServerChallengeStrings.createSubmit),
-      ),
+    return AppLoadingButton(
+      isLoading: isLoading,
+      label: ServerChallengeStrings.createSubmit,
+      onPressed: _handleCreate,
     );
   }
 
@@ -306,22 +248,12 @@ class _CreateChallengeScreenState extends ConsumerState<CreateChallengeScreen> {
     }
 
     if (_startDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(ServerChallengeStrings.pickStartDate),
-          backgroundColor: ColorManager.error,
-        ),
-      );
+      AppSnackbar.error(ServerChallengeStrings.pickStartDate);
       return;
     }
 
     if (_endDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(ServerChallengeStrings.pickEndDate),
-          backgroundColor: ColorManager.error,
-        ),
-      );
+      AppSnackbar.error(ServerChallengeStrings.pickEndDate);
       return;
     }
 

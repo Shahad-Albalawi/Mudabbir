@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:mudabbir/constants/api_constants.dart';
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:mudabbir/data/network/failure.dart';
-import 'package:mudabbir/presentation/server_challenges/utils/dio_client.dart';
+import 'package:mudabbir/data/network/dio_client.dart';
 import 'package:mudabbir/service/getit_init.dart';
 
 enum HttpMethod { GET, POST }
@@ -15,7 +16,7 @@ Future<Either<Failure, T>> requestData<T>({
   HttpMethod method = HttpMethod.GET,
   Map<String, String>? headers,
   Map<String, dynamic>? body,
-  Duration timeout = const Duration(seconds: 10),
+  Duration timeout = ApiConstants.defaultTimeout,
 }) async {
   final dio = getIt<DioClient>().dio;
 
@@ -51,6 +52,10 @@ Future<Either<Failure, T>> requestData<T>({
     }
 
     final bodyText = _responseBodyAsString(response.data);
+    final fieldErrors = _fieldErrorsFromBody(bodyText);
+    if (statusCode == 422 && fieldErrors != null && fieldErrors.isNotEmpty) {
+      return Left(ValidationFieldsFailure(fieldErrors));
+    }
     final msg = _messageFromErrorResponse(
       body: bodyText,
       statusCode: statusCode,
@@ -69,6 +74,10 @@ Future<Either<Failure, T>> requestData<T>({
     final statusCode = e.response?.statusCode ?? 0;
     if (statusCode > 0) {
       final bodyText = _responseBodyAsString(e.response?.data);
+      final fieldErrors = _fieldErrorsFromBody(bodyText);
+      if (statusCode == 422 && fieldErrors != null && fieldErrors.isNotEmpty) {
+        return Left(ValidationFieldsFailure(fieldErrors));
+      }
       final msg = _messageFromErrorResponse(
         body: bodyText,
         statusCode: statusCode,
@@ -137,6 +146,30 @@ String? _firstValidationError(Map<dynamic, dynamic> errors) {
     }
   }
   return null;
+}
+
+Map<String, String>? _fieldErrorsFromBody(String body) {
+  final trimmed = body.trim();
+  if (trimmed.isEmpty) return null;
+  try {
+    final parsed = jsonDecode(trimmed);
+    if (parsed is! Map<String, dynamic>) return null;
+    final errors = parsed['errors'];
+    if (errors is! Map) return null;
+    final result = <String, String>{};
+    for (final entry in errors.entries) {
+      final v = entry.value;
+      if (v is List && v.isNotEmpty) {
+        final first = v.first;
+        if (first is String && first.trim().isNotEmpty) {
+          result[entry.key.toString()] = first.trim();
+        }
+      }
+    }
+    return result.isEmpty ? null : result;
+  } catch (_) {
+    return null;
+  }
 }
 
 String _fallbackMessageForStatus(int code) {

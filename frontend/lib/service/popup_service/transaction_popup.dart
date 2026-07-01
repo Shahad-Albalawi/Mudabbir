@@ -5,16 +5,23 @@ import 'package:dartz/dartz.dart';
 import 'package:mudabbir/constants/hive_constants.dart';
 import 'package:mudabbir/data/local/local_database.dart';
 import 'package:mudabbir/data/network/failure.dart';
+import 'package:mudabbir/domain/models/expense_sync_result.dart';
 import 'package:mudabbir/domain/models/expense_transaction.dart';
 import 'package:mudabbir/domain/repository/expense_repository/expense_repository.dart';
-import 'package:mudabbir/presentation/resources/expense_strings.dart';
-import 'package:mudabbir/presentation/resources/entity_localizations.dart';
+import 'package:mudabbir/domain/repository/synced_expense_repository/synced_expense_repository.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
+import 'package:mudabbir/presentation/resources/entity_localizations.dart';
+import 'package:mudabbir/presentation/widgets/app_loading_button.dart';
+import 'package:mudabbir/presentation/widgets/ios_dialog_style.dart';
+import 'package:mudabbir/presentation/widgets/riyal_amount.dart';
+import 'package:mudabbir/presentation/widgets/ios_loading_widget.dart';
 import 'package:mudabbir/service/financial_refresh.dart';
+import 'package:mudabbir/service/haptic_service.dart';
 import 'package:mudabbir/service/hive_service.dart';
+import 'package:mudabbir/service/notifications/financial_alert_service.dart';
 import 'package:mudabbir/utils/local_db_user_id.dart';
 
-import '../../data/local/database_helper.dart';
 import 'popup_widgets.dart';
 
 class TransactionPopup {
@@ -27,9 +34,7 @@ class TransactionPopup {
       builder: (_) => Consumer(
         builder: (context, ref, _) {
           return Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            shape: IOSDialogStyle.dialogShape(),
             elevation: 0,
             child: _TransactionDialogBody(type: type, ref: ref),
           );
@@ -96,9 +101,10 @@ class _TransactionDialogBodyState extends ConsumerState<_TransactionDialogBody> 
 
   int? _accountId;
   int? _categoryId;
+  bool _saving = false;
 
   TransactionPopup get _popup => GetIt.I<TransactionPopup>();
-  ExpenseRepository get _expenseRepository => GetIt.I<ExpenseRepository>();
+  SyncedExpenseRepository get _synced => GetIt.I<SyncedExpenseRepository>();
 
   @override
   void initState() {
@@ -122,8 +128,8 @@ class _TransactionDialogBodyState extends ConsumerState<_TransactionDialogBody> 
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Padding(
-            padding: EdgeInsets.all(32),
-            child: Center(child: CircularProgressIndicator()),
+            padding: EdgeInsets.all(40),
+            child: Center(child: IOSLoadingWidget()),
           );
         }
         if (snapshot.hasError) {
@@ -133,7 +139,6 @@ class _TransactionDialogBodyState extends ConsumerState<_TransactionDialogBody> 
               child: Text(
                 AppStrings.txLoadFailed(snapshot.error!),
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium,
               ),
             ),
           );
@@ -147,11 +152,7 @@ class _TransactionDialogBodyState extends ConsumerState<_TransactionDialogBody> 
           return Padding(
             padding: const EdgeInsets.all(24),
             child: Center(
-              child: Text(
-                message,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
+              child: Text(message, textAlign: TextAlign.center),
             ),
           );
         }
@@ -160,42 +161,65 @@ class _TransactionDialogBodyState extends ConsumerState<_TransactionDialogBody> 
         final accounts = data['accounts']! as List<dynamic>;
         final categories = data['categories']! as List<dynamic>;
         final currentBalance = (data['balance'] as num?)?.toDouble() ?? 0.0;
+        final isIncome = widget.type == 'income';
 
         return Container(
           width: MediaQuery.of(context).size.width * 0.9,
           constraints: const BoxConstraints(maxWidth: 400, maxHeight: 700),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            color: Theme.of(context).colorScheme.surface,
-            border: Border.all(
-              color: Theme.of(context)
-                  .colorScheme
-                  .outline
-                  .withValues(alpha: 0.2),
-            ),
-          ),
+          decoration: IOSDialogStyle.surfaceDecoration(context),
           child: Form(
             key: _formKey,
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                _buildHeader(context),
-                if (widget.type == 'expense')
-                  _buildBalanceStrip(context, currentBalance),
+                IOSDialogStyle.header(
+                  context,
+                  title: isIncome
+                      ? AppStrings.addIncome
+                      : AppStrings.addExpense,
+                  subtitleWidget: isIncome
+                      ? null
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('${AppStrings.txAvailableBalanceShort} '),
+                            RiyalAmount(
+                              currentBalance,
+                              fontSize: 12,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .textMuted,
+                            ),
+                          ],
+                        ),
+                  icon: isIncome
+                      ? Icons.arrow_upward_rounded
+                      : Icons.arrow_downward_rounded,
+                ),
                 Flexible(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _sectionHeader(context, AppStrings.txSectionAmount),
+                        IOSDialogStyle.sectionLabel(
+                          context,
+                          AppStrings.txSectionAmount,
+                        ),
                         const SizedBox(height: 12),
                         PopupWidgets.amountField(_amountCtrl),
                         const SizedBox(height: 24),
-                        _sectionHeader(context, AppStrings.txSectionDate),
+                        IOSDialogStyle.sectionLabel(
+                          context,
+                          AppStrings.txSectionDate,
+                        ),
                         const SizedBox(height: 12),
                         PopupWidgets.dateField(_dateCtrl, context),
                         const SizedBox(height: 24),
-                        _sectionHeader(context, AppStrings.txSectionDetails),
+                        IOSDialogStyle.sectionLabel(
+                          context,
+                          AppStrings.txSectionDetails,
+                        ),
                         const SizedBox(height: 12),
                         Row(
                           children: [
@@ -225,7 +249,10 @@ class _TransactionDialogBodyState extends ConsumerState<_TransactionDialogBody> 
                           ],
                         ),
                         const SizedBox(height: 24),
-                        _sectionHeader(context, AppStrings.txSectionNotes),
+                        IOSDialogStyle.sectionLabel(
+                          context,
+                          AppStrings.txSectionNotes,
+                        ),
                         const SizedBox(height: 12),
                         PopupWidgets.notesField(_notesCtrl),
                       ],
@@ -241,112 +268,33 @@ class _TransactionDialogBodyState extends ConsumerState<_TransactionDialogBody> 
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    final type = widget.type;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 14),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context)
-                .colorScheme
-                .outline
-                .withValues(alpha: 0.18),
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            type == 'income'
-                ? Icons.arrow_upward_rounded
-                : Icons.arrow_downward_rounded,
-            color: Theme.of(context).colorScheme.onSurface,
-            size: 22,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              type == 'income'
-                  ? AppStrings.addIncome
-                  : AppStrings.addExpense,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBalanceStrip(BuildContext context, double currentBalance) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: Theme.of(context)
-                .colorScheme
-                .outline
-                .withValues(alpha: 0.15),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              AppStrings.txAvailableBalance,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            Text(
-              ExpenseStrings.formatAmount(currentBalance),
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildActions(
     BuildContext context,
     List<dynamic> accounts,
     List<dynamic> categories,
   ) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
       child: Row(
         children: [
           Expanded(
-            child: OutlinedButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(AppStrings.txCancel),
+            child: Semantics(
+              button: true,
+              label: AppStrings.txCancel,
+              child: OutlinedButton(
+                onPressed: _saving ? null : () => Navigator.pop(context),
+                child: Text(AppStrings.txCancel),
+              ),
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
-            child: ElevatedButton(
+            child: AppLoadingButton(
+              isLoading: _saving,
+              label: widget.type == 'income'
+                  ? AppStrings.txSaveIncome
+                  : AppStrings.txSaveExpense,
               onPressed: () => _save(context, accounts, categories),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
-              ),
-              child: Text(
-                widget.type == 'income'
-                    ? AppStrings.txSaveIncome
-                    : AppStrings.txSaveExpense,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
             ),
           ),
         ],
@@ -370,69 +318,62 @@ class _TransactionDialogBodyState extends ConsumerState<_TransactionDialogBody> 
       return;
     }
 
-    String? feedback;
     final type = widget.type;
-
-    if (type == 'expense') {
-      final tx = ExpenseTransaction(
-        id: 0,
-        amount: amount,
-        date: _dateCtrl.text,
-        type: type,
-        notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
-        accountId: _accountId!,
-        categoryId: _categoryId!,
-        accountName: EntityLocalizations.accountName(
-          accounts.firstWhere(
-            (a) => a['id'] == _accountId,
-            orElse: () => {'name': ''},
-          ),
+    setState(() => _saving = true);
+    final tx = ExpenseTransaction(
+      id: 0,
+      amount: amount,
+      date: _dateCtrl.text,
+      type: type,
+      notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+      accountId: _accountId!,
+      categoryId: _categoryId!,
+      accountName: EntityLocalizations.accountName(
+        accounts.firstWhere(
+          (a) => a['id'] == _accountId,
+          orElse: () => {'name': ''},
         ),
-        categoryName: EntityLocalizations.categoryName(
-          categories.firstWhere(
-            (c) => c['id'] == _categoryId,
-            orElse: () => {'name': ''},
-          ),
+      ),
+      categoryName: EntityLocalizations.categoryName(
+        categories.firstWhere(
+          (c) => c['id'] == _categoryId,
+          orElse: () => {'name': ''},
         ),
-      );
-      final result = await _expenseRepository.addTransaction(tx);
-      final ok = result.fold((failure) {
-        PopupWidgets.showErrorSnackBar(context, failure.userFacingMessage);
-        return false;
-      }, (write) {
-        feedback = write.budgetMessage;
-        return true;
-      });
-      if (!ok) return;
-    } else {
-      await GetIt.I<DbHelper>().insert('transactions', {
-        'amount': amount,
-        'date': _dateCtrl.text,
-        'type': type,
-        'notes': _notesCtrl.text.trim(),
-        'account_id': _accountId,
-        'category_id': _categoryId,
-        'is_recurring': 0,
-      });
-    }
-
-    await FinancialRefresh.refreshAll(ref);
-
-    if (!context.mounted) return;
-    Navigator.pop(context);
-    final successText = feedback == null
-        ? AppStrings.txSuccess(type)
-        : '${AppStrings.txSuccess(type)}\n$feedback';
-    PopupWidgets.showSuccessSnackBar(context, successText);
-  }
-
-  Widget _sectionHeader(BuildContext context, String title) {
-    return Text(
-      title,
-      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-        fontWeight: FontWeight.w600,
-        color: Theme.of(context).colorScheme.onSurface,
       ),
     );
+
+    final result = await _synced.addTransaction(tx);
+    ExpenseWriteSyncResult? successWrite;
+    final ok = await result.fold((failure) async {
+      PopupWidgets.showErrorSnackBar(context, failure.userFacingMessage);
+      return false;
+    }, (write) async {
+      successWrite = write;
+      if (write.result.budgetSnapshot != null) {
+        await FinancialAlertService.instance.maybeNotifyBudgetUsage(
+          write.result.budgetSnapshot,
+        );
+      }
+      return true;
+    });
+    if (!context.mounted) return;
+    if (!ok || successWrite == null) {
+      setState(() => _saving = false);
+      return;
+    }
+
+    await FinancialRefresh.refreshAll(widget.ref);
+
+    if (!context.mounted) return;
+    HapticService.success();
+    Navigator.pop(context);
+
+    final write = successWrite!;
+    final successText = write.queuedOffline
+        ? AppStrings.offlineSavedPendingSync
+        : write.result.budgetMessage == null
+            ? AppStrings.txSuccess(type)
+            : '${AppStrings.txSuccess(type)}\n${write.result.budgetMessage}';
+    PopupWidgets.showSuccessSnackBar(context, successText);
   }
 }

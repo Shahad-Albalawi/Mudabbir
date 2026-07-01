@@ -3,6 +3,7 @@ import 'package:mudabbir/data/local/database_helper.dart';
 import 'package:mudabbir/data/network/failure.dart';
 import 'package:mudabbir/domain/models/behavioral_snapshot.dart';
 import 'package:mudabbir/domain/services/behavioral_analysis_engine.dart';
+import 'package:mudabbir/domain/services/repository_guard.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/presentation/statistics/statistics_viewmodel.dart';
 import 'package:mudabbir/service/getit_init.dart';
@@ -13,17 +14,14 @@ class BehavioralAnalysisRepository {
 
   Future<Either<Failure, BehavioralSnapshot>> buildSnapshot(
     StatisticsState statistics,
-  ) async {
-    try {
+  ) {
+    return guardRepository(() async {
       final raw = await _loadRawData();
-      final snapshot = BehavioralAnalysisEngine.build(
+      return BehavioralAnalysisEngine.build(
         raw: raw,
         statistics: statistics,
       );
-      return Right(snapshot);
-    } catch (_) {
-      return Left(UnknownFailure(AppStrings.statsAnalysisSubtitle));
-    }
+    }, fallbackMessage: AppStrings.statsAnalysisSubtitle);
   }
 
   Future<BehavioralRawData> _loadRawData() async {

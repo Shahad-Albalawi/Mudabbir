@@ -16,5 +16,8 @@ class AuthTokenSecureStore {
 
   Future<String?> readToken() async => _storage.read(key: _key);
 
+  /// Alias for [readToken].
+  Future<String?> getToken() => readToken();
+
   Future<void> clearToken() async => _storage.delete(key: _key);
 }

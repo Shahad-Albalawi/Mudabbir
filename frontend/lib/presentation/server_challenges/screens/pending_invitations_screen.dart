@@ -1,13 +1,20 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mudabbir/presentation/resources/color_manager.dart';
-import 'package:mudabbir/presentation/resources/server_challenge_strings.dart';
-import 'package:mudabbir/presentation/resources/font_manager.dart';
-import 'package:mudabbir/presentation/resources/styles_manager.dart';
+import 'package:intl/intl.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
+import 'package:mudabbir/presentation/server_challenges/challenge_copy_helpers.dart';
 import 'package:mudabbir/presentation/server_challenges/models/challenge_model.dart';
 import 'package:mudabbir/presentation/server_challenges/providers/challenge_provider.dart';
 import 'package:mudabbir/presentation/server_challenges/providers/challenge_state.dart';
-import 'package:intl/intl.dart';
+import 'package:mudabbir/presentation/widgets/app_animated_list_item.dart';
+import 'package:mudabbir/presentation/widgets/app_card.dart';
+import 'package:mudabbir/presentation/widgets/app_grouped_scaffold.dart';
+import 'package:mudabbir/presentation/widgets/app_skeleton.dart';
+import 'package:mudabbir/presentation/widgets/ios_empty_state.dart';
+import 'package:mudabbir/presentation/widgets/app_snackbar.dart';
+import 'package:mudabbir/service/haptic_service.dart';
+import 'package:mudabbir/service/routing_service/app_routes.dart';
 
 class PendingInvitationsScreen extends ConsumerStatefulWidget {
   const PendingInvitationsScreen({super.key});
@@ -33,69 +40,42 @@ class _PendingInvitationsScreenState
   Widget build(BuildContext context) {
     final state = ref.watch(pendingInvitationsProvider);
 
-    // Listen to operation state
     ref.listen<ChallengeOperationState>(challengeOperationProvider, (
       previous,
       next,
     ) {
       if (next is ChallengeOperationSuccess) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.message),
-            backgroundColor: const Color(0xFF4CAF50),
-          ),
-        );
-        // Remove from pending list if accepted/rejected
+        AppSnackbar.success(next.message);
         if (next.challenge != null) {
           ref
               .read(pendingInvitationsProvider.notifier)
               .removeInvitation(next.challenge!.id);
         }
       } else if (next is ChallengeOperationError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.message),
-            backgroundColor: ColorManager.error,
-          ),
-        );
+        AppSnackbar.error(next.message);
       }
     });
 
-    return Scaffold(
-      backgroundColor: ColorManager.background,
-      appBar: AppBar(
-        title: Text(
-          ServerChallengeStrings.pendingTitle,
-          style: getBoldStyle(
-            fontSize: FontSize.s20,
-            color: ColorManager.darkGrey,
-          ),
+    return AppGroupedScaffold(
+      backFallbackRoute: AppRoutes.challenges,
+      titleText: ServerChallengeStrings.pendingTitle,
+      actions: [
+        IconButton(
+          tooltip: ServerChallengeStrings.retry,
+          onPressed: () => ref
+              .read(pendingInvitationsProvider.notifier)
+              .loadPendingInvitations(),
+          icon: const Icon(CupertinoIcons.refresh),
         ),
-        centerTitle: false,
-        actions: [
-          IconButton(
-            onPressed: () => ref
-                .read(pendingInvitationsProvider.notifier)
-                .loadPendingInvitations(),
-            icon: const Icon(Icons.refresh),
-          ),
-          const SizedBox(width: 6),
-        ],
-      ),
-      body: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: _buildBody(state),
-        ),
-      ),
+      ],
+      body: SafeArea(top: false, child: _buildBody(state)),
     );
   }
 
   Widget _buildBody(ChallengeState state) {
     return switch (state) {
       ChallengeInitial() => const SizedBox.shrink(),
-      ChallengeLoading() => const Center(child: CircularProgressIndicator()),
+      ChallengeLoading() => const AppListSkeleton(),
       ChallengeError(:final message) => _buildError(message),
       ChallengeLoaded(:final challenges) => _buildInvitations(challenges),
     };
@@ -104,256 +84,203 @@ class _PendingInvitationsScreenState
   Widget _buildInvitations(List<ChallengeModel> challenges) {
     if (challenges.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.inbox_outlined,
-              size: 80,
-              color: ColorManager.grey.withValues(alpha: 0.3),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              ServerChallengeStrings.pendingEmpty,
-              style: getMediumStyle(
-                fontSize: FontSize.s16,
-                color: ColorManager.grey1,
-              ),
-            ),
-          ],
+        child: IOSEmptyState(
+          icon: Icons.mail_outline_rounded,
+          title: ServerChallengeStrings.pendingEmpty,
+          subtitle: ServerChallengeStrings.pendingEmptySubtitle,
         ),
       );
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppLayout.pageGutter),
       itemCount: challenges.length,
       itemBuilder: (context, index) {
-        return _buildInvitationCard(challenges[index]);
+        return AppAnimatedListItem(
+          index: index,
+          child: _buildInvitationCard(challenges[index]),
+        );
       },
     );
   }
 
   Widget _buildInvitationCard(ChallengeModel challenge) {
+    final scheme = Theme.of(context).colorScheme;
     final dateFormat = DateFormat('MMM d, yyyy');
     final operationState = ref.watch(challengeOperationProvider);
     final isLoading = operationState is ChallengeOperationLoading;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    challenge.name,
-                    style: getSemiBoldStyle(
-                      fontSize: FontSize.s18,
-                      color: ColorManager.darkGrey,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF9800).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.schedule,
-                        size: 16,
-                        color: const Color(0xFFFF9800),
+    return AppCard(
+      margin: const EdgeInsets.only(bottom: AppLayout.sectionGap),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  challenge.name,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        ServerChallengeStrings.pendingStatus,
-                        style: getMediumStyle(
-                          fontSize: FontSize.s12,
-                          color: const Color(0xFFFF9800),
-                        ),
-                      ),
-                    ],
-                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Icon(Icons.person, size: 16, color: ColorManager.grey1),
-                const SizedBox(width: 8),
-                Text(
-                  ServerChallengeStrings.fromCreator(challenge.creator.name),
-                  style: getRegularStyle(
-                    fontSize: FontSize.s14,
-                    color: ColorManager.grey1,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(Icons.attach_money, size: 16, color: ColorManager.grey1),
-                const SizedBox(width: 8),
-                Text(
-                  ServerChallengeStrings.totalAmount(challenge.amount),
-                  style: getMediumStyle(
-                    fontSize: FontSize.s14,
-                    color: ColorManager.darkGrey,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(Icons.calendar_today, size: 16, color: ColorManager.grey1),
-                const SizedBox(width: 8),
-                Text(
-                  '${dateFormat.format(challenge.startDate)} - ${dateFormat.format(challenge.endDate)}',
-                  style: getRegularStyle(
-                    fontSize: FontSize.s14,
-                    color: ColorManager.grey1,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(Icons.group, size: 16, color: ColorManager.grey1),
-                const SizedBox(width: 8),
-                Text(
-                  ServerChallengeStrings.acceptedBeforeInvite(
-                    challenge.acceptedParticipants.length,
-                  ),
-                  style: getRegularStyle(
-                    fontSize: FontSize.s14,
-                    color: ColorManager.grey1,
-                  ),
-                ),
-              ],
-            ),
-            if (challenge.acceptedParticipants.isNotEmpty) ...[
-              const SizedBox(height: 8),
+              ),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: ColorManager.primary.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(12),
+                  color: scheme.warning.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: 16,
-                      color: ColorManager.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        ServerChallengeStrings.splitHint,
-                        style: getRegularStyle(
-                          fontSize: FontSize.s12,
-                          color: ColorManager.primary,
-                        ),
+                    Icon(Icons.schedule, size: 14, color: scheme.warning),
+                    const SizedBox(width: 4),
+                    Text(
+                      ServerChallengeStrings.pendingStatus,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: scheme.warning,
                       ),
                     ),
                   ],
                 ),
               ),
             ],
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: isLoading
-                        ? null
-                        : () => _handleReject(challenge.id),
-                    icon: const Icon(Icons.close),
-                    label: Text(ServerChallengeStrings.decline),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: ColorManager.error,
-                      side: BorderSide(color: ColorManager.error),
+          ),
+          const SizedBox(height: 14),
+          _infoRow(
+            Icons.person_outline,
+            ServerChallengeStrings.fromCreator(challenge.creator.name),
+          ),
+          const SizedBox(height: 8),
+          _infoRow(
+            Icons.payments_outlined,
+            ServerChallengeStrings.totalAmount(challenge.amount),
+          ),
+          const SizedBox(height: 8),
+          _infoRow(
+            Icons.calendar_today_outlined,
+            '${dateFormat.format(challenge.startDate)} - ${dateFormat.format(challenge.endDate)}',
+          ),
+          const SizedBox(height: 8),
+          _infoRow(
+            Icons.group_outlined,
+            ServerChallengeStrings.acceptedBeforeInvite(
+              challenge.acceptedParticipants.length,
+            ),
+          ),
+          if (challenge.acceptedParticipants.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: scheme.groupedFill,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, size: 16, color: scheme.chromeIcon),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      ServerChallengeStrings.splitHint,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: scheme.onSurface,
+                          ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: isLoading
-                        ? null
-                        : () => _handleAccept(challenge.id),
-                    icon: const Icon(Icons.check),
-                    label: Text(ServerChallengeStrings.accept),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
-        ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: isLoading
+                      ? null
+                      : () {
+                          HapticService.light();
+                          _handleReject(challenge.id);
+                        },
+                  icon: const Icon(Icons.close_rounded),
+                  label: Text(ServerChallengeStrings.decline),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: scheme.error,
+                    side: BorderSide(color: scheme.error.withValues(alpha: 0.7)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: isLoading
+                      ? null
+                      : () {
+                          HapticService.medium();
+                          _handleAccept(challenge.id);
+                        },
+                  icon: const Icon(Icons.check_rounded),
+                  label: Text(ServerChallengeStrings.accept),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _infoRow(IconData icon, String text) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: scheme.textMuted),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildError(String message) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 80,
-              color: ColorManager.error.withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: getMediumStyle(
-                fontSize: FontSize.s16,
-                color: ColorManager.darkGrey,
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () => ref
-                  .read(pendingInvitationsProvider.notifier)
-                  .loadPendingInvitations(),
-              icon: const Icon(Icons.refresh),
-              label: Text(ServerChallengeStrings.retry),
-            ),
-          ],
-        ),
+      child: IOSEmptyState(
+        icon: Icons.error_outline_rounded,
+        title: message,
+        iconColor: Theme.of(context).colorScheme.error,
+        buttonLabel: ServerChallengeStrings.retry,
+        onPressed: () => ref
+            .read(pendingInvitationsProvider.notifier)
+            .loadPendingInvitations(),
       ),
     );
   }
 
   void _handleAccept(int challengeId) {
-    ref
-        .read(challengeOperationProvider.notifier)
-        .respondToInvitation(challengeId: challengeId, accept: true);
+    ref.read(challengeOperationProvider.notifier).respondToInvitation(
+          challengeId: challengeId,
+          accept: true,
+        );
   }
 
   void _handleReject(int challengeId) {
-    ref
-        .read(challengeOperationProvider.notifier)
-        .respondToInvitation(challengeId: challengeId, accept: false);
+    ref.read(challengeOperationProvider.notifier).respondToInvitation(
+          challengeId: challengeId,
+          accept: false,
+        );
   }
 }

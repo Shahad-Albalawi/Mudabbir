@@ -30,6 +30,14 @@ class ValidationFailure extends Failure {
   const ValidationFailure(String message) : super(-5, message);
 }
 
+/// Laravel 422 field errors keyed by input name (`email`, `password`, …).
+class ValidationFieldsFailure extends Failure {
+  ValidationFieldsFailure(this.fieldErrors, {String message = 'validation'})
+      : super(422, message);
+
+  final Map<String, String> fieldErrors;
+}
+
 class BudgetExceededFailure extends Failure {
   final double budgetRemaining;
   const BudgetExceededFailure(String message, {this.budgetRemaining = 0})
@@ -42,6 +50,7 @@ extension FailureUserMessage on Failure {
     if (this is TimeoutFailure) return NetworkUserMessages.timeout;
     if (this is ParsingFailure) return NetworkUserMessages.parsing;
     if (this is UnknownFailure) return NetworkUserMessages.unknown;
+    if (this is ValidationFieldsFailure) return message;
     if (this is ValidationFailure) return message;
     if (this is BudgetExceededFailure) return message;
     if (this is ServerFailure) {

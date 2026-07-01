@@ -4,7 +4,7 @@ import 'package:mudabbir/data/network/failure.dart';
 import 'package:mudabbir/domain/models/expense_transaction.dart';
 import 'package:mudabbir/domain/services/financial_aggregator.dart';
 import 'package:mudabbir/domain/services/sync_policies.dart';
-import 'package:mudabbir/presentation/resources/expense_strings.dart';
+import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -64,7 +64,7 @@ class ExpenseRepository {
         (rows) => Right(rows.map(ExpenseTransaction.fromMap).toList()),
       );
     } catch (e) {
-      return Left(UnknownFailure(ExpenseStrings.loadFailed));
+      return Left(UnknownFailure(AppStrings.expensesLoadFailed));
     }
   }
 
@@ -157,7 +157,7 @@ class ExpenseRepository {
         );
         if (transaction.amount > balance) {
           return Left(
-            ValidationFailure(ExpenseStrings.insufficientBalance),
+            ValidationFailure(AppStrings.txInsufficientBody),
           );
         }
 
@@ -170,7 +170,7 @@ class ExpenseRepository {
             transaction.amount > budget.remaining) {
           return Left(
             BudgetExceededFailure(
-              ExpenseStrings.budgetExceeded(budget.remaining),
+              AppStrings.expensesBudgetExceeded(budget.remaining),
               budgetRemaining: budget.remaining,
             ),
           );
@@ -203,7 +203,7 @@ class ExpenseRepository {
         ),
       );
     } catch (e) {
-      return Left(UnknownFailure(ExpenseStrings.saveFailed));
+      return Left(UnknownFailure(AppStrings.expensesSaveFailed));
     }
   }
 
@@ -230,7 +230,7 @@ class ExpenseRepository {
         final delta = transaction.amount - oldAmount;
         if (delta > 0 && delta > balance) {
           return Left(
-            ValidationFailure(ExpenseStrings.insufficientBalance),
+            ValidationFailure(AppStrings.txInsufficientBody),
           );
         }
 
@@ -244,7 +244,7 @@ class ExpenseRepository {
             transaction.amount > budget.remaining) {
           return Left(
             BudgetExceededFailure(
-              ExpenseStrings.budgetExceeded(budget.remaining),
+              AppStrings.expensesBudgetExceeded(budget.remaining),
               budgetRemaining: budget.remaining,
             ),
           );
@@ -274,7 +274,7 @@ class ExpenseRepository {
         ),
       );
     } catch (e) {
-      return Left(UnknownFailure(ExpenseStrings.updateFailed));
+      return Left(UnknownFailure(AppStrings.expensesUpdateFailed));
     }
   }
 
@@ -286,7 +286,7 @@ class ExpenseRepository {
       }
       return Right(affected > 0);
     } catch (e) {
-      return Left(UnknownFailure(ExpenseStrings.deleteFailed));
+      return Left(UnknownFailure(AppStrings.expensesDeleteFailed));
     }
   }
 
@@ -302,7 +302,7 @@ class ExpenseRepository {
 
   String? _budgetMessage(BudgetSnapshot? snapshot) {
     if (snapshot == null) return null;
-    return ExpenseStrings.budgetLinked(
+    return AppStrings.expensesBudgetLinked(
       snapshot.spentAmount,
       snapshot.budgetAmount,
       snapshot.remaining,

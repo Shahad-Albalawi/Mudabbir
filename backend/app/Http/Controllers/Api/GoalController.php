@@ -3,25 +3,27 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Goal\AddGoalContributionRequest;
+use App\Http\Requests\Goal\StoreGoalMilestoneRequest;
+use App\Http\Requests\Goal\StoreGoalRequest;
+use App\Http\Requests\Goal\UpdateGoalRequest;
+use App\Http\Resources\GoalResource;
 use App\Services\GoalStore;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class GoalController extends Controller
 {
-    /** @var GoalStore */
-    private $store;
-
-    public function __construct(GoalStore $store)
-    {
-        $this->store = $store;
-    }
+    public function __construct(private GoalStore $store) {}
 
     public function index(Request $request): JsonResponse
     {
         $userId = (int) $request->user()->id;
+        $goals = collect($this->store->all($userId))
+            ->map(fn (array $goal): array => (new GoalResource($goal))->resolve($request))
+            ->all();
 
-        return response()->json(['success' => true, 'data' => $this->store->all($userId)]);
+        return $this->success($goals);
     }
 
     public function show(Request $request, int $id): JsonResponse
@@ -29,93 +31,74 @@ class GoalController extends Controller
         $userId = (int) $request->user()->id;
         $goal = $this->store->find($id, $userId);
         if (! $goal) {
-            return response()->json(['success' => false, 'message' => 'Goal not found'], 404);
+            return $this->notFound('Goal not found');
         }
 
-        return response()->json(['success' => true, 'data' => $goal]);
+        return $this->success((new GoalResource($goal))->resolve($request));
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreGoalRequest $request): JsonResponse
     {
-        $payload = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'target' => ['required', 'numeric', 'min:0.01'],
-            'current_amount' => ['sometimes', 'numeric', 'min:0'],
-            'type' => ['sometimes', 'string', 'max:64'],
-            'start_date' => ['required', 'date'],
-            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
-            'image_path' => ['nullable', 'string'],
-        ]);
-
         $userId = (int) $request->user()->id;
+        $goal = $this->store->create($request->validated(), $userId);
 
-        return response()->json(
-            ['success' => true, 'data' => $this->store->create($payload, $userId)],
-            201
-        );
+        return $this->created((new GoalResource($goal))->resolve($request));
     }
 
-    public function addContribution(Request $request, int $id): JsonResponse
-    {
-        $payload = $request->validate([
-            'amount' => ['required', 'numeric', 'min:0.01'],
-            'note' => ['nullable', 'string'],
-        ]);
-
+    public function addMilestone(
+        StoreGoalMilestoneRequest $request,
+        int $id,
+    ): JsonResponse {
         $userId = (int) $request->user()->id;
-        $goal = $this->store->addContribution($id, $payload, $userId);
+        $goal = $this->store->addMilestone($id, $request->validated(), $userId);
         if (! $goal) {
-            return response()->json(
-                ['success' => false, 'message' => 'Goal not found or already completed'],
-                404
-            );
+            return $this->notFound('Goal not found');
         }
 
-        return response()->json(['success' => true, 'data' => $goal]);
+        return $this->created((new GoalResource($goal))->resolve($request), 'Milestone added');
+    }
+
+    public function addContribution(AddGoalContributionRequest $request, int $id): JsonResponse
+    {
+        $userId = (int) $request->user()->id;
+        $goal = $this->store->addContribution($id, $request->validated(), $userId);
+        if (! $goal) {
+            return $this->notFound('Goal not found or already completed');
+        }
+
+        return $this->success((new GoalResource($goal))->resolve($request));
     }
 
     public function destroy(Request $request, int $id): JsonResponse
     {
         $userId = (int) $request->user()->id;
         if (! $this->store->delete($id, $userId)) {
-            return response()->json(['success' => false, 'message' => 'Goal not found'], 404);
+            return $this->notFound('Goal not found');
         }
 
-        return response()->json(['success' => true, 'message' => 'Deleted']);
+        return $this->success(null, 'Deleted');
     }
 
-    public function update(Request $request, int $id): JsonResponse
+    public function update(UpdateGoalRequest $request, int $id): JsonResponse
     {
-        $payload = $request->validate([
-            'name' => ['sometimes', 'string', 'max:255'],
-            'target' => ['sometimes', 'numeric', 'min:0.01'],
-            'type' => ['sometimes', 'string', 'max:64'],
-            'start_date' => ['sometimes', 'date'],
-            'end_date' => ['sometimes', 'date'],
-            'image_path' => ['nullable', 'string'],
-            'updated_at' => ['nullable', 'date'],
-        ]);
-
         $userId = (int) $request->user()->id;
         $result = $this->store->update(
             $id,
-            $payload,
+            $request->validated(),
             $userId,
             $request->input('updated_at')
         );
         if (! $result) {
-            return response()->json(['success' => false, 'message' => 'Goal not found'], 404);
+            return $this->notFound('Goal not found');
         }
 
         if (! empty($result['conflict'])) {
-            return response()->json([
-                'success' => false,
-                'conflict' => true,
-                'message' => 'Server has a newer version of this goal.',
-                'data' => $result['data'],
-            ], 409);
+            return $this->conflict(
+                'Server has a newer version of this goal.',
+                (new GoalResource($result['data']))->resolve($request)
+            );
         }
 
-        return response()->json(['success' => true, 'data' => $result['data']]);
+        return $this->success((new GoalResource($result['data']))->resolve($request));
     }
 }

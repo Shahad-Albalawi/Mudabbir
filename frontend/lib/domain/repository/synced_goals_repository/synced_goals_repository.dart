@@ -6,8 +6,12 @@ import 'package:mudabbir/domain/models/goal_sync_result.dart';
 import 'package:mudabbir/domain/models/savings_goal.dart';
 import 'package:mudabbir/domain/repository/goals_repository/goals_repository.dart';
 import 'package:mudabbir/domain/services/sync_policies.dart';
-import 'package:mudabbir/presentation/server_challenges/services/api_exception.dart';
+import 'package:mudabbir/domain/services/sync_flush_lock.dart';
+import 'package:mudabbir/domain/services/repository_guard.dart';
+import 'package:mudabbir/presentation/resources/strings_manager.dart';
+import 'package:mudabbir/data/network/api_exception.dart';
 import 'package:mudabbir/service/getit_init.dart';
+import 'package:mudabbir/utils/api_session.dart';
 
 /// Offline-first sync between Laravel goals API, Hive cache, and SQLite.
 class SyncedGoalsRepository {
@@ -23,42 +27,54 @@ class SyncedGoalsRepository {
         _remote = remote ?? getIt<GoalApiService>(),
         _cache = cache ?? getIt<GoalHiveCache>();
 
-  Future<GoalListSyncResult> getGoals() async {
-    final cached = _cache.getGoalsList();
+  Future<GoalListSyncResult> getGoals() {
+    return guardSyncedOperation(() async {
+      final cached = _cache.getGoalsList();
 
-    try {
-      await flushPendingOps();
-      final remote = await _remote.getGoals();
-      await _pruneFromServerSnapshot(remote);
-      await _local.mergeServerGoals(remote);
-      await _cache.saveGoalsList(
-        remote.map((g) => _goalToCacheMap(g)).toList(),
-      );
-
-      final local = await _local.getGoals();
-      return GoalListSyncResult(goals: local.getOrElse(() => []));
-    } on ApiException catch (e) {
-      if (e.isNetworkError) {
-        if (cached != null) {
-          return GoalListSyncResult(
-            goals: cached.map(_goalFromCacheMap).toList(),
-            fromCache: true,
-            isOffline: true,
-          );
-        }
-
+      if (!await hasApiSession()) {
         final local = await _local.getGoals();
         return local.fold(
-          (_) => const GoalListSyncResult(goals: [], isOffline: true),
-          (data) => GoalListSyncResult(
-            goals: data,
-            fromCache: true,
-            isOffline: true,
+          (_) => GoalListSyncResult(
+            goals: cached?.map(_goalFromCacheMap).toList() ?? const [],
           ),
+          (data) => GoalListSyncResult(goals: data),
         );
       }
-      rethrow;
-    }
+
+      try {
+        await flushPendingOps();
+        final remote = await _remote.getGoals();
+        await _pruneFromServerSnapshot(remote);
+        await _local.mergeServerGoals(remote);
+        await _cache.saveGoalsList(
+          remote.map((g) => _goalToCacheMap(g)).toList(),
+        );
+
+        final local = await _local.getGoals();
+        return GoalListSyncResult(goals: local.getOrElse(() => []));
+      } on ApiException catch (e) {
+        if (e.isNetworkError || e.statusCode == 401) {
+          if (cached != null) {
+            return GoalListSyncResult(
+              goals: cached.map(_goalFromCacheMap).toList(),
+              fromCache: true,
+              isOffline: true,
+            );
+          }
+
+          final local = await _local.getGoals();
+          return local.fold(
+            (_) => const GoalListSyncResult(goals: [], isOffline: true),
+            (data) => GoalListSyncResult(
+              goals: data,
+              fromCache: true,
+              isOffline: true,
+            ),
+          );
+        }
+        rethrow;
+      }
+    }, fallbackMessage: AppStrings.goalLoadFailed);
   }
 
   Future<Either<Failure, GoalCreateSyncResult>> createGoal({
@@ -69,57 +85,60 @@ class SyncedGoalsRepository {
     required DateTime startDate,
     required DateTime endDate,
     String? imageSourcePath,
-  }) async {
-    try {
-      final remote = await _remote.createGoal({
-        'name': name.trim(),
-        'target': target,
-        'current_amount': currentAmount,
-        'type': type,
-        'start_date': _isoDate(startDate),
-        'end_date': _isoDate(endDate),
-      });
-      await _cache.upsertGoal(_goalToCacheMap(remote));
-      await _local.mergeServerGoals([remote]);
-
-      return Right(GoalCreateSyncResult(goal: remote));
-    } on ApiException catch (e) {
-      if (!e.isNetworkError) rethrow;
-
-      final localResult = await _local.createGoal(
-        name: name,
-        target: target,
-        currentAmount: currentAmount,
-        type: type,
-        startDate: startDate,
-        endDate: endDate,
-        imageSourcePath: imageSourcePath,
-      );
-
-      return localResult.fold(Left.new, (goal) async {
-        await _cache.upsertGoal(_goalToCacheMap(goal));
-        await _cache.queueOp({
-          'op': 'create_goal',
-          'local_goal_id': goal.id,
-          'payload': {
-            'name': name.trim(),
-            'target': target,
-            'current_amount': currentAmount,
-            'type': type,
-            'start_date': _isoDate(startDate),
-            'end_date': _isoDate(endDate),
-          },
-          'queued_at': DateTime.now().toIso8601String(),
+  }) {
+    return guardRepository(() async {
+      try {
+        final remote = await _remote.createGoal({
+          'name': name.trim(),
+          'target': target,
+          'current_amount': currentAmount,
+          'type': type,
+          'start_date': _isoDate(startDate),
+          'end_date': _isoDate(endDate),
         });
-        return Right(
-          GoalCreateSyncResult(
-            goal: goal,
-            syncedToServer: false,
-            queuedOffline: true,
-          ),
+        await _cache.upsertGoal(_goalToCacheMap(remote));
+        await _local.mergeServerGoals([remote]);
+
+        return GoalCreateSyncResult(goal: remote);
+      } on ApiException catch (e) {
+        if (!e.isNetworkError) throw RepositoryException(e.userMessage);
+
+        final localResult = await _local.createGoal(
+          name: name,
+          target: target,
+          currentAmount: currentAmount,
+          type: type,
+          startDate: startDate,
+          endDate: endDate,
+          imageSourcePath: imageSourcePath,
         );
-      });
-    }
+
+        return localResult.fold(
+          (failure) => throw RepositoryException(failure.userFacingMessage),
+          (goal) async {
+            await _cache.upsertGoal(_goalToCacheMap(goal));
+            await _cache.queueOp({
+              'op': 'create_goal',
+              'local_goal_id': goal.id,
+              'payload': {
+                'name': name.trim(),
+                'target': target,
+                'current_amount': currentAmount,
+                'type': type,
+                'start_date': _isoDate(startDate),
+                'end_date': _isoDate(endDate),
+              },
+              'queued_at': DateTime.now().toIso8601String(),
+            });
+            return GoalCreateSyncResult(
+              goal: goal,
+              syncedToServer: false,
+              queuedOffline: true,
+            );
+          },
+        );
+      }
+    }, fallbackMessage: AppStrings.goalSyncFailed);
   }
 
   Future<Either<Failure, GoalUpdateSyncResult>> updateGoal({
@@ -131,7 +150,7 @@ class SyncedGoalsRepository {
     required DateTime endDate,
     String? imageSourcePath,
     String? updatedAt,
-  }) async {
+  }) {
     final payload = {
       'name': name.trim(),
       'target': target,
@@ -141,155 +160,161 @@ class SyncedGoalsRepository {
       if (updatedAt != null) 'updated_at': updatedAt,
     };
 
-    try {
-      final remote = await _remote.updateGoal(goalId, payload);
-      await _cache.upsertGoal(_goalToCacheMap(remote));
-      await _local.mergeServerGoals([remote]);
-      return Right(GoalUpdateSyncResult(goal: remote));
-    } on ApiException catch (e) {
-      if (e.isConflict && e.conflictData is Map) {
-        final server = _goalFromCacheMap(
-          Map<String, dynamic>.from(e.conflictData as Map),
+    return guardRepository(() async {
+      try {
+        final remote = await _remote.updateGoal(goalId, payload);
+        await _cache.upsertGoal(_goalToCacheMap(remote));
+        await _local.mergeServerGoals([remote]);
+        return GoalUpdateSyncResult(goal: remote);
+      } on ApiException catch (e) {
+        if (e.isConflict && e.conflictData is Map) {
+          final server = _goalFromCacheMap(
+            Map<String, dynamic>.from(e.conflictData as Map),
+          );
+          await _cache.upsertGoal(_goalToCacheMap(server));
+          await _local.mergeServerGoals([server]);
+          return GoalUpdateSyncResult(goal: server, syncedToServer: false);
+        }
+        if (!e.isNetworkError) throw RepositoryException(e.userMessage);
+
+        final localResult = await _local.updateGoal(
+          goalId: goalId,
+          name: name,
+          target: target,
+          type: type,
+          startDate: startDate,
+          endDate: endDate,
+          imageSourcePath: imageSourcePath,
         );
-        await _cache.upsertGoal(_goalToCacheMap(server));
-        await _local.mergeServerGoals([server]);
-        return Right(
-          GoalUpdateSyncResult(goal: server, syncedToServer: false),
+
+        return localResult.fold(
+          (failure) => throw RepositoryException(failure.userFacingMessage),
+          (goal) async {
+            await _cache.upsertGoal(_goalToCacheMap(goal));
+            await _cache.queueOp({
+              'op': 'update_goal',
+              'goal_id': goalId,
+              'payload': payload,
+              'queued_at': DateTime.now().toIso8601String(),
+            });
+            return GoalUpdateSyncResult(
+              goal: goal,
+              syncedToServer: false,
+              queuedOffline: true,
+            );
+          },
         );
       }
-      if (!e.isNetworkError) rethrow;
-
-      final localResult = await _local.updateGoal(
-        goalId: goalId,
-        name: name,
-        target: target,
-        type: type,
-        startDate: startDate,
-        endDate: endDate,
-        imageSourcePath: imageSourcePath,
-      );
-
-      return localResult.fold(Left.new, (goal) async {
-        await _cache.upsertGoal(_goalToCacheMap(goal));
-        await _cache.queueOp({
-          'op': 'update_goal',
-          'goal_id': goalId,
-          'payload': payload,
-          'queued_at': DateTime.now().toIso8601String(),
-        });
-        return Right(
-          GoalUpdateSyncResult(
-            goal: goal,
-            syncedToServer: false,
-            queuedOffline: true,
-          ),
-        );
-      });
-    }
+    }, fallbackMessage: AppStrings.goalSyncFailed);
   }
 
   Future<Either<Failure, GoalWriteSyncResult>> addContribution({
     required int goalId,
     required double amount,
     String? note,
-  }) async {
-    try {
-      final remote = await _remote.addContribution(
-        goalId: goalId,
-        amount: amount,
-        note: note,
-      );
-      await _cache.upsertGoal(_goalToCacheMap(remote));
-      await _local.mergeServerGoals([remote]);
+  }) {
+    return guardRepository(() async {
+      try {
+        final remote = await _remote.addContribution(
+          goalId: goalId,
+          amount: amount,
+          note: note,
+        );
+        await _cache.upsertGoal(_goalToCacheMap(remote));
+        await _local.mergeServerGoals([remote]);
 
-      final previous = await _local.getGoalById(goalId);
-      final newlyCompleted = previous.fold(
-        (_) => false,
-        (g) => remote.isCompleted && !g.isCompleted,
-      );
+        final previous = await _local.getGoalById(goalId);
+        final newlyCompleted = previous.fold(
+          (_) => false,
+          (g) => remote.isCompleted && !g.isCompleted,
+        );
 
-      return Right(
-        GoalWriteSyncResult(
+        return GoalWriteSyncResult(
           result: GoalWriteResult(
             goal: remote,
             newlyCompleted: newlyCompleted,
           ),
-        ),
-      );
-    } on ApiException catch (e) {
-      if (!e.isNetworkError) rethrow;
-
-      final localResult = await _local.addContribution(
-        goalId: goalId,
-        amount: amount,
-        note: note,
-      );
-
-      return localResult.fold(Left.new, (write) async {
-        await _cache.upsertGoal(_goalToCacheMap(write.goal));
-        await _cache.queueOp({
-          'op': 'add_contribution',
-          'goal_id': goalId,
-          'payload': {
-            'amount': amount,
-            if (note != null) 'note': note,
-          },
-          'queued_at': DateTime.now().toIso8601String(),
-        });
-        return Right(
-          GoalWriteSyncResult(
-            result: write,
-            syncedToServer: false,
-            queuedOffline: true,
-          ),
         );
-      });
-    }
+      } on ApiException catch (e) {
+        if (!e.isNetworkError) throw RepositoryException(e.userMessage);
+
+        final localResult = await _local.addContribution(
+          goalId: goalId,
+          amount: amount,
+          note: note,
+        );
+
+        return localResult.fold(
+          (failure) => throw RepositoryException(failure.userFacingMessage),
+          (write) async {
+            await _cache.upsertGoal(_goalToCacheMap(write.goal));
+            await _cache.queueOp({
+              'op': 'add_contribution',
+              'goal_id': goalId,
+              'payload': {
+                'amount': amount,
+                if (note != null) 'note': note,
+              },
+              'queued_at': DateTime.now().toIso8601String(),
+            });
+            return GoalWriteSyncResult(
+              result: write,
+              syncedToServer: false,
+              queuedOffline: true,
+            );
+          },
+        );
+      }
+    }, fallbackMessage: AppStrings.goalSyncFailed);
   }
 
-  Future<Either<Failure, GoalDeleteSyncResult>> deleteGoal(int id) async {
-    try {
-      await _remote.deleteGoal(id);
-      await _cache.removeGoal(id);
-      final local = await _local.deleteGoal(id);
-      return local.fold(
-        Left.new,
-        (ok) => Right(GoalDeleteSyncResult(deleted: ok)),
-      );
-    } on ApiException catch (e) {
-      if (!e.isNetworkError) rethrow;
-
-      final local = await _local.deleteGoal(id);
-      return local.fold(Left.new, (ok) async {
-        if (ok) {
-          await _cache.removeGoal(id);
-          await _cache.queueOp({
-            'op': 'delete_goal',
-            'goal_id': id,
-            'queued_at': DateTime.now().toIso8601String(),
-          });
-        }
-        return Right(
-          GoalDeleteSyncResult(
-            deleted: ok,
-            syncedToServer: false,
-            queuedOffline: ok,
-          ),
+  Future<Either<Failure, GoalDeleteSyncResult>> deleteGoal(int id) {
+    return guardRepository(() async {
+      try {
+        await _remote.deleteGoal(id);
+        await _cache.removeGoal(id);
+        final local = await _local.deleteGoal(id);
+        return local.fold(
+          (failure) => throw RepositoryException(failure.userFacingMessage),
+          (ok) => GoalDeleteSyncResult(deleted: ok),
         );
-      });
-    }
+      } on ApiException catch (e) {
+        if (!e.isNetworkError) throw RepositoryException(e.userMessage);
+
+        final local = await _local.deleteGoal(id);
+        return local.fold(
+          (failure) => throw RepositoryException(failure.userFacingMessage),
+          (ok) async {
+            if (ok) {
+              await _cache.removeGoal(id);
+              await _cache.queueOp({
+                'op': 'delete_goal',
+                'goal_id': id,
+                'queued_at': DateTime.now().toIso8601String(),
+              });
+            }
+            return GoalDeleteSyncResult(
+              deleted: ok,
+              syncedToServer: false,
+              queuedOffline: ok,
+            );
+          },
+        );
+      }
+    }, fallbackMessage: AppStrings.goalSyncFailed);
   }
 
   Future<void> flushPendingOps() async {
-    final ops = _cache.getPendingOps();
-    if (ops.isEmpty) return;
+    await SyncFlushLock.run(() async {
+      final ops = _cache.getPendingOps();
+      if (ops.isEmpty) return;
 
-    final remaining = <Map<String, dynamic>>[];
-    for (var i = 0; i < ops.length; i++) {
-      final op = ops[i];
-      try {
-        final type = op['op'] as String?;
-        if (type == 'create_goal') {
+      final remaining = <Map<String, dynamic>>[];
+      for (var i = 0; i < ops.length; i++) {
+        final op = ops[i];
+        try {
+          final type = op['op'] as String?;
+          if (type == 'create_goal') {
           final payload = Map<String, dynamic>.from(op['payload'] as Map);
           final remote = await _remote.createGoal(payload);
           await _cache.upsertGoal(_goalToCacheMap(remote));
@@ -329,15 +354,16 @@ class SyncedGoalsRepository {
           await _cache.removeGoal(goalId);
           await _local.deleteGoal(goalId);
         }
-      } on ApiException catch (e) {
-        if (e.isNetworkError) {
+        } on ApiException catch (e) {
+          if (shouldRetainPendingOp(error: e, opType: op['op'] as String?)) {
+            remaining.add(op);
+          }
+        } catch (_) {
           remaining.add(op);
         }
-      } catch (_) {
-        remaining.add(op);
       }
-    }
-    await _cache.setPendingOps(remaining);
+      await _cache.setPendingOps(remaining);
+    });
   }
 
   Future<void> _pruneFromServerSnapshot(List<SavingsGoal> remote) async {

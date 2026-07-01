@@ -1,6 +1,6 @@
 import 'package:mudabbir/domain/models/behavioral_snapshot.dart';
 import 'package:mudabbir/domain/services/insight_thresholds.dart';
-import 'package:mudabbir/presentation/resources/behavioral_strings.dart';
+import 'package:mudabbir/presentation/analysis/behavioral_copy_helpers.dart';
 import 'package:mudabbir/presentation/resources/entity_localizations.dart';
 import 'package:mudabbir/presentation/statistics/statistics_viewmodel.dart';
 
@@ -35,10 +35,10 @@ class BehavioralAnalysisEngine {
 
     return BehavioralSnapshot(
       behavioralScore: behavioralScore,
-      behavioralRating: BehavioralStrings.ratingForScore(behavioralScore),
+      behavioralRating: BehavioralCopyHelpers.ratingForScore(behavioralScore),
       monthlyTrend: raw.monthlyTrend,
       anomalies: anomalies,
-      monthComparisonSummary: BehavioralStrings.monthComparisonSummary(
+      monthComparisonSummary: BehavioralCopyHelpers.monthComparisonSummary(
         currentExpense: raw.currentMonthExpense,
         previousExpense: raw.previousMonthExpense,
         trailingAvg: raw.trailingThreeMonthAvgExpense,
@@ -254,7 +254,7 @@ class BehavioralAnalysisEngine {
 
   static String _weekdayInsight(Map<int, double> weekdayTotals) {
     if (weekdayTotals.isEmpty) {
-      return BehavioralStrings.noWeekdayData;
+      return BehavioralCopyHelpers.noWeekdayData;
     }
 
     var topDay = 1;
@@ -266,8 +266,8 @@ class BehavioralAnalysisEngine {
       }
     });
 
-    return BehavioralStrings.weekdayInsight(
-      dayName: BehavioralStrings.weekdayName(topDay),
+    return BehavioralCopyHelpers.weekdayInsight(
+      dayName: BehavioralCopyHelpers.weekdayName(topDay),
       amount: topAmount,
     );
   }
@@ -282,35 +282,35 @@ class BehavioralAnalysisEngine {
     final recs = <String>[];
 
     for (final anomaly in anomalies.take(3)) {
-      recs.add(BehavioralStrings.anomalyRecommendation(anomaly));
+      recs.add(BehavioralCopyHelpers.anomalyRecommendation(anomaly));
     }
 
     if (raw.previousMonthExpense > 0 &&
         raw.currentMonthExpense > raw.previousMonthExpense * 1.1) {
-      recs.add(BehavioralStrings.recReduceVsLastMonth);
+      recs.add(BehavioralCopyHelpers.recReduceVsLastMonth);
     } else if (raw.trailingThreeMonthAvgExpense > 0 &&
         raw.currentMonthExpense < raw.trailingThreeMonthAvgExpense * 0.9) {
-      recs.add(BehavioralStrings.recKeepDiscipline);
+      recs.add(BehavioralCopyHelpers.recKeepDiscipline);
     }
 
     if (monthlySavingsRate < 10 && raw.currentMonthIncome > 0) {
-      recs.add(BehavioralStrings.recIncreaseSavings);
+      recs.add(BehavioralCopyHelpers.recIncreaseSavings);
     }
 
     if (statistics.goalsProgress.isEmpty) {
-      recs.add(BehavioralStrings.recSetGoals);
+      recs.add(BehavioralCopyHelpers.recSetGoals);
     }
 
     if (statistics.budgetsProgress.isEmpty) {
-      recs.add(BehavioralStrings.recCreateBudget);
+      recs.add(BehavioralCopyHelpers.recCreateBudget);
     }
 
     if (behavioralScore >= 75) {
-      recs.add(BehavioralStrings.recGreatScore);
+      recs.add(BehavioralCopyHelpers.recGreatScore);
     }
 
     if (recs.isEmpty) {
-      recs.add(BehavioralStrings.recDefault);
+      recs.add(BehavioralCopyHelpers.recDefault);
     }
 
     return recs.take(6).toList();

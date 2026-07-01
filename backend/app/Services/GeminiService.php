@@ -21,10 +21,13 @@ class GeminiService
             throw new RuntimeException('Gemini API key is missing.');
         }
 
-        $url = "{$baseUrl}/models/{$model}:generateContent?key={$apiKey}";
+        $url = "{$baseUrl}/models/{$model}:generateContent";
 
         try {
             $response = Http::acceptJson()
+                ->withHeaders([
+                    'x-goog-api-key' => $apiKey,
+                ])
                 ->withOptions([
                     'verify' => filter_var(config('gemini.verify_ssl', true), FILTER_VALIDATE_BOOLEAN),
                 ])

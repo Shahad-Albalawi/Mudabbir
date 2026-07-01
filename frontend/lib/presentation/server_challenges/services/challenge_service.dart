@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:mudabbir/presentation/server_challenges/models/challenge_model.dart';
 import 'package:mudabbir/utils/dev_log.dart';
-import 'package:mudabbir/presentation/server_challenges/services/api_exception.dart';
-import 'package:mudabbir/presentation/server_challenges/utils/dio_client.dart';
+import 'package:mudabbir/data/network/api_exception.dart';
+import 'package:mudabbir/data/network/dio_client.dart';
 
 class ChallengeService {
   final DioClient _dioClient;
@@ -324,12 +324,10 @@ class ChallengeService {
 
   Future<ChallengeCheckInResult> checkIn({
     required int challengeId,
-    int userId = 1,
   }) async {
     try {
       final response = await _dioClient.dio.post(
         '/challenges/$challengeId/check-in',
-        data: {'user_id': userId},
       );
       if (response.data['success'] == true) {
         final meta = response.data['meta'] as Map<String, dynamic>? ?? {};
@@ -353,12 +351,11 @@ class ChallengeService {
   Future<ChallengeModel> recordProgress({
     required int challengeId,
     required double amount,
-    int userId = 1,
   }) async {
     try {
       final response = await _dioClient.dio.post(
         '/challenges/$challengeId/progress',
-        data: {'user_id': userId, 'amount': amount},
+        data: {'amount': amount},
       );
       if (response.data['success'] == true) {
         return ChallengeModel.fromJson(

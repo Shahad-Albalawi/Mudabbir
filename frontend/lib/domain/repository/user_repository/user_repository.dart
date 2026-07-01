@@ -7,22 +7,20 @@ class UserRepository {
   final ApiService apiService;
   UserRepository(this.apiService);
 
-  // login
   Future<Either<Failure, UserModel>> login(
     String email,
     String password,
-  ) async {
-    return await apiService.login(email, password);
+  ) {
+    return apiService.login(email, password);
   }
 
-  // login
   Future<Either<Failure, UserModel>> register(
     String name,
     String email,
     String password,
     String passwordConfirmation,
-  ) async {
-    return await apiService.register(
+  ) {
+    return apiService.register(
       name,
       email,
       password,

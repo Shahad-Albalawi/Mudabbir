@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mudabbir/domain/models/challenge_sync_result.dart';
 import 'package:mudabbir/domain/repository/server_challenge_repository/server_challenge_repository.dart';
-import 'package:mudabbir/presentation/resources/server_challenge_strings.dart';
+import 'package:mudabbir/presentation/server_challenges/challenge_copy_helpers.dart';
 import 'package:mudabbir/presentation/server_challenges/models/challenge_model.dart';
 import 'package:mudabbir/presentation/server_challenges/providers/challenge_state.dart';
-import 'package:mudabbir/presentation/server_challenges/services/api_exception.dart';
+import 'package:mudabbir/data/network/api_exception.dart';
 import 'package:mudabbir/presentation/server_challenges/services/challenge_service.dart';
-import 'package:mudabbir/presentation/server_challenges/utils/dio_client.dart';
+import 'package:mudabbir/data/network/dio_client.dart';
 import 'package:mudabbir/service/getit_init.dart';
 
 // Dio Client Provider (kept for Riverpod consumers that still reference it)
@@ -144,6 +144,9 @@ class ChallengeOperationNotifier
   ChallengeOperationNotifier(this._repository, this._challengesNotifier)
     : super(const ChallengeOperationInitial());
 
+  String _networkOrValidation(ApiException e, {required String offlineMessage}) =>
+      e.isNetworkError ? offlineMessage : e.getValidationMessage();
+
   Future<void> createChallenge({
     required String name,
     required double amount,
@@ -164,7 +167,12 @@ class ChallengeOperationNotifier
         challenge: challenge,
       );
     } on ApiException catch (e) {
-      state = ChallengeOperationError(e.getValidationMessage());
+      state = ChallengeOperationError(
+        _networkOrValidation(
+          e,
+          offlineMessage: ServerChallengeStrings.createRequiresOnline,
+        ),
+      );
     } catch (e) {
       state = ChallengeOperationError(
         ServerChallengeStrings.unexpectedErrorLater,
@@ -194,7 +202,12 @@ class ChallengeOperationNotifier
         challenge: challenge,
       );
     } on ApiException catch (e) {
-      state = ChallengeOperationError(e.getValidationMessage());
+      state = ChallengeOperationError(
+        _networkOrValidation(
+          e,
+          offlineMessage: ServerChallengeStrings.writeRequiresOnline,
+        ),
+      );
     } catch (e) {
       state = ChallengeOperationError(
         ServerChallengeStrings.unexpectedErrorLater,
@@ -211,7 +224,12 @@ class ChallengeOperationNotifier
         ServerChallengeStrings.challengeDeletedSuccess,
       );
     } on ApiException catch (e) {
-      state = ChallengeOperationError(e.getValidationMessage());
+      state = ChallengeOperationError(
+        _networkOrValidation(
+          e,
+          offlineMessage: ServerChallengeStrings.writeRequiresOnline,
+        ),
+      );
     } catch (e) {
       state = ChallengeOperationError(ServerChallengeStrings.unexpectedError);
     }
@@ -233,7 +251,12 @@ class ChallengeOperationNotifier
         challenge: challenge,
       );
     } on ApiException catch (e) {
-      state = ChallengeOperationError(e.getValidationMessage());
+      state = ChallengeOperationError(
+        _networkOrValidation(
+          e,
+          offlineMessage: ServerChallengeStrings.writeRequiresOnline,
+        ),
+      );
     } catch (e) {
       state = ChallengeOperationError(
         ServerChallengeStrings.unexpectedErrorLater,
@@ -257,7 +280,12 @@ class ChallengeOperationNotifier
         challenge: challenge,
       );
     } on ApiException catch (e) {
-      state = ChallengeOperationError(e.getValidationMessage());
+      state = ChallengeOperationError(
+        _networkOrValidation(
+          e,
+          offlineMessage: ServerChallengeStrings.writeRequiresOnline,
+        ),
+      );
     } catch (e) {
       state = ChallengeOperationError(ServerChallengeStrings.unexpectedError);
     }
@@ -307,13 +335,11 @@ class ChallengeOperationNotifier
 
   Future<void> checkIn({
     required int challengeId,
-    int userId = 1,
   }) async {
     state = const ChallengeOperationLoading();
     try {
       final result = await _repository.checkIn(
         challengeId: challengeId,
-        userId: userId,
       );
       _challengesNotifier.updateChallenge(result.challenge);
 
@@ -338,14 +364,12 @@ class ChallengeOperationNotifier
   Future<ChallengeProgressResult?> addProgress({
     required int challengeId,
     required double amount,
-    int userId = 1,
   }) async {
     state = const ChallengeOperationLoading();
     try {
       final result = await _repository.addProgress(
         challengeId: challengeId,
         amount: amount,
-        userId: userId,
       );
       if (result.challenge != null) {
         _challengesNotifier.updateChallenge(result.challenge!);

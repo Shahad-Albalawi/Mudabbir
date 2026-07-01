@@ -6,7 +6,7 @@ import 'package:mudabbir/data/local/empty.dart';
 import 'package:mudabbir/data/network/failure.dart';
 import 'package:mudabbir/domain/models/savings_goal.dart';
 import 'package:mudabbir/domain/services/sync_policies.dart';
-import 'package:mudabbir/presentation/resources/goal_strings.dart';
+import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -47,7 +47,7 @@ class GoalsRepository {
         },
       );
     } catch (_) {
-      return Left(UnknownFailure(GoalStrings.updateFailed));
+      return Left(UnknownFailure(AppStrings.goalUpdateFailed));
     }
   }
 
@@ -62,7 +62,7 @@ class GoalsRepository {
   }) async {
     try {
       if (name.trim().isEmpty || target <= 0) {
-        return Left(ValidationFailure(GoalStrings.nameRequired));
+        return Left(ValidationFailure(AppStrings.goalNameRequired));
       }
 
       String? storedImagePath;
@@ -95,7 +95,7 @@ class GoalsRepository {
       final goalEither = await getGoalById(id);
       return goalEither.fold(Left.new, Right.new);
     } catch (_) {
-      return Left(UnknownFailure(GoalStrings.createFailed));
+      return Left(UnknownFailure(AppStrings.goalCreateFailed));
     }
   }
 
@@ -106,13 +106,13 @@ class GoalsRepository {
   }) async {
     try {
       if (amount <= 0) {
-        return Left(ValidationFailure(GoalStrings.invalidAmount));
+        return Left(ValidationFailure(AppStrings.goalsInvalidAmount));
       }
 
       final goalEither = await getGoalById(goalId);
       return goalEither.fold(Left.new, (goal) async {
         if (goal.isCompleted) {
-          return Left(ValidationFailure(GoalStrings.updateFailed));
+          return Left(ValidationFailure(AppStrings.goalUpdateFailed));
         }
 
         final newAmount = (goal.currentAmount + amount).clamp(0, goal.target);
@@ -148,7 +148,7 @@ class GoalsRepository {
         );
       });
     } catch (_) {
-      return Left(UnknownFailure(GoalStrings.updateFailed));
+      return Left(UnknownFailure(AppStrings.goalUpdateFailed));
     }
   }
 
@@ -157,14 +157,14 @@ class GoalsRepository {
       final deleted = await _db.delete('goals', 'id = ?', [id]);
       return Right(deleted > 0);
     } catch (_) {
-      return Left(UnknownFailure(GoalStrings.updateFailed));
+      return Left(UnknownFailure(AppStrings.goalUpdateFailed));
     }
   }
 
   Future<Either<Failure, SavingsGoal>> getGoalById(int id) async {
     final result = await _db.queryRow('goals', 'id = ?', [id]);
     return await result.fold(
-      (_) async => Left(UnknownFailure(GoalStrings.updateFailed)),
+      (_) async => Left(UnknownFailure(AppStrings.goalUpdateFailed)),
       (rows) => _mapGoalRow(rows.first, id),
     );
   }
@@ -193,7 +193,7 @@ class GoalsRepository {
   }) async {
     try {
       if (name.trim().isEmpty || target <= 0) {
-        return Left(ValidationFailure(GoalStrings.nameRequired));
+        return Left(ValidationFailure(AppStrings.goalNameRequired));
       }
 
       String? storedImagePath;
@@ -234,7 +234,7 @@ class GoalsRepository {
         },
       );
     } catch (_) {
-      return Left(UnknownFailure(GoalStrings.updateFailed));
+      return Left(UnknownFailure(AppStrings.goalUpdateFailed));
     }
   }
 

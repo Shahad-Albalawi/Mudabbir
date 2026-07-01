@@ -7,6 +7,7 @@ import 'package:mudabbir/service/debug/demo_seed_service.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/hive_service.dart';
 import 'package:mudabbir/service/security/auth_token_secure_store.dart';
+import 'package:mudabbir/utils/api_session.dart';
 import 'package:mudabbir/utils/dev_log.dart';
 
 /// Debug-only: land on home with onboarding done, guest DB + demo rows.
@@ -32,7 +33,19 @@ class InstantBrowseBootstrap {
   static Future<void> applyIfEnabled() async {
     if (!isEnabled) return;
 
+    // Keep API login across restarts — backend features need a real session.
+    if (await hasApiSession()) {
+      devLog('[InstantBrowse] skipped — active API session');
+      return;
+    }
+
     final hive = getIt<HiveService>();
+    final onboardingDone = hive.getValue(HiveConstants.savedFirstTime) == true;
+    if (onboardingDone) {
+      devLog('[InstantBrowse] skipped — guest onboarding already applied');
+      return;
+    }
+
     await hive.setValue(HiveConstants.savedFirstTime, true);
 
     await hive.deleteValue(HiveConstants.savedToken);

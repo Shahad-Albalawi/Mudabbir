@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
+import 'package:mudabbir/presentation/widgets/app_snackbar.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
-import 'package:mudabbir/service/getit_init.dart';
-import 'package:mudabbir/service/navigation_service.dart';
 
 class PopupWidgets {
   static Widget textField({
@@ -122,7 +121,7 @@ class PopupWidgets {
         ? scheme.success
         : type == 'expense'
         ? scheme.error
-        : scheme.primary;
+        : scheme.chromeIcon;
     return Row(
       children: [
         Icon(
@@ -140,14 +139,8 @@ class PopupWidgets {
   }
 
   static void showSuccessSnackBar(BuildContext ctx, String msg) =>
-      getIt<NavigationService>().showSuccessSnackbar(
-        title: AppStrings.snackSuccessTitle,
-        body: msg,
-      );
+      AppSnackbar.success(msg);
 
   static void showErrorSnackBar(BuildContext ctx, String msg) =>
-      getIt<NavigationService>().showErrorSnackbar(
-        title: AppStrings.snackErrorTitle,
-        body: msg,
-      );
+      AppSnackbar.error(msg);
 }
