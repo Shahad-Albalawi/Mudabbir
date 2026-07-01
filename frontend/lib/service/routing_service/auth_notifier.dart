@@ -12,6 +12,7 @@ import 'package:mudabbir/utils/dev_log.dart';
 import 'package:mudabbir/utils/local_db_user_id.dart';
 import 'package:flutter/material.dart';
 import 'package:mudabbir/constants/app_flags.dart';
+import 'package:mudabbir/constants/test_support.dart';
 
 class AuthNotifier extends ChangeNotifier {
   final HiveService _hiveService = getIt<HiveService>();
@@ -32,9 +33,11 @@ class AuthNotifier extends ChangeNotifier {
       final user = _hiveService.getValue(HiveConstants.savedUserInfo);
       if (user != null && user is Map) {
         _isLoggedIn = true;
-        await LocalDatabase.instance.initForUser(resolveLocalDbUserId(user));
-        if (AppFlags.enableDemoSeed) {
-          await DemoSeedService.seedIfDatabaseEmpty();
+        if (!TestSupport.skipDatabaseSideEffects) {
+          await LocalDatabase.instance.initForUser(resolveLocalDbUserId(user));
+          if (AppFlags.enableDemoSeed) {
+            await DemoSeedService.seedIfDatabaseEmpty();
+          }
         }
         devLog('Database initialized for existing user: ${user['name']}');
       } else {
@@ -46,15 +49,19 @@ class AuthNotifier extends ChangeNotifier {
       _isLoggedIn = false;
       await _hiveService.deleteValue(HiveConstants.savedToken);
       if (AppFlags.allowGuestHome) {
-        final guestUser = resolveLocalDbUserId(
-          _hiveService.getValue(HiveConstants.savedUserInfo),
-        );
-        await LocalDatabase.instance.initForUser(guestUser);
-        if (AppFlags.enableDemoSeed) {
-          await DemoSeedService.seedIfDatabaseEmpty();
+        if (!TestSupport.skipDatabaseSideEffects) {
+          final guestUser = resolveLocalDbUserId(
+            _hiveService.getValue(HiveConstants.savedUserInfo),
+          );
+          await LocalDatabase.instance.initForUser(guestUser);
+          if (AppFlags.enableDemoSeed) {
+            await DemoSeedService.seedIfDatabaseEmpty();
+          }
         }
       } else {
-        await LocalDatabase.instance.close();
+        if (!TestSupport.skipDatabaseSideEffects) {
+          await LocalDatabase.instance.close();
+        }
       }
     }
 
@@ -69,9 +76,11 @@ class AuthNotifier extends ChangeNotifier {
       await _hiveService.deleteValue(HiveConstants.savedToken);
 
       final dbUserId = resolveLocalDbUserId(user);
-      await LocalDatabase.instance.initForUser(dbUserId);
-      if (AppFlags.enableDemoSeed) {
-        await DemoSeedService.seedIfDatabaseEmpty();
+      if (!TestSupport.skipDatabaseSideEffects) {
+        await LocalDatabase.instance.initForUser(dbUserId);
+        if (AppFlags.enableDemoSeed) {
+          await DemoSeedService.seedIfDatabaseEmpty();
+        }
       }
       devLog('Database initialized for new user: $dbUserId');
 
@@ -99,12 +108,16 @@ class AuthNotifier extends ChangeNotifier {
     await getIt<ChallengeHiveCache>().clearAll();
 
     if (AppFlags.allowGuestHome) {
-      await LocalDatabase.instance.initForUser('guest_user');
-      if (AppFlags.enableDemoSeed) {
-        await DemoSeedService.seedIfDatabaseEmpty();
+      if (!TestSupport.skipDatabaseSideEffects) {
+        await LocalDatabase.instance.initForUser('guest_user');
+        if (AppFlags.enableDemoSeed) {
+          await DemoSeedService.seedIfDatabaseEmpty();
+        }
       }
     } else {
-      await LocalDatabase.instance.close();
+      if (!TestSupport.skipDatabaseSideEffects) {
+        await LocalDatabase.instance.close();
+      }
     }
 
     _isLoggedIn = false;

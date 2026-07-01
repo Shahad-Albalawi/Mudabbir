@@ -1,6 +1,6 @@
+import 'package:mudabbir/core/utils/notification_content.dart';
 import 'package:mudabbir/domain/models/expense_transaction.dart';
-import 'package:mudabbir/presentation/resources/goal_strings.dart';
-import 'package:mudabbir/presentation/resources/notification_strings.dart';
+import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/service/notifications/local_notification_service.dart';
 
 enum BudgetAlertLevel { none, warning, exceeded }
@@ -20,25 +20,38 @@ class FinancialAlertService {
   FinancialAlertService._();
   static final FinancialAlertService instance = FinancialAlertService._();
 
-  Future<void> maybeNotifyBudgetUsage(BudgetSnapshot? snapshot) async {
+  Future<void> maybeNotifyBudgetUsage(
+    BudgetSnapshot? snapshot, {
+    String? categoryName,
+  }) async {
     final level = budgetAlertLevel(snapshot);
     if (level == BudgetAlertLevel.none || snapshot == null) return;
 
+    final lang = AppStrings.isEnglishLocale ? 'en' : 'ar';
     final isExceeded = level == BudgetAlertLevel.exceeded;
+    final pct =
+        (snapshot.spentAmount / snapshot.budgetAmount * 100).round().clamp(0, 999);
+    final category = categoryName?.trim().isNotEmpty == true
+        ? categoryName!.trim()
+        : (lang == 'ar' ? 'الميزانية' : 'Budget');
+
+    final Map<String, String> content;
+    if (isExceeded) {
+      content = {
+        'title': AppStrings.notificationBudgetExceededTitle,
+        'body': AppStrings.notificationBudgetExceededBody(
+          snapshot.spentAmount,
+          snapshot.budgetAmount,
+        ),
+      };
+    } else {
+      content = NotificationContent.budgetWarning(category, pct, lang);
+    }
+
     await LocalNotificationService.instance.show(
       id: 1000 + (isExceeded ? 1 : 0),
-      title: isExceeded
-          ? NotificationStrings.budgetExceededTitle
-          : NotificationStrings.budgetWarningTitle,
-      body: isExceeded
-          ? NotificationStrings.budgetExceededBody(
-              snapshot.spentAmount,
-              snapshot.budgetAmount,
-            )
-          : NotificationStrings.budgetWarningBody(
-              snapshot.spentAmount,
-              snapshot.budgetAmount,
-            ),
+      title: content['title']!,
+      body: content['body']!,
       channelId: LocalNotificationService.budgetChannelId,
     );
   }
@@ -46,8 +59,8 @@ class FinancialAlertService {
   Future<void> notifyGoalCompleted(String goalName) async {
     await LocalNotificationService.instance.show(
       id: 2001,
-      title: GoalStrings.completedAlertTitle,
-      body: GoalStrings.completedAlertBody(goalName),
+      title: AppStrings.goalCompletedAlertTitle,
+      body: AppStrings.goalCompletedAlertBody(goalName),
       channelId: LocalNotificationService.goalChannelId,
     );
   }

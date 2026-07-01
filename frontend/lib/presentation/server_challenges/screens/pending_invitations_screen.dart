@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
-import 'package:mudabbir/presentation/resources/server_challenge_strings.dart';
+import 'package:mudabbir/presentation/server_challenges/challenge_copy_helpers.dart';
 import 'package:mudabbir/presentation/server_challenges/models/challenge_model.dart';
 import 'package:mudabbir/presentation/server_challenges/providers/challenge_provider.dart';
 import 'package:mudabbir/presentation/server_challenges/providers/challenge_state.dart';
@@ -12,7 +12,9 @@ import 'package:mudabbir/presentation/widgets/app_card.dart';
 import 'package:mudabbir/presentation/widgets/app_grouped_scaffold.dart';
 import 'package:mudabbir/presentation/widgets/app_skeleton.dart';
 import 'package:mudabbir/presentation/widgets/ios_empty_state.dart';
+import 'package:mudabbir/presentation/widgets/app_snackbar.dart';
 import 'package:mudabbir/service/haptic_service.dart';
+import 'package:mudabbir/service/routing_service/app_routes.dart';
 
 class PendingInvitationsScreen extends ConsumerStatefulWidget {
   const PendingInvitationsScreen({super.key});
@@ -36,7 +38,6 @@ class _PendingInvitationsScreenState
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final state = ref.watch(pendingInvitationsProvider);
 
     ref.listen<ChallengeOperationState>(challengeOperationProvider, (
@@ -44,29 +45,19 @@ class _PendingInvitationsScreenState
       next,
     ) {
       if (next is ChallengeOperationSuccess) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.message),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppSnackbar.success(next.message);
         if (next.challenge != null) {
           ref
               .read(pendingInvitationsProvider.notifier)
               .removeInvitation(next.challenge!.id);
         }
       } else if (next is ChallengeOperationError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.message),
-            backgroundColor: scheme.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppSnackbar.error(next.message);
       }
     });
 
     return AppGroupedScaffold(
+      backFallbackRoute: AppRoutes.challenges,
       titleText: ServerChallengeStrings.pendingTitle,
       actions: [
         IconButton(

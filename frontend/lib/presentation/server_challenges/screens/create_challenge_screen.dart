@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
-import 'package:mudabbir/presentation/resources/server_challenge_strings.dart';
+import 'package:mudabbir/presentation/server_challenges/challenge_copy_helpers.dart';
 import 'package:mudabbir/presentation/server_challenges/providers/challenge_provider.dart';
 import 'package:mudabbir/presentation/server_challenges/providers/challenge_state.dart';
 import 'package:intl/intl.dart';
+import 'package:mudabbir/presentation/widgets/app_snackbar.dart';
 import 'package:mudabbir/presentation/widgets/app_grouped_scaffold.dart';
 import 'package:mudabbir/presentation/widgets/app_loading_button.dart';
+import 'package:mudabbir/service/routing_service/app_routes.dart';
 
 class CreateChallengeScreen extends ConsumerStatefulWidget {
   const CreateChallengeScreen({super.key});
@@ -37,21 +40,10 @@ class _CreateChallengeScreenState extends ConsumerState<CreateChallengeScreen> {
       next,
     ) {
       if (next is ChallengeOperationSuccess) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.message),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        Navigator.pop(context);
+        AppSnackbar.success(next.message);
+        context.pop();
       } else if (next is ChallengeOperationError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.message),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppSnackbar.error(next.message);
       }
     });
 
@@ -59,7 +51,7 @@ class _CreateChallengeScreenState extends ConsumerState<CreateChallengeScreen> {
     final isLoading = operationState is ChallengeOperationLoading;
 
     return AppGroupedScaffold(
-      onBackPressed: () => Navigator.pop(context),
+      backFallbackRoute: AppRoutes.challenges,
       titleText: ServerChallengeStrings.createTitle,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppLayout.pageGutter),
@@ -256,24 +248,12 @@ class _CreateChallengeScreenState extends ConsumerState<CreateChallengeScreen> {
     }
 
     if (_startDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(ServerChallengeStrings.pickStartDate),
-          backgroundColor: Theme.of(context).colorScheme.error,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppSnackbar.error(ServerChallengeStrings.pickStartDate);
       return;
     }
 
     if (_endDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(ServerChallengeStrings.pickEndDate),
-          backgroundColor: Theme.of(context).colorScheme.error,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppSnackbar.error(ServerChallengeStrings.pickEndDate);
       return;
     }
 

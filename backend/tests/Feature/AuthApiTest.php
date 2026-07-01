@@ -35,7 +35,8 @@ class AuthApiTest extends TestCase
             'password' => 'password123',
         ]);
         $login->assertOk();
-        $newToken = (string) $login->json('token.plainTextToken');
+        $newToken = (string) ($login->json('data.token.plainTextToken')
+            ?? $login->json('token.plainTextToken'));
 
         $this->assertNotSame($oldToken, $newToken);
         $this->withHeaders(['Authorization' => 'Bearer '.$oldToken])

@@ -39,6 +39,15 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        multiDexEnabled = true
+        multiDexKeepFile = file("multidex-config.txt")
+        multiDexKeepProguard = file("multidex-config.pro")
+    }
+
+    sourceSets {
+        getByName("main") {
+            java.setSrcDirs(listOf("src/main/java", "src/main/kotlin"))
+        }
     }
 
     signingConfigs {
@@ -81,12 +90,18 @@ afterEvaluate {
     val mirrorApksToFlutterToolPath = {
         val toolOutDir = rootProject.projectDir.parentFile.resolve("build/app/outputs/flutter-apk")
         toolOutDir.mkdirs()
-        val pluginDir = project.layout.buildDirectory.get().asFile.resolve("outputs/flutter-apk")
-        pluginDir.takeIf { it.isDirectory }?.listFiles()
-            ?.filter { it.isFile && it.extension == "apk" }
-            ?.forEach { apk ->
-                apk.copyTo(toolOutDir.resolve(apk.name), overwrite = true)
-            }
+        val buildDir = project.layout.buildDirectory.get().asFile
+        val candidates = listOf(
+            buildDir.resolve("outputs/flutter-apk"),
+            buildDir.resolve("outputs/apk/debug"),
+        )
+        candidates.forEach { dir ->
+            dir.takeIf { it.isDirectory }?.listFiles()
+                ?.filter { it.isFile && it.extension == "apk" }
+                ?.forEach { apk ->
+                    apk.copyTo(toolOutDir.resolve(apk.name), overwrite = true)
+                }
+        }
     }
     listOf("assembleDebug", "assembleRelease").forEach { taskName ->
         tasks.named(taskName).configure { doLast { mirrorApksToFlutterToolPath() } }

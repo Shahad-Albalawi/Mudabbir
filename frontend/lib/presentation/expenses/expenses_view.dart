@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:mudabbir/domain/models/expense_transaction.dart';
 import 'package:mudabbir/presentation/expenses/expenses_viewmodel.dart';
 import 'package:mudabbir/presentation/home/home_viewmodel.dart';
@@ -9,11 +8,11 @@ import 'package:mudabbir/presentation/statistics/statistics_viewmodel.dart';
 import 'package:mudabbir/presentation/expenses/widgets/expense_form_sheet.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/entity_localizations.dart';
-import 'package:mudabbir/presentation/resources/expense_strings.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/presentation/widgets/app_animated_list_item.dart';
 import 'package:mudabbir/presentation/widgets/app_confirm_dialog.dart';
 import 'package:mudabbir/presentation/widgets/app_offline_banner.dart';
+import 'package:mudabbir/presentation/widgets/riyal_amount.dart';
 import 'package:mudabbir/presentation/widgets/app_skeleton.dart';
 import 'package:mudabbir/presentation/widgets/app_card.dart';
 import 'package:mudabbir/presentation/widgets/app_grouped_scaffold.dart';
@@ -37,12 +36,11 @@ class ExpensesView extends ConsumerWidget {
     });
 
     return AppGroupedScaffold(
-      onBackPressed: () => context.pop(),
       largeTitle: true,
-      title: Text(ExpenseStrings.title),
+      title: Text(AppStrings.expensesTitle),
       actions: [
         IconButton(
-          tooltip: ExpenseStrings.addExpense,
+          tooltip: AppStrings.expensesAddButton,
           onPressed: () => _openForm(context, ref),
           icon: const Icon(CupertinoIcons.add),
         ),
@@ -54,7 +52,7 @@ class ExpensesView extends ConsumerWidget {
                 _FiltersBar(state: state, notifier: notifier),
                 if (state.isOffline)
                   AppOfflineBanner(
-                    message: ExpenseStrings.offlineBanner,
+                    message: AppStrings.expenseOfflineBanner,
                     onRetry: notifier.loadExpenses,
                   ),
                 if (state.errorMessage != null)
@@ -76,16 +74,15 @@ class ExpensesView extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        ExpenseStrings.totalFiltered,
+                        AppStrings.expensesTotalFiltered,
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
-                      Text(
-                        ExpenseStrings.formatAmount(state.filteredTotal),
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(
-                              color: scheme.dataGreen,
-                              fontWeight: FontWeight.w600,
-                            ),
+                      RiyalAmount(
+                        state.filteredTotal,
+                        fontSize: Theme.of(context).textTheme.titleMedium?.fontSize,
+                        fontWeight: FontWeight.w600,
+                        symbolBold: true,
+                        color: scheme.dataGreen,
                       ),
                     ],
                   ),
@@ -102,9 +99,9 @@ class ExpensesView extends ConsumerWidget {
                       : state.expenses.isEmpty
                           ? IOSEmptyState(
                               icon: CupertinoIcons.doc_text,
-                              title: ExpenseStrings.emptyTitle,
-                              subtitle: ExpenseStrings.emptySubtitle,
-                              buttonLabel: ExpenseStrings.addExpense,
+                              title: AppStrings.expensesEmptyTitle,
+                              subtitle: AppStrings.expensesEmptySubtitle,
+                              buttonLabel: AppStrings.expensesAddButton,
                               onPressed: () => _openForm(context, ref),
                             )
                           : ListView.separated(
@@ -112,7 +109,7 @@ class ExpensesView extends ConsumerWidget {
                             AppLayout.pageGutter,
                             8,
                             AppLayout.pageGutter,
-                            24,
+                            AppLayout.bottomNavClearance,
                           ),
                           itemCount: state.expenses.length,
                           separatorBuilder: (_, __) =>
@@ -153,7 +150,7 @@ class ExpensesView extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => ExpenseFormSheet(existing: existing),
     );
@@ -166,10 +163,10 @@ class ExpensesView extends ConsumerWidget {
   ) async {
     final confirmed = await AppConfirmDialog.show(
       context,
-      title: ExpenseStrings.deleteConfirmTitle,
-      message: ExpenseStrings.deleteConfirmBody,
-      confirmLabel: ExpenseStrings.deleteExpense,
-      cancelLabel: ExpenseStrings.cancel,
+      title: AppStrings.expenseDeleteConfirmTitle,
+      message: AppStrings.expenseDeleteConfirmBody,
+      confirmLabel: AppStrings.delete,
+      cancelLabel: AppStrings.txCancel,
     );
     if (confirmed == true) {
       await ref.read(expensesProvider.notifier).deleteExpense(item.id);
@@ -186,7 +183,7 @@ class _FiltersBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: ExpenseStrings.filterRecurring,
+      label: AppStrings.expensesFilterRecurring,
       child: SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.fromLTRB(
@@ -200,18 +197,18 @@ class _FiltersBar extends StatelessWidget {
           _MonthPicker(state: state, notifier: notifier),
           const SizedBox(width: 8),
           FilterChip(
-            label: Text(ExpenseStrings.filterRecurring),
+            label: Text(AppStrings.expensesFilterRecurring),
             selected: state.recurringOnly,
             onSelected: notifier.toggleRecurringOnly,
           ),
           const SizedBox(width: 8),
           DropdownButton<int?>(
             value: state.selectedCategoryId,
-            hint: Text(ExpenseStrings.filterCategory),
+            hint: Text(AppStrings.expensesFilterCategory),
             items: [
               DropdownMenuItem<int?>(
                 value: null,
-                child: Text(ExpenseStrings.filterAll),
+                child: Text(AppStrings.expensesFilterAll),
               ),
               ...state.categories.map(
                 (c) => DropdownMenuItem<int?>(
@@ -259,7 +256,7 @@ class _MonthPicker extends StatelessWidget {
         }
       },
       icon: const Icon(CupertinoIcons.calendar, size: 18),
-      label: Text('${ExpenseStrings.filterMonth}: $label'),
+      label: Text('${AppStrings.expensesFilterMonth}: $label'),
     );
   }
 }
@@ -284,7 +281,19 @@ class _ExpenseTile extends StatelessWidget {
       onTap: onEdit,
       child: Row(
         children: [
-          Icon(CupertinoIcons.arrow_down, size: 20, color: scheme.error),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: scheme.expenseAmount.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              CupertinoIcons.arrow_down,
+              size: 18,
+              color: scheme.expenseAmount,
+            ),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -314,7 +323,7 @@ class _ExpenseTile extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
-                      ExpenseStrings.recurringBadge,
+                      AppStrings.expensesRecurringBadge,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: scheme.textMuted,
                       ),
@@ -323,12 +332,11 @@ class _ExpenseTile extends StatelessWidget {
               ],
             ),
           ),
-          Text(
-            ExpenseStrings.formatAmount(item.amount),
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: scheme.error,
-            ),
+          RiyalAmount(
+            item.amount,
+            fontSize: Theme.of(context).textTheme.titleSmall?.fontSize,
+            fontWeight: FontWeight.w600,
+            color: scheme.error,
           ),
           IconButton(
             onPressed: onDelete,

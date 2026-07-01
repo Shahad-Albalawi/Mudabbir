@@ -1,4 +1,4 @@
-import 'package:mudabbir/presentation/resources/chatbot_ui_strings.dart';
+import 'package:mudabbir/presentation/chatbot/chatbot_copy_helpers.dart';
 
 /// Offline / quota-exceeded replies built from the user's local SQLite data.
 class ChatbotLocalFallback {

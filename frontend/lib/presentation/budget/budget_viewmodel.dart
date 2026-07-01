@@ -4,7 +4,8 @@ import 'package:mudabbir/domain/models/budget_record.dart';
 import 'package:mudabbir/domain/repository/budget_repository/budget_repository.dart';
 import 'package:mudabbir/domain/repository/synced_budget_repository/synced_budget_repository.dart';
 import 'package:mudabbir/data/network/api_exception.dart';
-import 'package:mudabbir/presentation/resources/budget_strings.dart';
+import 'package:mudabbir/data/network/failure.dart';
+import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/utils/dev_log.dart';
 
@@ -90,14 +91,14 @@ class BudgetViewmodel extends StateNotifier<BudgetState> {
       devLog('Budget sync error: ${e.message}');
       state = state.copyWith(
         isLoading: false,
-        error: e.message,
+        error: e.userMessage,
         isOffline: e.isNetworkError,
       );
     } catch (e) {
       devLog('Budget sync error: $e');
       state = state.copyWith(
         isLoading: false,
-        error: BudgetStrings.loadFailed,
+        error: AppStrings.budgetLoadFailed,
         isOffline: true,
       );
     }
@@ -118,7 +119,7 @@ class BudgetViewmodel extends StateNotifier<BudgetState> {
         accountId: accountId,
       );
       result.fold(
-        (failure) => state = state.copyWith(error: failure.message),
+        (failure) => state = state.copyWith(error: failure.userFacingMessage),
         (sync) => state = state.copyWith(
           isAdd: true,
           isOffline: sync.queuedOffline || state.isOffline,
@@ -138,7 +139,7 @@ class BudgetViewmodel extends StateNotifier<BudgetState> {
     try {
       final result = await _synced.deleteBudget(id);
       result.fold(
-        (failure) => state = state.copyWith(error: failure.message),
+        (failure) => state = state.copyWith(error: failure.userFacingMessage),
         (sync) {
           if (sync.deleted) {
             final updated =

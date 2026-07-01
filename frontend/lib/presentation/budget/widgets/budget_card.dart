@@ -1,12 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mudabbir/domain/models/budget_record.dart';
+import 'package:mudabbir/presentation/budget/budget_date_format.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
-import 'package:mudabbir/presentation/resources/currency_formatter.dart';
-import 'package:mudabbir/presentation/resources/budget_strings.dart';
 import 'package:mudabbir/presentation/resources/design_tokens.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/presentation/widgets/app_card.dart';
+import 'package:mudabbir/presentation/widgets/riyal_amount.dart';
 
 /// Intelligent budget card — remaining amount, calm progress, clear status.
 class BudgetCard extends StatelessWidget {
@@ -38,10 +38,10 @@ class BudgetCard extends StatelessWidget {
             : scheme.primary;
 
     final statusLabel = isOver
-        ? BudgetStrings.statusOverBudget
+        ? AppStrings.budgetStatusOverBudget
         : isWarning
-            ? BudgetStrings.statusNearLimit
-            : BudgetStrings.statusOnTrack;
+            ? AppStrings.budgetStatusNearLimit
+            : AppStrings.budgetStatusOnTrack;
 
     return AppCard(
       child: Column(
@@ -55,27 +55,39 @@ class BudgetCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      BudgetStrings.cardLabel,
+                      AppStrings.budgetCardLabel,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: scheme.textMuted,
                             fontWeight: FontWeight.w500,
                           ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      AppCurrency.format(remaining),
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w500,
-                            color: isOver ? scheme.error : scheme.onSurface,
-                            letterSpacing: AppTypographyScale.titleTracking,
-                          ),
+                    RiyalAmount(
+                      remaining,
+                      fontSize:
+                          Theme.of(context).textTheme.headlineSmall?.fontSize ??
+                              24,
+                      fontWeight: FontWeight.w500,
+                      symbolBold: true,
+                      color: isOver ? scheme.error : scheme.onSurface,
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      BudgetStrings.remainingOf(limit),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: scheme.textMuted,
-                          ),
+                    Row(
+                      children: [
+                        Text(
+                          AppStrings.budgetRemainingOfPrefix,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: scheme.textMuted,
+                              ),
+                        ),
+                        RiyalAmount(
+                          limit,
+                          fontSize:
+                              Theme.of(context).textTheme.bodySmall?.fontSize ??
+                                  12,
+                          color: scheme.textMuted,
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -113,33 +125,45 @@ class BudgetCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           ClipRRect(
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(999),
             child: LinearProgressIndicator(
               value: displayRatio,
-              minHeight: 6,
+              minHeight: 8,
               backgroundColor: scheme.outline.withValues(alpha: 0.12),
               color: progressColor,
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                '${budget.startDate} – ${budget.endDate}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: scheme.textMuted,
-                    ),
-              ),
-              Text(
-                AppStrings.budgetSpentSummary(
-                  spent.toStringAsFixed(0),
-                  limit.toStringAsFixed(0),
+              Expanded(
+                child: Text(
+                  BudgetDateFormat.formatPeriodRange(
+                    budget.startDate,
+                    budget.endDate,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: scheme.textMuted,
+                      ),
                 ),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: isOver ? scheme.error : scheme.textMuted,
-                      fontWeight: isOver ? FontWeight.w500 : FontWeight.w400,
-                    ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  AppStrings.budgetSpentSummary(
+                    spent.toStringAsFixed(0),
+                    limit.toStringAsFixed(0),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: isOver ? scheme.error : scheme.textMuted,
+                        fontWeight: isOver ? FontWeight.w500 : FontWeight.w400,
+                      ),
+                ),
               ),
             ],
           ),

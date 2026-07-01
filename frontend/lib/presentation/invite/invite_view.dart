@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:mudabbir/constants/hive_constants.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/widgets/app_grouped_scaffold.dart';
-import 'package:mudabbir/presentation/resources/server_challenge_strings.dart';
+import 'package:mudabbir/presentation/server_challenges/challenge_copy_helpers.dart';
 import 'package:mudabbir/presentation/widgets/app_card.dart';
 import 'package:mudabbir/presentation/widgets/app_animated_list_item.dart';
 import 'package:mudabbir/presentation/widgets/app_loading_button.dart';

@@ -21,7 +21,7 @@ class IOSStyleConstants {
   static const double pressScale = 0.98;
   static const double pressOpacity = 0.92;
 
-  static const double navBarHeight = 49;
-  /// Toolbar row + large title row + hairline divider.
-  static const double largeTitleBarHeight = 44 + 52 + 1;
+  static const double navBarHeight = 52;
+  /// Inline toolbar (44) + large title block (48) + hairline.
+  static const double largeTitleBarHeight = 44 + 48 + 1;
 }

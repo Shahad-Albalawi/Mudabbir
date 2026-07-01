@@ -9,14 +9,15 @@ class AppLayout {
 
   /// Screen horizontal padding: 20px (premium fintech).
   static const double pageGutter = 20;
-  static const double sectionGap = AppSpacing.smd;
+  static const double sectionGap = AppSpacing.md;
   static const double cardRadius = AppRadius.card;
-  static const double chipRadius = AppSpacing.sm;
+  static const double chipRadius = AppRadius.xs;
   static const double listRowHeight = AppTouch.minTarget;
   static const double bottomNavHeight = IOSStyleConstants.navBarHeight;
-  /// Space for bottom nav + floating chat FAB so list content is not obscured.
-  static const double fabClearance = 56 + 16 + 20;
-  static const double bottomNavClearance = bottomNavHeight + fabClearance;
+  /// Space for bottom nav + center FAB protrusion.
+  static const double shellFabProtrusion = 28;
+  static const double bottomNavClearance =
+      bottomNavHeight + shellFabProtrusion + 20;
 }
 
 /// iOS system-like semantic colors (charts, status).
@@ -40,6 +41,14 @@ extension AppSemanticColors on ColorScheme {
   /// Income / positive balance amounts.
   Color get incomeAmount => dataGreen;
 
+  /// Link / interactive accent (chart blue).
+  Color get linkColor => brightness == Brightness.dark
+      ? BrandPalette.chart1
+      : BrandPalette.chart1;
+
+  /// CTA green — primary positive actions only.
+  Color get ctaGreen => BrandPalette.green;
+
   /// Strong label color for financial rows (readable navy/slate).
   Color get financialLabel => brightness == Brightness.dark
       ? const Color(0xFFE2E8F0)
@@ -48,13 +57,11 @@ extension AppSemanticColors on ColorScheme {
   /// Green reserved for numeric values (amounts, scores) — not labels or links.
   Color get dataGreen => BrandPalette.green500;
 
-  /// Neutral icon / chrome on cards — brighter in dark for legibility.
-  Color get chromeIcon => brightness == Brightness.dark
-      ? DarkAppColors.primary
-      : BrandPalette.brandPrimary;
+  /// Branded icon / chrome — navy primary in both themes.
+  Color get chromeIcon => primary;
 
   Color get chromeIconFill => brightness == Brightness.dark
-      ? const Color(0xFF21262D)
+      ? BrandPalette.inputFillDark
       : BrandPalette.inputFillLight;
 
   /// Branded accent — prefer [dataGreen] for amounts only.
@@ -90,8 +97,8 @@ extension AppSemanticColors on ColorScheme {
 
   /// Skeleton shimmer base — visible in dark without harsh contrast.
   Color get skeletonBase => brightness == Brightness.dark
-      ? const Color(0xFF21262D)
-      : BrandPalette.borderLight.withValues(alpha: 0.5);
+      ? BrandPalette.inputFillDark
+      : BrandPalette.borderLight.withValues(alpha: 0.45);
 
   /// Skeleton shimmer peak opacity multiplier.
   double get skeletonPulseHigh => brightness == Brightness.dark ? 0.55 : 0.65;

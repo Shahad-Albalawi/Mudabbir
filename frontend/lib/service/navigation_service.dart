@@ -22,57 +22,6 @@ class _SnackbarConfig {
 class NavigationService {
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-  Future<dynamic> navigate(Widget widget) {
-    return navigatorKey.currentState!.push(_animatedRoute(widget));
-  }
-
-  Future<dynamic> navigateReplacement(Widget widget) {
-    return navigatorKey.currentState!.pushReplacement(_animatedRoute(widget));
-  }
-
-  @Deprecated('Use navigateReplacement')
-  Future<dynamic> navigateReplacment(Widget widget) =>
-      navigateReplacement(widget);
-
-  Route _animatedRoute(Widget page) {
-    return PageRouteBuilder(
-      pageBuilder: (context, animation, secondaryAnimation) => page,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        // Example: slide from right with fade
-        const begin = Offset(1.0, 0.0); // start from right
-        const end = Offset.zero;
-        const curve = Curves.easeInOut;
-
-        final tween = Tween(
-          begin: begin,
-          end: end,
-        ).chain(CurveTween(curve: curve));
-
-        final fadeTween = Tween<double>(begin: 0, end: 1);
-
-        return SlideTransition(
-          position: animation.drive(tween),
-          child: FadeTransition(
-            opacity: animation.drive(fadeTween),
-            child: child,
-          ),
-        );
-      },
-    );
-  }
-
-  void goBack() {
-    navigatorKey.currentState!.pop();
-  }
-
-  Future<void> showDialog(/*BuildContext? context,*/ Widget widget) async {
-    await showAdaptiveDialog(
-      barrierDismissible: true,
-      context: /*context ??*/ navigatorKey.currentContext!,
-      builder: (context) => widget,
-    );
-  }
-
   void showSnackbar({
     required String title,
     required String body,

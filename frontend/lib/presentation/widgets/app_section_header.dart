@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/design_tokens.dart';
+import 'package:mudabbir/presentation/widgets/section_title_text.dart';
 
 /// iOS section header — 22pt semibold, generous spacing.
 class AppSectionHeader extends StatelessWidget {
@@ -27,17 +28,18 @@ class AppSectionHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                SectionTitleText(
                   title,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w500,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        fontSize: AppTypographyScale.title,
                         color: scheme.onSurface,
                         letterSpacing: AppTypographyScale.titleTracking,
                       ),
                 ),
                 if (subtitle != null) ...[
                   const SizedBox(height: AppSpacing.xs),
-                  Text(
+                  SectionTitleText(
                     subtitle!,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: scheme.textMuted,

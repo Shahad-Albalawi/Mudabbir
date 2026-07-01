@@ -58,5 +58,31 @@ void main() {
       expect(eta.status, GoalTrackStatus.overdue);
       expect(eta.daysToDeadline, lessThan(0));
     });
+
+    test('required monthly uses remaining divided by calendar months left', () {
+      final months = GoalProgressEngine.monthsRemainingUntil(
+        DateTime(2026, 5, 15),
+        DateTime(2026, 12, 31),
+      );
+      expect(months, 7);
+
+      final monthly = GoalProgressEngine.requiredMonthlySavings(
+        remaining: 7000,
+        now: DateTime(2026, 5, 15),
+        endDate: DateTime(2026, 12, 31),
+      );
+      expect(monthly, closeTo(1000, 0.01));
+
+      final eta = GoalProgressEngine.computeEta(
+        currentAmount: 3000,
+        targetAmount: 10000,
+        startDate: start,
+        endDate: end,
+        contributions: const [],
+        isCompleted: false,
+        now: now,
+      );
+      expect(eta.requiredMonthlyToDeadline, closeTo(7000 / 7, 0.01));
+    });
   });
 }

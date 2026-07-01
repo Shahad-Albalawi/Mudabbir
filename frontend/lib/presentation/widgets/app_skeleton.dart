@@ -13,7 +13,7 @@ class AppSkeletonBox extends StatefulWidget {
     super.key,
     required this.height,
     this.width,
-    this.borderRadius = const BorderRadius.all(Radius.circular(8)),
+    this.borderRadius = const BorderRadius.all(Radius.circular(AppRadius.cardSmall)),
   });
 
   @override
@@ -81,7 +81,10 @@ class AppListSkeleton extends StatelessWidget {
       padding: padding,
       itemCount: itemCount,
       separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.smd),
-      itemBuilder: (_, __) => const AppSkeletonBox(height: 72),
+      itemBuilder: (_, __) => AppSkeletonBox(
+        height: 76,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+      ),
     );
   }
 }

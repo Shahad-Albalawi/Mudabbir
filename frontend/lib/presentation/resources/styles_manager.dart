@@ -11,7 +11,7 @@ TextStyle _getStyle(
 }) {
   return TextStyle(
     inherit: false,
-    fontFamily: FontConstants.thmanyahFamily,
+    fontFamily: FontConstants.fontFamily,
     fontFamilyFallback: FontConstants.fontFamilyFallback,
     fontSize: fontSize,
     fontWeight: fontWeight,

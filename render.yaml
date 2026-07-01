@@ -13,13 +13,19 @@ services:
         value: production
       - key: APP_DEBUG
         value: false
+      - key: APP_URL
+        value: https://mudabbir-backend-api.onrender.com
       - key: DB_CONNECTION
         value: sqlite
       - key: LOG_CHANNEL
         value: stderr
       - key: LOG_LEVEL
         value: warning
-      - key: APP_URL
-        sync: false
+      - key: TRUSTED_PROXIES
+        value: "*"
       - key: APP_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
         sync: false

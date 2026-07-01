@@ -4,7 +4,7 @@ import 'package:mudabbir/domain/models/expense_transaction.dart';
 import 'package:mudabbir/presentation/auth/financial_form_validators.dart';
 import 'package:mudabbir/presentation/expenses/expenses_viewmodel.dart';
 import 'package:mudabbir/presentation/resources/entity_localizations.dart';
-import 'package:mudabbir/presentation/resources/expense_strings.dart';
+import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/presentation/widgets/app_loading_button.dart';
 import 'package:mudabbir/service/financial_refresh.dart';
 
@@ -82,8 +82,8 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
               children: [
                 Text(
                   widget.existing == null
-                      ? ExpenseStrings.addExpense
-                      : ExpenseStrings.editExpense,
+                      ? AppStrings.expensesAddButton
+                      : AppStrings.expensesEditButton,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 16),
@@ -91,14 +91,14 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                   controller: _amountCtrl,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(labelText: ExpenseStrings.amount),
+                  decoration: InputDecoration(labelText: AppStrings.fieldAmount),
                   validator: FinancialFormValidators.amount,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _dateCtrl,
                   readOnly: true,
-                  decoration: InputDecoration(labelText: ExpenseStrings.date),
+                  decoration: InputDecoration(labelText: AppStrings.fieldDate),
                   validator: FinancialFormValidators.dateNotFuture,
                   onTap: () async {
                     final picked = await showDatePicker(
@@ -118,7 +118,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                 DropdownButtonFormField<int>(
                   initialValue: _accountId,
                   decoration:
-                      InputDecoration(labelText: ExpenseStrings.account),
+                      InputDecoration(labelText: AppStrings.labelAccount),
                   items: accounts
                       .map(
                         (a) => DropdownMenuItem<int>(
@@ -136,7 +136,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                 DropdownButtonFormField<int>(
                   initialValue: _categoryId,
                   decoration:
-                      InputDecoration(labelText: ExpenseStrings.category),
+                      InputDecoration(labelText: AppStrings.labelCategory),
                   items: categories
                       .map(
                         (c) => DropdownMenuItem<int>(
@@ -153,7 +153,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _notesCtrl,
-                  decoration: InputDecoration(labelText: ExpenseStrings.notes),
+                  decoration: InputDecoration(labelText: AppStrings.fieldNotes),
                   maxLines: 2,
                   maxLength: FinancialFormValidators.maxNotesLength,
                   validator: FinancialFormValidators.notes,
@@ -161,14 +161,14 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                 const SizedBox(height: 8),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: Text(ExpenseStrings.recurringMonthly),
+                  title: Text(AppStrings.expensesRecurringMonthly),
                   value: _isRecurring,
                   onChanged: (v) => setState(() => _isRecurring = v),
                 ),
                 const SizedBox(height: 16),
                 AppLoadingButton(
                   isLoading: _saving,
-                  label: ExpenseStrings.save,
+                  label: AppStrings.expensesSaveButton,
                   onPressed: _save,
                 ),
               ],

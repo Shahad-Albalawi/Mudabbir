@@ -1,6 +1,6 @@
 # Mudabbir (مُدَبِّر)
 
-Personal finance app for Arabic and English speakers — track spending, set savings goals, analyze habits, and get AI coaching.
+Personal finance app for Arabic and English speakers — track spending, set savings goals, analyze habits, compete in challenges, and get AI coaching.
 
 ---
 
@@ -8,15 +8,26 @@ Personal finance app for Arabic and English speakers — track spending, set sav
 
 | Area | What users get |
 |------|----------------|
-| **Home** | Balance summary, quick add income/expense, shortcuts |
-| **Statistics** | KPIs, charts, behavioral score |
-| **Goals** | Savings targets with progress and milestones |
-| **Budget** | Monthly limits with spend tracking |
+| **Home** | Balance, monthly spending vs budget, insights, goals snapshot, quick add income/expense/goal |
+| **Statistics** | Period KPIs, spending trend chart, category breakdown, plain-language insights |
+| **Goals** | Savings targets with progress and contributions |
+| **Budget** | Monthly limits with spend tracking and alerts |
+| **Behavioral analysis** | Health score, savings behavior, category insights |
 | **Challenges** | Social saving challenges (server-synced) |
-| **Chatbot** | Bilingual financial assistant |
-| **Reports** | Shareable monthly PDF (Thmanyah font, SAR ﷼) |
+| **Chatbot** | Bilingual financial assistant (SSE streaming) |
+| **Reports** | Shareable monthly PDF (Thmanyah font, SAR ﷼, RTL layout) |
 
-**Design:** Thmanyah typography, light/dark themes, iOS-inspired layout, official wallet logo.
+**Design:** Navy brand palette (`#112E81`), Thmanyah typography, light/dark themes, iOS-inspired cards and navigation.
+
+### Screenshots (`screenshots/`)
+
+| File | Screen |
+|------|--------|
+| `home.png` | Home dashboard — balance, budget strip, quick actions |
+| `statistics.png` | Statistics tab — KPIs and charts |
+| `goals.png` | Goals tab — savings progress |
+| `behavior.png` | Behavioral analysis |
+| `chatbot.png` | AI assistant |
 
 ---
 
@@ -24,8 +35,8 @@ Personal finance app for Arabic and English speakers — track spending, set sav
 
 ```
 ├── frontend/          Flutter app (iOS, Android, desktop, web)
-├── backend/           Laravel REST API (challenges, expenses, goals, AI)
-├── docs/              Deployment notes (e.g. Render)
+├── backend/           Laravel REST API (auth, expenses, goals, budgets, challenges, AI)
+├── docs/              Deployment & Play Store guides
 ├── scripts/           Build & backend helpers
 └── screenshots/       Store / README visuals
 ```
@@ -34,14 +45,21 @@ Personal finance app for Arabic and English speakers — track spending, set sav
 
 | Layer | Responsibility |
 |-------|----------------|
-| `presentation/` | UI, view models (Riverpod / Stacked where legacy) |
+| `presentation/` | UI screens, Riverpod providers/view models |
 | `domain/` | Models, repositories, business rules |
 | `data/` | SQLite, Hive cache, Dio HTTP |
-| `service/` | DI (GetIt), routing, popups, reporting |
-| `constants/` | API flags, Hive keys |
+| `service/` | DI (GetIt), GoRouter, reporting, chatbot |
+| `constants/` | Theme, API flags, Hive keys |
+| `l10n/` | Arabic / English strings (ARB) |
 | `utils/` | Debug logging (`devLog` — release-safe) |
 
-Shared UI: `AppCard`, `AppAsyncView`, `IOSEmptyState`, `NavigationService` snackbars.
+**Navigation**
+
+- **Shell:** `HomePage` — bottom tabs (Home · Statistics · Goals), settings app-bar action, chatbot FAB
+- **Routes:** expenses, budget, analysis, chatbot, challenges, invite, settings, privacy (see `app_routes.dart`)
+- **Auth flow:** splash → onboarding → login/register → home
+
+Shared UI: `AppCard`, `IOSEmptyState`, `ModernGradientAppBar`, `AppSectionHeader`, design tokens in `constants/app_theme.dart`.
 
 ---
 
@@ -92,7 +110,15 @@ php artisan serve
 
 See **`docs/DEPLOY_RENDER_AR.md`** (Render — مُوصى به حالياً) or `docs/DEPLOY_LARAVEL_CLOUD.md` (Laravel Cloud).
 
-**Production API:** `https://mudabbir-backend-api.onrender.com` (Render). Verify: `scripts/check-production-api.ps1`. See `docs/DEPLOY_RENDER_AR.md`.
+**Production API:** `https://mudabbir-backend-api.onrender.com` (Render). Verify: `scripts/check-production-api.ps1`.
+
+### Quality checks
+
+```bash
+cd frontend
+flutter analyze
+flutter test
+```
 
 ---
 
@@ -101,9 +127,10 @@ See **`docs/DEPLOY_RENDER_AR.md`** (Render — مُوصى به حالياً) or 
 - [ ] Set `API_BASE_URL` in `frontend/config/release.json`
 - [ ] Configure Android signing: `frontend/android/key.properties` (see `key.properties.example`)
 - [ ] Build for Play Store: `scripts/build-release-aab.ps1` (AAB required; APK for sideload: `build-release-apk.ps1`)
+- [ ] Run `flutter analyze` with zero issues
 - [ ] Verify login/register (no guest bypass in release)
 - [ ] Confirm `devLog` / Dio logging silent in release
-- [ ] Test offline sync: expenses, goals, and **budgets** (SQLite + Hive + Laravel API)
+- [ ] Test offline sync: expenses, goals, and budgets (SQLite + Hive + Laravel API)
 - [ ] Test local notifications: budget 80%/exceeded and goal completion (grant permission on Android 13+)
 - [ ] Prepare Play listing: see **`docs/PLAY_STORE.md`** (screenshots, privacy policy, data safety)
 - [ ] Replace launcher icons if needed (`android/app/src/main/res`, iOS `AppIcon`)
@@ -112,8 +139,8 @@ See **`docs/DEPLOY_RENDER_AR.md`** (Render — مُوصى به حالياً) or 
 
 ## Tech stack
 
-- **Client:** Flutter, Riverpod, GetIt, SQLite, Hive, Dio, fl_chart, pdf
-- **Server:** Laravel 9, REST, OpenAI/Gemini integrations
+- **Client:** Flutter, Riverpod, GetIt, GoRouter, SQLite, Hive, Dio, fl_chart, pdf, printing
+- **Server:** Laravel 9, Sanctum auth, REST, Gemini AI
 - **Fonts:** Thmanyah (primary), Tajawal (fallback glyphs)
 
 ---

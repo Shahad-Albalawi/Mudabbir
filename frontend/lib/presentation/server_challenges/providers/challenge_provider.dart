@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mudabbir/domain/models/challenge_sync_result.dart';
 import 'package:mudabbir/domain/repository/server_challenge_repository/server_challenge_repository.dart';
-import 'package:mudabbir/presentation/resources/server_challenge_strings.dart';
+import 'package:mudabbir/presentation/server_challenges/challenge_copy_helpers.dart';
 import 'package:mudabbir/presentation/server_challenges/models/challenge_model.dart';
 import 'package:mudabbir/presentation/server_challenges/providers/challenge_state.dart';
 import 'package:mudabbir/data/network/api_exception.dart';
 import 'package:mudabbir/presentation/server_challenges/services/challenge_service.dart';
-import 'package:mudabbir/presentation/server_challenges/utils/dio_client.dart';
+import 'package:mudabbir/data/network/dio_client.dart';
 import 'package:mudabbir/service/getit_init.dart';
 
 // Dio Client Provider (kept for Riverpod consumers that still reference it)

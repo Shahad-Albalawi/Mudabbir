@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:mudabbir/presentation/server_challenges/models/challenge_model.dart';
 import 'package:mudabbir/utils/dev_log.dart';
 import 'package:mudabbir/data/network/api_exception.dart';
-import 'package:mudabbir/presentation/server_challenges/utils/dio_client.dart';
+import 'package:mudabbir/data/network/dio_client.dart';
 
 class ChallengeService {
   final DioClient _dioClient;

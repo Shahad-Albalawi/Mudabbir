@@ -8,7 +8,7 @@ import 'package:mudabbir/domain/repository/goals_repository/goals_repository.dar
 import 'package:mudabbir/domain/services/sync_policies.dart';
 import 'package:mudabbir/domain/services/sync_flush_lock.dart';
 import 'package:mudabbir/domain/services/repository_guard.dart';
-import 'package:mudabbir/presentation/resources/goal_strings.dart';
+import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/data/network/api_exception.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/utils/api_session.dart';
@@ -74,7 +74,7 @@ class SyncedGoalsRepository {
         }
         rethrow;
       }
-    }, fallbackMessage: GoalStrings.loadFailed);
+    }, fallbackMessage: AppStrings.goalLoadFailed);
   }
 
   Future<Either<Failure, GoalCreateSyncResult>> createGoal({
@@ -138,7 +138,7 @@ class SyncedGoalsRepository {
           },
         );
       }
-    }, fallbackMessage: GoalStrings.syncFailed);
+    }, fallbackMessage: AppStrings.goalSyncFailed);
   }
 
   Future<Either<Failure, GoalUpdateSyncResult>> updateGoal({
@@ -205,7 +205,7 @@ class SyncedGoalsRepository {
           },
         );
       }
-    }, fallbackMessage: GoalStrings.syncFailed);
+    }, fallbackMessage: AppStrings.goalSyncFailed);
   }
 
   Future<Either<Failure, GoalWriteSyncResult>> addContribution({
@@ -265,7 +265,7 @@ class SyncedGoalsRepository {
           },
         );
       }
-    }, fallbackMessage: GoalStrings.syncFailed);
+    }, fallbackMessage: AppStrings.goalSyncFailed);
   }
 
   Future<Either<Failure, GoalDeleteSyncResult>> deleteGoal(int id) {
@@ -301,7 +301,7 @@ class SyncedGoalsRepository {
           },
         );
       }
-    }, fallbackMessage: GoalStrings.syncFailed);
+    }, fallbackMessage: AppStrings.goalSyncFailed);
   }
 
   Future<void> flushPendingOps() async {

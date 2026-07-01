@@ -13,9 +13,9 @@ void main() {
         trailingThreeMonthAvgExpense: 6800,
         currentMonthExpenseByCategory: const {'Food': 2000, 'Transport': 1500},
         previousMonthExpenseByCategory: const {'Food': 2200, 'Transport': 1400},
-        weekdayExpenseTotals: const {1: 1000, 2: 900, 5: 800, 6: 500, 7: 400},
-        currentMonthExpenseAmounts: const [500, 300, 200],
-        currentMonthTransactionCount: 12,
+        weekdayExpenseTotals: const {1: 1000, 2: 900, 3: 800, 4: 700, 5: 600},
+        currentMonthExpenseAmounts: const [200, 150, 100],
+        currentMonthTransactionCount: 5,
       );
 
       final snapshot = BehavioralAnalysisEngine.build(

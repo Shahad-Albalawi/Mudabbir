@@ -1,7 +1,7 @@
 import 'package:mudabbir/data/local/challenge_hive_cache.dart';
 import 'package:mudabbir/domain/models/challenge_sync_result.dart';
 import 'package:mudabbir/domain/services/repository_guard.dart';
-import 'package:mudabbir/presentation/resources/server_challenge_strings.dart';
+import 'package:mudabbir/presentation/server_challenges/challenge_copy_helpers.dart';
 import 'package:mudabbir/presentation/server_challenges/models/challenge_model.dart';
 import 'package:mudabbir/data/network/api_exception.dart';
 import 'package:mudabbir/presentation/server_challenges/services/challenge_service.dart';

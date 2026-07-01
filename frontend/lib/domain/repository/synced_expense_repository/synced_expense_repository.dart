@@ -8,7 +8,7 @@ import 'package:mudabbir/domain/repository/expense_repository/expense_repository
 import 'package:mudabbir/domain/services/sync_policies.dart';
 import 'package:mudabbir/domain/services/sync_flush_lock.dart';
 import 'package:mudabbir/domain/services/repository_guard.dart';
-import 'package:mudabbir/presentation/resources/expense_strings.dart';
+import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/data/network/api_exception.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/utils/api_session.dart';
@@ -101,7 +101,7 @@ class SyncedExpenseRepository {
         }
         rethrow;
       }
-    }, fallbackMessage: ExpenseStrings.loadFailed);
+    }, fallbackMessage: AppStrings.expensesLoadFailed);
   }
 
   Future<Either<Failure, ExpenseWriteSyncResult>> addTransaction(
@@ -132,7 +132,7 @@ class SyncedExpenseRepository {
             budgetSnapshot: budget,
             budgetMessage: budget == null
                 ? null
-                : ExpenseStrings.budgetLinked(
+                : AppStrings.expensesBudgetLinked(
                     budget.spentAmount,
                     budget.budgetAmount,
                     budget.remaining,
@@ -170,7 +170,7 @@ class SyncedExpenseRepository {
           },
         );
       }
-    }, fallbackMessage: ExpenseStrings.syncFailed);
+    }, fallbackMessage: AppStrings.expensesSyncFailed);
   }
 
   Future<Either<Failure, ExpenseWriteSyncResult>> updateTransaction(
@@ -205,7 +205,7 @@ class SyncedExpenseRepository {
             budgetSnapshot: budget,
             budgetMessage: budget == null
                 ? null
-                : ExpenseStrings.budgetLinked(
+                : AppStrings.expensesBudgetLinked(
                     budget.spentAmount,
                     budget.budgetAmount,
                     budget.remaining,
@@ -226,7 +226,7 @@ class SyncedExpenseRepository {
                 budgetSnapshot: budget,
                 budgetMessage: budget == null
                     ? null
-                    : ExpenseStrings.budgetLinked(
+                    : AppStrings.expensesBudgetLinked(
                         budget.spentAmount,
                         budget.budgetAmount,
                         budget.remaining,
@@ -264,7 +264,7 @@ class SyncedExpenseRepository {
           },
         );
       }
-    }, fallbackMessage: ExpenseStrings.syncFailed);
+    }, fallbackMessage: AppStrings.expensesSyncFailed);
   }
 
   Future<Either<Failure, ExpenseDeleteSyncResult>> deleteTransaction(int id) {
@@ -296,7 +296,7 @@ class SyncedExpenseRepository {
           },
         );
       }
-    }, fallbackMessage: ExpenseStrings.syncFailed);
+    }, fallbackMessage: AppStrings.expensesSyncFailed);
   }
 
   Future<Failure?> _validateExpense(
@@ -320,7 +320,7 @@ class SyncedExpenseRepository {
       requiredBalance = (transaction.amount - oldAmount).clamp(0, double.infinity);
     }
     if (requiredBalance > balance) {
-      return ValidationFailure(ExpenseStrings.insufficientBalance);
+      return ValidationFailure(AppStrings.txInsufficientBody);
     }
 
     final budget = await _local.getBudgetSnapshot(
@@ -332,7 +332,7 @@ class SyncedExpenseRepository {
         !allowOverBudget &&
         transaction.amount > budget.remaining) {
       return BudgetExceededFailure(
-        ExpenseStrings.budgetExceeded(budget.remaining),
+        AppStrings.expensesBudgetExceeded(budget.remaining),
         budgetRemaining: budget.remaining,
       );
     }

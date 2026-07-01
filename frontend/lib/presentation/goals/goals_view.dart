@@ -1,33 +1,31 @@
-import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mudabbir/domain/models/savings_goal.dart';
 import 'package:mudabbir/presentation/goals/goals_viewmodel.dart';
+import 'package:mudabbir/presentation/goals/widgets/goal_list_card.dart';
+import 'package:mudabbir/presentation/goals/widgets/goals_summary_card.dart';
 import 'package:mudabbir/presentation/resources/app_icons.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
-import 'package:mudabbir/presentation/resources/goal_strings.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/presentation/widgets/app_animated_list_item.dart';
-import 'package:mudabbir/presentation/widgets/app_confirm_dialog.dart';
 import 'package:mudabbir/presentation/widgets/app_offline_banner.dart';
 import 'package:mudabbir/presentation/widgets/app_skeleton.dart';
-import 'package:mudabbir/presentation/widgets/app_card.dart';
 import 'package:mudabbir/presentation/widgets/ios_empty_state.dart';
 import 'package:mudabbir/presentation/widgets/app_loading_button.dart';
 import 'package:mudabbir/presentation/widgets/ios_dialog_style.dart';
+import 'package:mudabbir/presentation/widgets/app_snackbar.dart';
 import 'package:mudabbir/service/financial_refresh.dart';
 import 'package:mudabbir/service/gamification/celebration_service.dart';
 import 'package:mudabbir/service/gamification/confetti_widget.dart';
-import 'package:mudabbir/service/gamification/journey_progress_map.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/haptic_service.dart';
-import 'package:mudabbir/service/navigation_service.dart';
 import 'package:mudabbir/service/notifications/financial_alert_service.dart';
 import 'package:mudabbir/service/popup_service/goal_popup.dart';
 import 'package:mudabbir/service/popup_service/popup_service.dart';
 import 'package:mudabbir/service/popup_service/popup_widgets.dart';
+import 'package:mudabbir/service/routing_service/app_routes.dart';
 
 class GoalView extends ConsumerStatefulWidget {
   const GoalView({super.key});
@@ -63,7 +61,7 @@ class _GoalViewState extends ConsumerState<GoalView> {
                   children: [
                     IOSDialogStyle.header(
                       dialogContext,
-                      title: GoalStrings.contributionTitle,
+                      title: AppStrings.goalContributionTitle,
                       icon: CupertinoIcons.plus_circle_fill,
                     ),
                     Flexible(
@@ -97,7 +95,7 @@ class _GoalViewState extends ConsumerState<GoalView> {
                             TextField(
                               controller: noteController,
                               decoration: InputDecoration(
-                                labelText: GoalStrings.contributionNote,
+                                labelText: AppStrings.goalContributionNote,
                                 prefixIcon: Icon(
                                   CupertinoIcons.text_bubble,
                                   color: scheme.chromeIcon,
@@ -115,12 +113,12 @@ class _GoalViewState extends ConsumerState<GoalView> {
                           Expanded(
                             child: Semantics(
                               button: true,
-                              label: GoalStrings.cancel,
+                              label: AppStrings.txCancel,
                               child: OutlinedButton(
                                 onPressed: saving
                                     ? null
                                     : () => Navigator.pop(dialogContext),
-                                child: Text(GoalStrings.cancel),
+                                child: Text(AppStrings.txCancel),
                               ),
                             ),
                           ),
@@ -168,13 +166,11 @@ class _GoalViewState extends ConsumerState<GoalView> {
                                     result.goal.target,
                                   );
                                   if (milestone == null) {
-                                    getIt<NavigationService>()
-                                        .showSuccessSnackbar(
-                                      title:
-                                          GoalStrings.contributionSuccessTitle,
-                                      body: GoalStrings.contributionSuccessBody(
+                                    AppSnackbar.success(
+                                      AppStrings.goalContributionSuccessBody(
                                         amount,
                                       ),
+                                      title: AppStrings.goalContributionSuccessTitle,
                                     );
                                   }
                                 }
@@ -209,13 +205,13 @@ class _GoalViewState extends ConsumerState<GoalView> {
             children: [
               IOSDialogStyle.header(
                 ctx,
-                title: GoalStrings.completedAlertTitle,
+                title: AppStrings.goalCompletedAlertTitle,
                 icon: Icons.emoji_events_outlined,
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
                 child: Text(
-                  GoalStrings.completedAlertBody(goalName),
+                  AppStrings.goalCompletedAlertBody(goalName),
                   style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
                         color: Theme.of(ctx).colorScheme.textMuted,
                       ),
@@ -240,34 +236,6 @@ class _GoalViewState extends ConsumerState<GoalView> {
     );
   }
 
-  Future<void> _confirmDeleteGoal(BuildContext context, SavingsGoal goal) async {
-    final confirmed = await AppConfirmDialog.show(
-      context,
-      title: AppStrings.goalDeleteConfirmTitle,
-      message: AppStrings.goalDeleteConfirmBody(goal.name),
-    );
-    if (confirmed) {
-      HapticService.medium();
-      await ref.read(goalViewmodelProvider.notifier).deleteGoal(goal.id);
-    }
-  }
-
-  Color _statusColor(BuildContext context, GoalTrackStatus status) {
-    final scheme = Theme.of(context).colorScheme;
-    switch (status) {
-      case GoalTrackStatus.onTrack:
-        return scheme.success;
-      case GoalTrackStatus.behind:
-        return scheme.warning;
-      case GoalTrackStatus.overdue:
-        return scheme.error;
-      case GoalTrackStatus.completed:
-        return scheme.dataGreen;
-      case GoalTrackStatus.noData:
-        return scheme.textMuted;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -279,42 +247,27 @@ class _GoalViewState extends ConsumerState<GoalView> {
         await goalViewmodel.getAllGoals();
         await FinancialRefresh.refreshAll(ref);
         if (!context.mounted) return;
-        getIt<NavigationService>().showSuccessSnackbar(
-          title: AppStrings.snackSuccessTitle,
-          body: AppStrings.goalsDeletedSuccess,
-        );
+        AppSnackbar.success(AppStrings.goalsDeletedSuccess);
       }
       if (next.isAdd) {
         await goalViewmodel.getAllGoals();
         await FinancialRefresh.refreshAll(ref);
         if (!context.mounted) return;
-        getIt<NavigationService>().showSuccessSnackbar(
-          title: AppStrings.snackSuccessTitle,
-          body: GoalStrings.createdSuccess,
-        );
+        AppSnackbar.success(AppStrings.goalCreateSuccess);
       }
       if (next.isEdit) {
         await goalViewmodel.getAllGoals();
         await FinancialRefresh.refreshAll(ref);
         if (!context.mounted) return;
-        getIt<NavigationService>().showSuccessSnackbar(
-          title: AppStrings.snackSuccessTitle,
-          body: GoalStrings.updatedSuccess,
-        );
+        AppSnackbar.success(AppStrings.goalUpdatedSuccess);
       }
       if (next.error != null &&
           previous?.error != next.error &&
           !next.isLoading) {
-        if (next.error == GoalStrings.savedOffline) {
-          getIt<NavigationService>().showSuccessSnackbar(
-            title: AppStrings.snackSuccessTitle,
-            body: GoalStrings.savedOffline,
-          );
+        if (next.error == AppStrings.offlineSavedPendingSync) {
+          AppSnackbar.success(AppStrings.offlineSavedPendingSync);
         } else {
-          getIt<NavigationService>().showErrorSnackbar(
-            title: AppStrings.snackErrorTitle,
-            body: next.error!,
-          );
+          AppSnackbar.error(next.error!);
         }
       }
     });
@@ -363,26 +316,24 @@ class _GoalViewState extends ConsumerState<GoalView> {
               children: [
                 if (goalState.isOffline)
                   AppOfflineBanner(
-                    message: GoalStrings.offlineBanner,
+                    message: AppStrings.goalOfflineBanner,
                     onRetry: () =>
                         ref.read(goalViewmodelProvider.notifier).getAllGoals(),
                   ),
                 Padding(
-                  padding: const EdgeInsets.all(AppLayout.pageGutter),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: FilledButton.icon(
-                      onPressed: () {
-                        HapticService.medium();
-                        getIt<PopupService>().showAddGoalPopup(context, ref);
-                      },
-                      icon: const Icon(CupertinoIcons.add),
-                      label: Text(
-                        AppStrings.addNewGoal,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppLayout.pageGutter,
+                    8,
+                    AppLayout.pageGutter,
+                    12,
+                  ),
+                  child: AppLoadingButton(
+                    isLoading: false,
+                    label: AppStrings.addNewGoal,
+                    onPressed: () {
+                      HapticService.medium();
+                      getIt<PopupService>().showAddGoalPopup(context, ref);
+                    },
                   ),
                 ),
                 Expanded(
@@ -393,15 +344,30 @@ class _GoalViewState extends ConsumerState<GoalView> {
                       AppLayout.pageGutter,
                       AppLayout.bottomNavClearance,
                     ),
-                    itemCount: goalState.goals.length,
-                    itemBuilder: (_, i) => AppAnimatedListItem(
-                      index: i,
-                      child: _goalCard(
-                        context,
-                        goalState.goals[i],
-                        goalViewmodel,
-                      ),
-                    ),
+                    itemCount: goalState.goals.length + 1,
+                    itemBuilder: (_, i) {
+                      if (i == 0) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: GoalsSummaryCard(goals: goalState.goals),
+                        );
+                      }
+                      final goal = goalState.goals[i - 1];
+                      return AppAnimatedListItem(
+                        index: i,
+                        child: GoalListCard(
+                          goal: goal,
+                          onContribute: () {
+                            HapticService.light();
+                            _showContributionDialog(goal);
+                          },
+                          onDetails: () {
+                            HapticService.light();
+                            context.push(AppRoutes.goalDetail(goal.id));
+                          },
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -409,266 +375,6 @@ class _GoalViewState extends ConsumerState<GoalView> {
           },
         ),
       ),
-    );
-  }
-
-  Widget _goalCard(
-    BuildContext context,
-    SavingsGoal goal,
-    GoalViewmodel viewmodel,
-  ) {
-    final scheme = Theme.of(context).colorScheme;
-    final progress = goal.progressPercent / 100;
-    final statusColor = _statusColor(context, goal.eta.status);
-
-    return AppCard(
-      margin: const EdgeInsets.only(bottom: 14),
-      child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _goalImage(context, goal),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                goal.name,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: scheme.textOnCard,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                GoalStrings.typeLabel(goal.type),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: scheme.textMuted,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: statusColor.withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  GoalStrings.statusLabel(goal.eta.status),
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: statusColor,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // RTL: trailing cluster sits on physical left — delete beside edit.
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (!goal.isCompleted)
-                        _goalCardIconButton(
-                          context,
-                          icon: CupertinoIcons.plus,
-                          color: scheme.primary,
-                          background: scheme.primary.withValues(alpha: 0.12),
-                          onPressed: () {
-                            HapticService.light();
-                            _showContributionDialog(goal);
-                          },
-                        ),
-                      _goalCardIconButton(
-                        context,
-                        icon: CupertinoIcons.pencil,
-                        color: scheme.primary,
-                        background: scheme.success.withValues(alpha: 0.14),
-                        onPressed: goal.isCompleted
-                            ? null
-                            : () {
-                                HapticService.light();
-                                GoalPopup().showEdit(context, ref, goal);
-                              },
-                      ),
-                      _goalCardIconButton(
-                        context,
-                        icon: CupertinoIcons.delete,
-                        color: scheme.error,
-                        onPressed: () => _confirmDeleteGoal(context, goal),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    GoalStrings.formatAmount(goal.currentAmount),
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: scheme.dataGreen,
-                    ),
-                  ),
-                  Text(
-                    '${AppStrings.fromAmount} ${GoalStrings.formatAmount(goal.target)}',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: scheme.textMuted,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: LinearProgressIndicator(
-                  value: progress,
-                  minHeight: 8,
-                  backgroundColor: scheme.outline.withValues(alpha: 0.15),
-                  valueColor: AlwaysStoppedAnimation<Color>(statusColor),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${goal.progressPercent.toStringAsFixed(0)}%',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: statusColor,
-                ),
-              ),
-              const SizedBox(height: 10),
-              JourneyProgressMap(
-                progress: progress,
-                goalName: goal.name,
-              ),
-              const SizedBox(height: 12),
-              _infoRow(
-                context,
-                Icons.event_outlined,
-                GoalStrings.deadlineLabel,
-                GoalStrings.formatDate(goal.endDate),
-              ),
-              const SizedBox(height: 6),
-              _infoRow(
-                context,
-                Icons.auto_graph_outlined,
-                GoalStrings.projectedLabel,
-                GoalStrings.projectedDateText(goal.eta.projectedDate),
-              ),
-              if (goal.eta.requiredMonthlyToDeadline != null) ...[
-                const SizedBox(height: 6),
-                _infoRow(
-                  context,
-                  Icons.trending_up_outlined,
-                  GoalStrings.monthlyNeeded,
-                  GoalStrings.formatAmount(goal.eta.requiredMonthlyToDeadline!),
-                ),
-              ],
-            ],
-          ),
-    );
-  }
-
-  Widget _goalCardIconButton(
-    BuildContext context, {
-    required IconData icon,
-    required Color color,
-    Color? background,
-    VoidCallback? onPressed,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          margin: const EdgeInsetsDirectional.only(start: 4),
-          padding: const EdgeInsets.all(8),
-          decoration: background != null
-              ? BoxDecoration(
-                  color: background,
-                  borderRadius: BorderRadius.circular(10),
-                )
-              : null,
-          child: Icon(icon, color: color, size: 18),
-        ),
-      ),
-    );
-  }
-
-  Widget _goalImage(BuildContext context, SavingsGoal goal) {
-    final scheme = Theme.of(context).colorScheme;
-    final path = goal.imagePath;
-    if (path != null && path.isNotEmpty && File(path).existsSync()) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Image.file(
-          File(path),
-          width: 52,
-          height: 52,
-          fit: BoxFit.cover,
-        ),
-      );
-    }
-    return Container(
-      width: 52,
-      height: 52,
-      decoration: BoxDecoration(
-        color: scheme.chromeIconFill,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Icon(Icons.flag_outlined, color: scheme.chromeIcon),
-    );
-  }
-
-  Widget _infoRow(
-    BuildContext context,
-    IconData icon,
-    String label,
-    String value,
-  ) {
-    final scheme = Theme.of(context).colorScheme;
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: scheme.textMuted),
-        const SizedBox(width: 8),
-        Text(
-          '$label: ',
-          style: TextStyle(fontSize: 12, color: scheme.textMuted),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: scheme.onSurface,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

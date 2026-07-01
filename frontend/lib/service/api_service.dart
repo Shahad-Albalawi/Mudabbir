@@ -68,8 +68,11 @@ class ApiService {
       (failure) async => Left(failure),
       (json) async {
         try {
-          final user = UserModel.fromJson(json['user']);
-          final token = _plainTokenFromAuthJson(json['token']);
+          final payload = json['data'] is Map
+              ? Map<String, dynamic>.from(json['data'] as Map)
+              : json;
+          final user = UserModel.fromJson(payload['user']);
+          final token = _plainTokenFromAuthJson(payload['token']);
           await storeTokenAndUser(user, token);
           return Right(user);
         } catch (e) {

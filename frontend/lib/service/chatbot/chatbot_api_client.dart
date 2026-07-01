@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:mudabbir/presentation/resources/chatbot_ui_strings.dart';
+import 'package:mudabbir/presentation/chatbot/chatbot_copy_helpers.dart';
 import 'package:mudabbir/service/chatbot/chatbot_api_result.dart';
 import 'package:mudabbir/utils/dev_log.dart';
 

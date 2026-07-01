@@ -5,13 +5,15 @@ import 'package:intl/intl.dart';
 import 'package:mudabbir/domain/repository/server_challenge_repository/server_challenge_repository.dart';
 import 'package:mudabbir/presentation/resources/app_icons.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
-import 'package:mudabbir/presentation/resources/server_challenge_strings.dart';
+import 'package:mudabbir/presentation/server_challenges/challenge_copy_helpers.dart';
 import 'package:mudabbir/presentation/server_challenges/models/challenge_model.dart';
 import 'package:mudabbir/presentation/server_challenges/providers/challenge_provider.dart';
 import 'package:mudabbir/presentation/server_challenges/providers/challenge_state.dart';
+import 'package:mudabbir/presentation/server_challenges/utils/challenge_check_in_utils.dart';
 import 'package:mudabbir/presentation/server_challenges/widgets/challenge_badge_chip.dart';
 import 'package:mudabbir/presentation/server_challenges/widgets/challenge_leaderboard_card.dart';
 import 'package:mudabbir/presentation/server_challenges/widgets/participant_item.dart';
+import 'package:mudabbir/presentation/widgets/app_snackbar.dart';
 import 'package:mudabbir/presentation/widgets/app_confirm_dialog.dart';
 import 'package:mudabbir/presentation/widgets/app_loading_button.dart';
 import 'package:mudabbir/presentation/widgets/app_offline_banner.dart';
@@ -20,6 +22,7 @@ import 'package:mudabbir/presentation/widgets/app_skeleton.dart';
 import 'package:mudabbir/presentation/widgets/ios_dialog_style.dart';
 import 'package:mudabbir/presentation/widgets/ios_empty_state.dart';
 import 'package:mudabbir/service/getit_init.dart';
+import 'package:mudabbir/service/routing_service/app_routes.dart';
 import 'package:mudabbir/utils/challenge_current_user.dart';
 
 class ChallengeDetailScreen extends ConsumerStatefulWidget {
@@ -74,7 +77,6 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final detailState = ref.watch(challengeDetailProvider(widget.challengeId));
 
     ref.listen<ChallengeOperationState>(challengeOperationProvider, (
@@ -82,12 +84,7 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
       next,
     ) {
       if (next is ChallengeOperationSuccess) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.message),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppSnackbar.success(next.message);
 
         if (next.challenge != null) {
           ref
@@ -96,17 +93,12 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
           ref.invalidate(challengeLeaderboardProvider(widget.challengeId));
         }
       } else if (next is ChallengeOperationError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.message),
-            backgroundColor: scheme.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppSnackbar.error(next.message);
       }
     });
 
     return AppGroupedScaffold(
+      backFallbackRoute: AppRoutes.challenges,
       titleText: ServerChallengeStrings.detailTitle,
       body: SafeArea(
         top: false,
@@ -184,8 +176,7 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
     if (me == null) return const SizedBox.shrink();
 
     final scheme = Theme.of(context).colorScheme;
-    final today = DateTime.now().toIso8601String().split('T').first;
-    final checkedToday = me.lastCheckIn == today;
+    final checkedToday = ChallengeCheckInUtils.isCheckedInToday(me);
 
     return Card(
       child: Padding(
@@ -657,15 +648,8 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
                                   amountController.text.trim(),
                                 );
                                 if (amountToAdd == null || amountToAdd <= 0) {
-                                  ScaffoldMessenger.of(dialogContext)
-                                      .showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        ServerChallengeStrings
-                                            .invalidAmountSnack,
-                                      ),
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
+                                  AppSnackbar.warning(
+                                    ServerChallengeStrings.invalidAmountSnack,
                                   );
                                   return;
                                 }
@@ -790,15 +774,8 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
                                   r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
                                 ).hasMatch(email);
                                 if (!isValidEmail) {
-                                  ScaffoldMessenger.of(dialogContext)
-                                      .showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        ServerChallengeStrings
-                                            .inviteInvalidEmail,
-                                      ),
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
+                                  AppSnackbar.warning(
+                                    ServerChallengeStrings.inviteInvalidEmail,
                                   );
                                   return;
                                 }

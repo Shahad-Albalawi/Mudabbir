@@ -8,7 +8,7 @@ import 'package:mudabbir/domain/repository/budget_repository/budget_repository.d
 import 'package:mudabbir/domain/services/sync_policies.dart';
 import 'package:mudabbir/domain/services/sync_flush_lock.dart';
 import 'package:mudabbir/domain/services/repository_guard.dart';
-import 'package:mudabbir/presentation/resources/budget_strings.dart';
+import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/data/network/api_exception.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/utils/api_session.dart';
@@ -82,7 +82,7 @@ class SyncedBudgetRepository {
         }
         rethrow;
       }
-    }, fallbackMessage: BudgetStrings.loadFailed);
+    }, fallbackMessage: AppStrings.budgetLoadFailed);
   }
 
   Future<Either<Failure, BudgetCreateSyncResult>> createBudget({
@@ -147,7 +147,7 @@ class SyncedBudgetRepository {
           queuedOffline: true,
         );
       }
-    }, fallbackMessage: BudgetStrings.syncFailed);
+    }, fallbackMessage: AppStrings.budgetSyncFailed);
   }
 
   Future<Either<Failure, BudgetDeleteSyncResult>> deleteBudget(int id) {
@@ -175,7 +175,7 @@ class SyncedBudgetRepository {
           queuedOffline: affected == 1,
         );
       }
-    }, fallbackMessage: BudgetStrings.syncFailed);
+    }, fallbackMessage: AppStrings.budgetSyncFailed);
   }
 
   Future<void> flushPendingOps() async {

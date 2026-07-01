@@ -6,32 +6,31 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Services\AuthService;
-use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
-    public function __construct(private readonly AuthService $authService) {}
+    public function __construct(private AuthService $authService) {}
 
     public function register(RegisterRequest $request): JsonResponse
     {
         $result = $this->authService->register($request->validated());
 
-        return response()->json($result, 201);
+        return $this->created($result, 'Registered successfully');
     }
 
     public function login(LoginRequest $request): JsonResponse
     {
         $result = $this->authService->login($request->validated(), $request);
 
-        return response()->json($result);
+        return $this->success($result, 'Logged in successfully');
     }
 
     public function logout(Request $request): JsonResponse
     {
         $this->authService->logout($request->user());
 
-        return ApiResponse::success(null, 'Logged out');
+        return $this->success(null, 'Logged out');
     }
 }

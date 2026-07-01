@@ -24,5 +24,10 @@ abstract final class AppIcons {
   static const share = CupertinoIcons.share;
   static const heart = CupertinoIcons.heart;
   static const warning = CupertinoIcons.exclamationmark_triangle;
+  static const notifications = CupertinoIcons.bell;
+  static const notificationsFilled = CupertinoIcons.bell_fill;
+  static const trophy = CupertinoIcons.rosette;
+  static const trophyFilled = CupertinoIcons.rosette;
+  static const add = CupertinoIcons.plus;
   static const sync = CupertinoIcons.arrow_2_circlepath;
 }

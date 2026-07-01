@@ -1,4 +1,5 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:mudabbir/service/notifications/notification_preferences.dart';
 import 'package:mudabbir/utils/dev_log.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -59,6 +60,7 @@ class LocalNotificationService {
     required String body,
     required String channelId,
   }) async {
+    if (!await NotificationPreferences.isEnabled()) return;
     if (!_initialized) await initialize();
     final granted = await requestPermissionIfNeeded();
     if (!granted) {

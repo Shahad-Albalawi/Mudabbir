@@ -64,14 +64,20 @@ class ExpenseStore
 
     public function create(array $payload, int $userId): array
     {
-        return $this->mutateStore(function (array &$data) use ($payload, $userId): array {
+        $expense = $this->mutateStore(function (array &$data) use ($payload, $userId): array {
             $id = (int) $data['next_expense_id'];
             $data['next_expense_id'] = $id + 1;
             $expense = $this->buildExpense($id, $payload, $userId);
             $data['expenses'][] = $expense;
 
+            app(ExpenseDatabaseSync::class)->upsertFromArray($expense);
+
             return $expense;
         });
+
+        DashboardCache::forgetForUser($userId);
+
+        return $expense;
     }
 
     /**
@@ -79,7 +85,7 @@ class ExpenseStore
      */
     public function update(int $id, array $updates, int $userId, ?string $clientUpdatedAt = null): ?array
     {
-        return $this->mutateStore(function (array &$data) use ($id, $updates, $userId, $clientUpdatedAt): ?array {
+        $result = $this->mutateStore(function (array &$data) use ($id, $updates, $userId, $clientUpdatedAt): ?array {
             foreach ($data['expenses'] as $idx => $expense) {
                 if ((int) $expense['id'] !== $id || (int) ($expense['user_id'] ?? 0) !== $userId) {
                     continue;
@@ -98,6 +104,8 @@ class ExpenseStore
                 $merged['updated_at'] = Carbon::now()->toISOString();
                 $data['expenses'][$idx] = $this->normalizeExpense($merged);
 
+                app(ExpenseDatabaseSync::class)->upsertFromArray($data['expenses'][$idx]);
+
                 return [
                     'conflict' => false,
                     'data' => $data['expenses'][$idx],
@@ -106,19 +114,35 @@ class ExpenseStore
 
             return null;
         });
+
+        if ($result !== null) {
+            DashboardCache::forgetForUser($userId);
+        }
+
+        return $result;
     }
 
     public function delete(int $id, int $userId): bool
     {
-        return $this->mutateStore(function (array &$data) use ($id, $userId): bool {
+        $deleted = $this->mutateStore(function (array &$data) use ($id, $userId): bool {
             $before = count($data['expenses']);
             $data['expenses'] = array_values(array_filter(
                 $data['expenses'],
                 fn (array $expense): bool => ! ((int) $expense['id'] === $id && (int) ($expense['user_id'] ?? 0) === $userId)
             ));
 
+            if (count($data['expenses']) < $before) {
+                app(ExpenseDatabaseSync::class)->deleteById($id);
+            }
+
             return count($data['expenses']) < $before;
         });
+
+        if ($deleted) {
+            DashboardCache::forgetForUser($userId);
+        }
+
+        return $deleted;
     }
 
     private function buildExpense(int $id, array $payload, int $userId): array

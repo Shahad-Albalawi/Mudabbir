@@ -3,7 +3,7 @@ import 'package:mudabbir/data/network/failure.dart';
 import 'package:mudabbir/domain/models/savings_goal.dart';
 import 'package:mudabbir/domain/repository/goals_repository/goals_repository.dart';
 import 'package:mudabbir/domain/repository/synced_goals_repository/synced_goals_repository.dart';
-import 'package:mudabbir/presentation/resources/goal_strings.dart';
+import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/data/network/api_exception.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/utils/dev_log.dart';
@@ -82,13 +82,13 @@ class GoalViewmodel extends StateNotifier<GoalState> {
     } on ApiException catch (e) {
       devLog(e.message);
       if (!mounted) return;
-      state = state.copyWith(isLoading: false, error: e.message);
+      state = state.copyWith(isLoading: false, error: e.userMessage);
     } catch (_) {
       devLog('Goals load error');
       if (!mounted) return;
       state = state.copyWith(
         isLoading: false,
-        error: GoalStrings.loadFailed,
+        error: AppStrings.goalLoadFailed,
       );
     }
   }
@@ -118,7 +118,7 @@ class GoalViewmodel extends StateNotifier<GoalState> {
         (failure) => state = state.copyWith(error: failure.userFacingMessage),
         (sync) => state = state.copyWith(
           isAdd: true,
-          error: sync.queuedOffline ? GoalStrings.savedOffline : null,
+          error: sync.queuedOffline ? AppStrings.offlineSavedPendingSync : null,
         ),
       );
     } finally {
@@ -156,7 +156,7 @@ class GoalViewmodel extends StateNotifier<GoalState> {
           state = state.copyWith(
             goals: updated,
             isEdit: true,
-            error: sync.queuedOffline ? GoalStrings.savedOffline : null,
+            error: sync.queuedOffline ? AppStrings.offlineSavedPendingSync : null,
           );
         },
       );
@@ -177,7 +177,7 @@ class GoalViewmodel extends StateNotifier<GoalState> {
             state = state.copyWith(
               goals: updated,
               isDelete: true,
-              error: sync.queuedOffline ? GoalStrings.savedOffline : null,
+              error: sync.queuedOffline ? AppStrings.offlineSavedPendingSync : null,
             );
           }
         },
@@ -213,7 +213,7 @@ class GoalViewmodel extends StateNotifier<GoalState> {
         state = state.copyWith(
           goals: updated,
           lastContribution: writeResult,
-          error: sync.queuedOffline ? GoalStrings.savedOffline : null,
+          error: sync.queuedOffline ? AppStrings.offlineSavedPendingSync : null,
         );
         return writeResult;
       },

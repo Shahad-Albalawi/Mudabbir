@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/design_tokens.dart';
 import 'package:mudabbir/presentation/widgets/app_animated_list_item.dart';
+import 'package:mudabbir/presentation/widgets/app_loading_button.dart';
 import 'package:mudabbir/service/haptic_service.dart';
 
 /// Unified empty state for lists, charts, and async views.
@@ -30,48 +31,39 @@ class IOSEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final color = iconColor ?? scheme.chromeIcon;
-    final iconSize = compact ? 36.0 : 44.0;
+    final color = iconColor ?? scheme.primary;
+    final iconSize = compact ? 32.0 : 40.0;
+    final circleSize = compact ? 72.0 : 88.0;
 
     final content = Semantics(
       container: true,
       label: subtitle.isEmpty ? title : '$title. $subtitle',
       child: Padding(
-        padding: EdgeInsets.all(compact ? 20 : 32),
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? 20 : AppLayout.pageGutter,
+          vertical: compact ? 20 : 32,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: compact ? 72 : 92,
-              height: compact ? 72 : 92,
-              padding: EdgeInsets.all(compact ? 14 : 18),
+              width: circleSize,
+              height: circleSize,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    color.withValues(alpha: 0.18),
-                    color.withValues(alpha: 0.06),
-                  ],
-                ),
+                color: color.withValues(alpha: scheme.brightness == Brightness.dark ? 0.14 : 0.08),
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: scheme.outline.withValues(
-                    alpha: scheme.brightness == Brightness.dark ? 0.45 : 1,
-                  ),
-                  width: 0.5,
-                ),
               ),
               child: Icon(
                 icon,
                 size: iconSize,
-                color: color.withValues(alpha: 0.9),
+                color: color,
               ),
             ),
             SizedBox(height: compact ? 16 : 20),
             Text(
               title,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
                     color: scheme.onSurface,
                   ),
               textAlign: TextAlign.center,
@@ -80,24 +72,22 @@ class IOSEmptyState extends StatelessWidget {
               const SizedBox(height: AppSpacing.sm),
               Text(
                 subtitle,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: scheme.textMuted,
-                      height: 1.35,
+                      height: 1.4,
                     ),
                 textAlign: TextAlign.center,
               ),
             ],
             if (buttonLabel != null && onPressed != null) ...[
               SizedBox(height: compact ? 16 : 24),
-              SizedBox(
-                height: AppTouch.buttonHeight,
-                child: FilledButton(
-                  onPressed: () {
-                    HapticService.medium();
-                    onPressed!();
-                  },
-                  child: Text(buttonLabel!),
-                ),
+              AppLoadingButton(
+                isLoading: false,
+                label: buttonLabel!,
+                onPressed: () {
+                  HapticService.medium();
+                  onPressed!();
+                },
               ),
             ],
           ],

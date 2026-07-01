@@ -25,6 +25,7 @@ class IOSDialogStyle {
     BuildContext context, {
     required String title,
     String? subtitle,
+    Widget? subtitleWidget,
     IconData? icon,
   }) {
     final scheme = Theme.of(context).colorScheme;
@@ -53,7 +54,15 @@ class IOSDialogStyle {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                if (subtitle != null) ...[
+                if (subtitleWidget != null) ...[
+                  const SizedBox(height: 2),
+                  DefaultTextStyle(
+                    style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                      color: scheme.textMuted,
+                    ),
+                    child: subtitleWidget,
+                  ),
+                ] else if (subtitle != null) ...[
                   const SizedBox(height: 2),
                   Text(
                     subtitle,

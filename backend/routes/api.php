@@ -1,12 +1,17 @@
 <?php
 
+use App\Http\Controllers\Api\AiChatController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BudgetController;
 use App\Http\Controllers\Api\ChallengeController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\Api\GenerateContentController;
 use App\Http\Controllers\Api\GoalController;
 use App\Http\Controllers\Api\HealthController;
+use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\StatisticsController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('throttle:api')->get('/health', HealthController::class);
@@ -21,8 +26,17 @@ Route::middleware('throttle:auth-login')->group(function (): void {
 
 Route::middleware(['auth:sanctum', 'throttle:api'])->group(function (): void {
     Route::post('/generate-content', GenerateContentController::class)
-        ->middleware('throttle:generate-content');
+        ->middleware('throttle:ai');
+    Route::post('/ai/chat', AiChatController::class)
+        ->middleware('throttle:ai');
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    Route::get('/statistics', [StatisticsController::class, 'index']);
+    Route::get('/dashboard', [DashboardController::class, 'index']);
+    Route::get('/reports/monthly', [ReportController::class, 'monthly']);
+
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markRead']);
 
     Route::get('/challenges/templates', [ChallengeController::class, 'templates']);
     Route::get('/challenges/invitations/pending', [ChallengeController::class, 'pendingInvitations']);
@@ -55,6 +69,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function (): void {
     Route::get('/goals/{id}', [GoalController::class, 'show']);
     Route::put('/goals/{id}', [GoalController::class, 'update']);
     Route::post('/goals/{id}/contributions', [GoalController::class, 'addContribution']);
+    Route::post('/goals/{id}/milestones', [GoalController::class, 'addMilestone']);
     Route::delete('/goals/{id}', [GoalController::class, 'destroy']);
 
     Route::get('/budgets', [BudgetController::class, 'index']);

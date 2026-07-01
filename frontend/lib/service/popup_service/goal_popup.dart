@@ -5,8 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mudabbir/domain/models/savings_goal.dart';
 import 'package:mudabbir/presentation/goals/goals_viewmodel.dart';
+import 'package:mudabbir/presentation/goals/goal_copy_helpers.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
-import 'package:mudabbir/presentation/resources/goal_strings.dart';
+import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/presentation/widgets/app_loading_button.dart';
 import 'package:mudabbir/presentation/widgets/ios_dialog_style.dart';
 import 'package:mudabbir/service/haptic_service.dart';
@@ -110,7 +111,7 @@ class GoalPopup {
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
-                                              GoalStrings.pickImage,
+                                              AppStrings.goalPickImage,
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodySmall
@@ -126,65 +127,65 @@ class GoalPopup {
                               ),
                             ),
                             const SizedBox(height: 20),
-                            _section(context,GoalStrings.goalName),
+                            _section(context, AppStrings.goalNameLabel),
                             const SizedBox(height: 8),
                             PopupWidgets.textField(
                               controller: nameCtrl,
-                              label: GoalStrings.goalNameHint,
+                              label: AppStrings.goalNameHint,
                               icon: Icons.flag_outlined,
                               validator: (val) => val == null || val.isEmpty
-                                  ? GoalStrings.nameRequired
+                                  ? AppStrings.goalNameRequired
                                   : null,
                             ),
                             const SizedBox(height: 16),
-                            _section(context,GoalStrings.targetAmount),
+                            _section(context,AppStrings.goalTargetAmountLabel),
                             const SizedBox(height: 8),
                             PopupWidgets.textField(
                               controller: targetCtrl,
-                              label: GoalStrings.targetAmount,
+                              label: AppStrings.goalTargetAmountLabel,
                               icon: Icons.savings_outlined,
                               validator: (val) {
                                 if (val == null || val.isEmpty) {
-                                  return GoalStrings.targetRequired;
+                                  return AppStrings.goalTargetRequired;
                                 }
                                 final n = double.tryParse(val);
                                 if (n == null || n <= 0) {
-                                  return GoalStrings.invalidAmount;
+                                  return AppStrings.goalsInvalidAmount;
                                 }
                                 return null;
                               },
                             ),
                             const SizedBox(height: 16),
-                            _section(context,GoalStrings.currentAmount),
+                            _section(context,AppStrings.goalCurrentAmountLabel),
                             const SizedBox(height: 8),
                             PopupWidgets.textField(
                               controller: currentCtrl,
-                              label: GoalStrings.currentAmount,
+                              label: AppStrings.goalCurrentAmountLabel,
                               icon: Icons.account_balance_wallet_outlined,
                               validator: (val) {
                                 if (val == null || val.isEmpty) return null;
                                 final n = double.tryParse(val);
                                 if (n == null || n < 0) {
-                                  return GoalStrings.invalidAmount;
+                                  return AppStrings.goalsInvalidAmount;
                                 }
                                 return null;
                               },
                             ),
                             const SizedBox(height: 16),
-                            _section(context,GoalStrings.goalType),
+                            _section(context,AppStrings.goalTypeLabel),
                             const SizedBox(height: 8),
                             PopupWidgets.dropdownField<String>(
                               value: selectedType,
-                              label: GoalStrings.goalType,
-                              items: GoalStrings.goalTypes,
+                              label: AppStrings.goalTypeLabel,
+                              items: GoalCopyHelpers.goalTypeOptions,
                               onChanged: (val) =>
                                   setLocalState(() => selectedType = val),
                               validator: (val) => val == null
-                                  ? GoalStrings.typeRequired
+                                  ? AppStrings.goalTypeRequired
                                   : null,
                             ),
                             const SizedBox(height: 16),
-                            _section(context,GoalStrings.goalPeriod),
+                            _section(context,AppStrings.goalPeriodLabel),
                             const SizedBox(height: 8),
                             Row(
                               children: [
@@ -192,10 +193,10 @@ class GoalPopup {
                                   child: PopupWidgets.dateField(
                                     startCtrl,
                                     context,
-                                    label: GoalStrings.startDate,
+                                    label: AppStrings.fieldStartDate,
                                     validator: (val) =>
                                         val == null || val.isEmpty
-                                            ? GoalStrings.startRequired
+                                            ? AppStrings.goalStartRequired
                                             : null,
                                   ),
                                 ),
@@ -204,10 +205,10 @@ class GoalPopup {
                                   child: PopupWidgets.dateField(
                                     endCtrl,
                                     context,
-                                    label: GoalStrings.endDate,
+                                    label: AppStrings.fieldEndDate,
                                     validator: (val) {
                                       if (val == null || val.isEmpty) {
-                                        return GoalStrings.endRequired;
+                                        return AppStrings.goalEndRequired;
                                       }
                                       final start =
                                           DateTime.tryParse(startCtrl.text);
@@ -215,7 +216,7 @@ class GoalPopup {
                                       if (start != null &&
                                           end != null &&
                                           !end.isAfter(start)) {
-                                        return GoalStrings.endAfterStart;
+                                        return AppStrings.goalEndAfterStart;
                                       }
                                       return null;
                                     },
@@ -234,12 +235,12 @@ class GoalPopup {
                           Expanded(
                             child: Semantics(
                               button: true,
-                              label: GoalStrings.cancel,
+                              label: AppStrings.txCancel,
                               child: OutlinedButton(
                                 onPressed: isSubmitting
                                     ? null
                                     : () => Navigator.pop(context),
-                                child: Text(GoalStrings.cancel),
+                                child: Text(AppStrings.txCancel),
                               ),
                             ),
                           ),
@@ -247,7 +248,7 @@ class GoalPopup {
                           Expanded(
                             child: AppLoadingButton(
                               isLoading: isSubmitting,
-                              label: GoalStrings.createButton,
+                              label: AppStrings.goalPopupCreateTitle,
                               onPressed: () async {
                                 if (!(formKey.currentState?.validate() ??
                                     false)) {
@@ -270,10 +271,10 @@ class GoalPopup {
                                 final error =
                                     ref.read(goalViewmodelProvider).error;
                                 if (error != null &&
-                                    error != GoalStrings.savedOffline) {
+                                    error != AppStrings.offlineSavedPendingSync) {
                                   PopupWidgets.showErrorSnackBar(
                                     context,
-                                    GoalStrings.createFailed,
+                                    AppStrings.goalCreateFailed,
                                   );
                                   return;
                                 }
@@ -282,7 +283,7 @@ class GoalPopup {
                                 Navigator.pop(context);
                                 PopupWidgets.showSuccessSnackBar(
                                   context,
-                                  GoalStrings.createdSuccess,
+                                  AppStrings.goalCreateSuccess,
                                 );
                               },
                             ),
@@ -320,7 +321,7 @@ class GoalPopup {
       text: goal.endDate.toIso8601String().split('T').first,
     );
 
-    String? selectedType = GoalStrings.resolveGoalTypeForDropdown(goal.type);
+    String? selectedType = GoalCopyHelpers.resolveGoalTypeForDropdown(goal.type);
     String? imagePath = goal.imagePath;
 
     final goalViewmodel = ref.read(goalViewmodelProvider.notifier);
@@ -351,8 +352,8 @@ class GoalPopup {
                   children: [
                     IOSDialogStyle.header(
                       context,
-                      title: GoalStrings.editTitle,
-                      subtitle: GoalStrings.editSubtitle,
+                      title: AppStrings.goalEditTitle,
+                      subtitle: AppStrings.goalEditSubtitle,
                       icon: Icons.edit_outlined,
                     ),
                     Flexible(
@@ -363,24 +364,24 @@ class GoalPopup {
                           children: [
                             PopupWidgets.textField(
                               controller: nameCtrl,
-                              label: GoalStrings.goalNameHint,
+                              label: AppStrings.goalNameHint,
                               icon: Icons.flag_outlined,
                               validator: (val) => val == null || val.isEmpty
-                                  ? GoalStrings.nameRequired
+                                  ? AppStrings.goalNameRequired
                                   : null,
                             ),
                             const SizedBox(height: 16),
                             PopupWidgets.textField(
                               controller: targetCtrl,
-                              label: GoalStrings.targetAmount,
+                              label: AppStrings.goalTargetAmountLabel,
                               icon: Icons.savings_outlined,
                               validator: (val) {
                                 if (val == null || val.isEmpty) {
-                                  return GoalStrings.targetRequired;
+                                  return AppStrings.goalTargetRequired;
                                 }
                                 final n = double.tryParse(val);
                                 if (n == null || n <= 0) {
-                                  return GoalStrings.invalidAmount;
+                                  return AppStrings.goalsInvalidAmount;
                                 }
                                 return null;
                               },
@@ -388,12 +389,12 @@ class GoalPopup {
                             const SizedBox(height: 16),
                             PopupWidgets.dropdownField<String>(
                               value: selectedType,
-                              label: GoalStrings.goalType,
-                              items: GoalStrings.goalTypes,
+                              label: AppStrings.goalTypeLabel,
+                              items: GoalCopyHelpers.goalTypeOptions,
                               onChanged: (val) =>
                                   setLocalState(() => selectedType = val),
                               validator: (val) => val == null
-                                  ? GoalStrings.typeRequired
+                                  ? AppStrings.goalTypeRequired
                                   : null,
                             ),
                             const SizedBox(height: 16),
@@ -403,10 +404,10 @@ class GoalPopup {
                                   child: PopupWidgets.dateField(
                                     startCtrl,
                                     context,
-                                    label: GoalStrings.startDate,
+                                    label: AppStrings.fieldStartDate,
                                     validator: (val) =>
                                         val == null || val.isEmpty
-                                            ? GoalStrings.startRequired
+                                            ? AppStrings.goalStartRequired
                                             : null,
                                   ),
                                 ),
@@ -415,10 +416,10 @@ class GoalPopup {
                                   child: PopupWidgets.dateField(
                                     endCtrl,
                                     context,
-                                    label: GoalStrings.endDate,
+                                    label: AppStrings.fieldEndDate,
                                     validator: (val) {
                                       if (val == null || val.isEmpty) {
-                                        return GoalStrings.endRequired;
+                                        return AppStrings.goalEndRequired;
                                       }
                                       final start =
                                           DateTime.tryParse(startCtrl.text);
@@ -426,7 +427,7 @@ class GoalPopup {
                                       if (start != null &&
                                           end != null &&
                                           !end.isAfter(start)) {
-                                        return GoalStrings.endAfterStart;
+                                        return AppStrings.goalEndAfterStart;
                                       }
                                       return null;
                                     },
@@ -445,12 +446,12 @@ class GoalPopup {
                           Expanded(
                             child: Semantics(
                               button: true,
-                              label: GoalStrings.cancel,
+                              label: AppStrings.txCancel,
                               child: OutlinedButton(
                                 onPressed: isSubmitting
                                     ? null
                                     : () => Navigator.pop(context),
-                                child: Text(GoalStrings.cancel),
+                                child: Text(AppStrings.txCancel),
                               ),
                             ),
                           ),
@@ -458,7 +459,7 @@ class GoalPopup {
                           Expanded(
                             child: AppLoadingButton(
                               isLoading: isSubmitting,
-                              label: GoalStrings.saveButton,
+                              label: AppStrings.goalSaveChanges,
                               onPressed: () async {
                                 if (!(formKey.currentState?.validate() ??
                                     false)) {
@@ -479,10 +480,10 @@ class GoalPopup {
                                 final error =
                                     ref.read(goalViewmodelProvider).error;
                                 if (error != null &&
-                                    error != GoalStrings.savedOffline) {
+                                    error != AppStrings.offlineSavedPendingSync) {
                                   PopupWidgets.showErrorSnackBar(
                                     context,
-                                    GoalStrings.updateFailed,
+                                    AppStrings.goalUpdateFailed,
                                   );
                                   return;
                                 }
@@ -491,7 +492,7 @@ class GoalPopup {
                                 Navigator.pop(context);
                                 PopupWidgets.showSuccessSnackBar(
                                   context,
-                                  GoalStrings.updatedSuccess,
+                                  AppStrings.goalUpdatedSuccess,
                                 );
                               },
                             ),
@@ -515,8 +516,8 @@ class GoalPopup {
   Widget _header(BuildContext context) {
     return IOSDialogStyle.header(
       context,
-      title: GoalStrings.createTitle,
-      subtitle: GoalStrings.createSubtitle,
+      title: AppStrings.goalPopupCreateTitle,
+      subtitle: AppStrings.goalPopupCreateSubtitle,
       icon: Icons.flag_outlined,
     );
   }

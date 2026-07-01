@@ -9,11 +9,12 @@ import 'package:mudabbir/domain/models/expense_sync_result.dart';
 import 'package:mudabbir/domain/models/expense_transaction.dart';
 import 'package:mudabbir/domain/repository/expense_repository/expense_repository.dart';
 import 'package:mudabbir/domain/repository/synced_expense_repository/synced_expense_repository.dart';
-import 'package:mudabbir/presentation/resources/expense_strings.dart';
-import 'package:mudabbir/presentation/resources/entity_localizations.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
+import 'package:mudabbir/presentation/resources/app_layout.dart';
+import 'package:mudabbir/presentation/resources/entity_localizations.dart';
 import 'package:mudabbir/presentation/widgets/app_loading_button.dart';
 import 'package:mudabbir/presentation/widgets/ios_dialog_style.dart';
+import 'package:mudabbir/presentation/widgets/riyal_amount.dart';
 import 'package:mudabbir/presentation/widgets/ios_loading_widget.dart';
 import 'package:mudabbir/service/financial_refresh.dart';
 import 'package:mudabbir/service/haptic_service.dart';
@@ -176,9 +177,21 @@ class _TransactionDialogBodyState extends ConsumerState<_TransactionDialogBody> 
                   title: isIncome
                       ? AppStrings.addIncome
                       : AppStrings.addExpense,
-                  subtitle: isIncome
+                  subtitleWidget: isIncome
                       ? null
-                      : '${AppStrings.txAvailableBalanceShort} ${ExpenseStrings.formatAmount(currentBalance)}',
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('${AppStrings.txAvailableBalanceShort} '),
+                            RiyalAmount(
+                              currentBalance,
+                              fontSize: 12,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .textMuted,
+                            ),
+                          ],
+                        ),
                   icon: isIncome
                       ? Icons.arrow_upward_rounded
                       : Icons.arrow_downward_rounded,
@@ -357,7 +370,7 @@ class _TransactionDialogBodyState extends ConsumerState<_TransactionDialogBody> 
 
     final write = successWrite!;
     final successText = write.queuedOffline
-        ? ExpenseStrings.savedOffline
+        ? AppStrings.offlineSavedPendingSync
         : write.result.budgetMessage == null
             ? AppStrings.txSuccess(type)
             : '${AppStrings.txSuccess(type)}\n${write.result.budgetMessage}';

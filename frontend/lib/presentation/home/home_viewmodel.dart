@@ -4,13 +4,13 @@ import 'package:mudabbir/constants/hive_constants.dart';
 import 'package:mudabbir/data/local/local_database.dart';
 import 'package:mudabbir/domain/repository/home_repository/home_repository.dart';
 import 'package:mudabbir/domain/services/financial_date_utils.dart';
-import 'package:mudabbir/presentation/explore/explore_view.dart';
+import 'package:mudabbir/presentation/home/home_screen.dart';
 import 'package:mudabbir/presentation/goals/goals_view.dart';
 import 'package:mudabbir/domain/services/health_score_calculator.dart';
 import 'package:mudabbir/domain/services/insight_thresholds.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
-import 'package:mudabbir/presentation/statistics/statistics_view.dart';
-import 'package:mudabbir/presentation/resources/statistics_strings.dart';
+import 'package:mudabbir/presentation/screens/statistics_screen.dart';
+import 'package:mudabbir/presentation/server_challenges/screens/challenges_list_screen.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/hive_service.dart';
 import 'package:mudabbir/utils/local_db_user_id.dart';
@@ -86,7 +86,12 @@ class HomeViewModel extends StateNotifier<HomeState> {
     loadFinancialSummary();
   }
 
-  List<Widget> pages = [ExploreView(), StatisticsView(), GoalView()];
+  List<Widget> pages = const [
+    HomeScreen(),
+    StatisticsScreen(),
+    GoalView(),
+    ChallengesListScreen(embedded: true),
+  ];
 
   final HomeRepository homeRepository = getIt<HomeRepository>();
 
@@ -152,7 +157,7 @@ class HomeViewModel extends StateNotifier<HomeState> {
     } catch (_) {
       state = state.copyWith(
         isLoading: false,
-        error: StatisticsStrings.homeLoadFailed,
+        error: AppStrings.statsHomeLoadFailed,
       );
     }
   }

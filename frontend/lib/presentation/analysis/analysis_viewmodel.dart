@@ -12,7 +12,7 @@ import 'package:mudabbir/presentation/resources/analysis_copy.dart';
 
 import 'package:mudabbir/presentation/resources/entity_localizations.dart';
 
-import 'package:mudabbir/presentation/resources/statistics_strings.dart';
+import 'package:mudabbir/presentation/resources/strings_manager.dart';
 
 import 'package:mudabbir/presentation/statistics/statistics_viewmodel.dart';
 
@@ -350,7 +350,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
         isLoading: false,
 
-        error: StatisticsStrings.analysisLoadFailed,
+        error: AppStrings.statsAnalysisLoadFailed,
 
       );
 
@@ -458,7 +458,7 @@ class AnalysisLogic {
 
         isLoading: false,
 
-        error: StatisticsStrings.analysisLoadFailed,
+        error: AppStrings.statsAnalysisLoadFailed,
 
       );
 

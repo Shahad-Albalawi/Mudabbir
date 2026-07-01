@@ -1,25 +1,24 @@
 import 'package:flutter/material.dart';
 
-/// App font — Thmanyah (خط ثمانية) for Arabic and English UI text.
+/// App font — IBM Plex Sans Arabic for Arabic and English UI text.
 class FontConstants {
-  static const String thmanyahFamily = 'Thmanyah';
-  /// Rare glyph fallback only; primary UI is always Thmanyah.
-  static const String fallbackFamily = 'Tajawal';
-  static const String fontFamily = thmanyahFamily;
+  static const String fontFamily = 'IBMPlexSansArabic';
 
-  static const List<String> fontFamilyFallback = [fallbackFamily];
+  /// Legacy alias (Eight was the previous default).
+  static const String eightFamily = 'Eight';
+
+  static const List<String> fontFamilyFallback = [];
 }
 
 class FontWeightManager {
   static const FontWeight regular = FontWeight.w400;
   static const FontWeight medium = FontWeight.w500;
-  // Only 400/500 globally (premium fintech consistency).
-  static const FontWeight semibold = medium;
-  static const FontWeight bold = medium;
-  static const FontWeight light = regular;
+  static const FontWeight semibold = FontWeight.w600;
+  static const FontWeight bold = FontWeight.w700;
+  static const FontWeight extraBold = FontWeight.w800;
+  static const FontWeight light = FontWeight.w300;
 }
 
-// font sizes now
 class FontSize {
   static const double s12 = 12.0;
   static const double s13 = 13.0;

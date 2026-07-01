@@ -1,24 +1,23 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:mudabbir/constants/hive_constants.dart';
 import 'package:mudabbir/presentation/budget/budget_viewmodel.dart';
 import 'package:mudabbir/presentation/budget/widgets/budget_card.dart';
 import 'package:mudabbir/presentation/resources/app_icons.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
-import 'package:mudabbir/presentation/resources/design_tokens.dart';
 import 'package:mudabbir/presentation/widgets/app_grouped_scaffold.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/presentation/widgets/app_animated_list_item.dart';
 import 'package:mudabbir/presentation/widgets/app_confirm_dialog.dart';
+import 'package:mudabbir/presentation/widgets/app_loading_button.dart';
 import 'package:mudabbir/presentation/widgets/app_offline_banner.dart';
 import 'package:mudabbir/presentation/widgets/app_skeleton.dart';
 import 'package:mudabbir/presentation/widgets/ios_empty_state.dart';
+import 'package:mudabbir/presentation/widgets/app_snackbar.dart';
 import 'package:mudabbir/service/financial_refresh.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/haptic_service.dart';
 import 'package:mudabbir/service/hive_service.dart';
-import 'package:mudabbir/service/navigation_service.dart';
 import 'package:mudabbir/service/popup_service/popup_service.dart';
 import 'package:mudabbir/utils/user_display_name.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -53,26 +52,17 @@ class BudgetView extends ConsumerWidget {
       if (newState.isDelete) {
         await budgetViewmodel.getAllBudgets();
         await FinancialRefresh.refreshAll(ref);
-        getIt<NavigationService>().showSuccessSnackbar(
-          title: AppStrings.snackSuccessTitle,
-          body: AppStrings.budgetDeleted,
-        );
+        AppSnackbar.success(AppStrings.budgetDeleted);
       }
       if (newState.isAdd == true) {
         await budgetViewmodel.getAllBudgets();
         await FinancialRefresh.refreshAll(ref);
-        getIt<NavigationService>().showSuccessSnackbar(
-          title: AppStrings.snackSuccessTitle,
-          body: AppStrings.budgetCreateSuccess,
-        );
+        AppSnackbar.success(AppStrings.budgetCreateSuccess);
       }
       if (newState.error != null &&
           (previousState?.error != newState.error) &&
           !newState.isLoading) {
-        getIt<NavigationService>().showErrorSnackbar(
-          title: AppStrings.snackErrorTitle,
-          body: newState.error!,
-        );
+        AppSnackbar.error(newState.error!);
       }
     });
 
@@ -84,7 +74,6 @@ class BudgetView extends ConsumerWidget {
         : '${AppStrings.title} - $userName';
 
     return AppGroupedScaffold(
-      onBackPressed: () => context.pop(),
       largeTitle: true,
       title: Text(title),
       body: Builder(
@@ -128,18 +117,19 @@ class BudgetView extends ConsumerWidget {
                   onRetry: budgetViewmodel.getAllBudgets,
                 ),
               Padding(
-                padding: const EdgeInsets.all(AppLayout.pageGutter),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: AppTouch.buttonHeight,
-                  child: FilledButton.icon(
-                    onPressed: () {
-                      HapticService.medium();
-                      getIt<PopupService>().showAddBudgetPopup(context, ref);
-                    },
-                    icon: const Icon(CupertinoIcons.add),
-                    label: Text(AppStrings.addBudgetButton),
-                  ),
+                padding: const EdgeInsets.fromLTRB(
+                  AppLayout.pageGutter,
+                  8,
+                  AppLayout.pageGutter,
+                  12,
+                ),
+                child: AppLoadingButton(
+                  isLoading: false,
+                  label: AppStrings.addBudgetButton,
+                  onPressed: () {
+                    HapticService.medium();
+                    getIt<PopupService>().showAddBudgetPopup(context, ref);
+                  },
                 ),
               ),
               Expanded(

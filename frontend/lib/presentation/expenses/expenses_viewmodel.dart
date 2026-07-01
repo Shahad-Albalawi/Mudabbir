@@ -3,7 +3,7 @@ import 'package:mudabbir/data/network/api_exception.dart';
 import 'package:mudabbir/data/network/failure.dart';
 import 'package:mudabbir/domain/models/expense_transaction.dart';
 import 'package:mudabbir/domain/repository/synced_expense_repository/synced_expense_repository.dart';
-import 'package:mudabbir/presentation/resources/expense_strings.dart';
+import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/notifications/financial_alert_service.dart';
 
@@ -121,14 +121,14 @@ class ExpensesNotifier extends StateNotifier<ExpensesState> {
     } on ApiException catch (e) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: e.message,
+        errorMessage: e.userMessage,
         expenses: const [],
         filteredTotal: 0,
       );
     } catch (_) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: ExpenseStrings.loadFailed,
+        errorMessage: AppStrings.expensesLoadFailed,
         expenses: const [],
         filteredTotal: 0,
       );
@@ -183,12 +183,12 @@ class ExpensesNotifier extends StateNotifier<ExpensesState> {
     }, (write) async {
       String? message;
       if (write.queuedOffline) {
-        message = ExpenseStrings.savedOffline;
+        message = AppStrings.offlineSavedPendingSync;
       } else {
-        message = ExpenseStrings.savedSuccess;
+        message = AppStrings.expensesSavedSuccess;
         if (write.result.budgetMessage != null) {
           message =
-              '${ExpenseStrings.savedSuccess}\n${write.result.budgetMessage}';
+              '${AppStrings.expensesSavedSuccess}\n${write.result.budgetMessage}';
         }
       }
       state = state.copyWith(successMessage: message);
@@ -235,12 +235,12 @@ class ExpensesNotifier extends StateNotifier<ExpensesState> {
     }, (write) async {
       String? message;
       if (write.queuedOffline) {
-        message = ExpenseStrings.savedOffline;
+        message = AppStrings.offlineSavedPendingSync;
       } else {
-        message = ExpenseStrings.updatedSuccess;
+        message = AppStrings.expensesUpdatedSuccess;
         if (write.result.budgetMessage != null) {
           message =
-              '${ExpenseStrings.updatedSuccess}\n${write.result.budgetMessage}';
+              '${AppStrings.expensesUpdatedSuccess}\n${write.result.budgetMessage}';
         }
       }
       state = state.copyWith(successMessage: message);
@@ -261,8 +261,8 @@ class ExpensesNotifier extends StateNotifier<ExpensesState> {
       if (syncResult.deleted) {
         state = state.copyWith(
           successMessage: syncResult.queuedOffline
-              ? ExpenseStrings.savedOffline
-              : ExpenseStrings.deletedSuccess,
+              ? AppStrings.offlineSavedPendingSync
+              : AppStrings.expensesDeletedSuccess,
         );
         await loadExpenses();
       }

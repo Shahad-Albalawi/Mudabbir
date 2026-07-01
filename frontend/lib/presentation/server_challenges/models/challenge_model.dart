@@ -1,9 +1,17 @@
-import 'package:mudabbir/presentation/resources/server_challenge_strings.dart';
+import 'package:mudabbir/presentation/server_challenges/challenge_copy_helpers.dart';
 import 'package:mudabbir/presentation/server_challenges/models/user_model.dart';
+import 'package:mudabbir/utils/challenge_current_user.dart';
+
+/// Lifecycle state for a social savings challenge.
+enum ChallengeStatus { active, upcoming, completed, expired }
+
+/// Invitation / membership state for a participant.
+enum ParticipantStatus { accepted, pending, rejected }
 
 class ChallengeModel {
   final int id;
   final String name;
+  final String? description;
   final double amount;
   final DateTime startDate;
   final DateTime endDate;
@@ -17,6 +25,7 @@ class ChallengeModel {
   ChallengeModel({
     required this.id,
     required this.name,
+    this.description,
     required this.amount,
     required this.startDate,
     required this.endDate,
@@ -32,6 +41,7 @@ class ChallengeModel {
     return ChallengeModel(
       id: json['id'] as int,
       name: json['name'] as String,
+      description: json['description'] as String?,
       amount: double.parse(json['amount'].toString()),
       startDate: DateTime.parse(json['start_date'] as String),
       endDate: DateTime.parse(json['end_date'] as String),
@@ -50,6 +60,7 @@ class ChallengeModel {
     return {
       'id': id,
       'name': name,
+      'description': description,
       'amount': amount,
       'start_date': startDate.toIso8601String().split('T')[0],
       'end_date': endDate.toIso8601String().split('T')[0],
@@ -65,6 +76,7 @@ class ChallengeModel {
   ChallengeModel copyWith({
     int? id,
     String? name,
+    String? description,
     double? amount,
     DateTime? startDate,
     DateTime? endDate,
@@ -78,6 +90,7 @@ class ChallengeModel {
     return ChallengeModel(
       id: id ?? this.id,
       name: name ?? this.name,
+      description: description ?? this.description,
       amount: amount ?? this.amount,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
@@ -140,6 +153,70 @@ class ChallengeModel {
     final accepted = acceptedParticipants;
     if (accepted.isEmpty) return false;
     return accepted.every((p) => p.achieved);
+  }
+
+  /// API alias + domain naming.
+  String get idString => id.toString();
+
+  double get targetAmount => amount;
+
+  ChallengeStatus get status {
+    if (achieved) return ChallengeStatus.completed;
+    if (isUpcoming) return ChallengeStatus.upcoming;
+    if (isExpired) return ChallengeStatus.expired;
+    if (isActive) return ChallengeStatus.active;
+    return ChallengeStatus.expired;
+  }
+
+  /// Average savings progress across accepted participants.
+  double get currentProgress {
+    final accepted = acceptedParticipants;
+    if (accepted.isEmpty) return 0;
+    final total = accepted.fold<double>(0, (sum, p) => sum + p.currentProgress);
+    return total / accepted.length;
+  }
+
+  /// Union of participant badge ids (e.g. streak_7, streak_30).
+  List<String> get badges {
+    final set = <String>{};
+    for (final p in acceptedParticipants) {
+      set.addAll(p.badges);
+    }
+    return set.toList();
+  }
+
+  /// Progress % for list cards — savings progress or streak pace, whichever is higher.
+  int get displayProgressPercent {
+    final me = ChallengeCurrentUser.participantIn(this);
+    if (me != null && amount > 0) {
+      return (me.currentProgress / amount * 100).round().clamp(0, 100);
+    }
+    return (progress * 100).round().clamp(0, 100);
+  }
+
+  /// Progress shown on active challenge cards (updates after daily log / check-in).
+  int get activeLogProgressPercent {
+    final me = ChallengeCurrentUser.participantIn(this);
+    final savings = displayProgressPercent;
+    if (me != null && totalDays > 0) {
+      final streakPercent =
+          (me.streakDays / totalDays * 100).round().clamp(0, 100);
+      return savings > streakPercent ? savings : streakPercent;
+    }
+    return savings;
+  }
+
+  /// Subtitle for active cards — streak when present, else participant count.
+  String? activeCardSubtitle() {
+    final me = ChallengeCurrentUser.participantIn(this);
+    if (me != null && me.streakDays > 0) {
+      return ServerChallengeStrings.streakFire(me.streakDays);
+    }
+    final count = acceptedParticipants.length;
+    if (count > 0) {
+      return ServerChallengeStrings.participantCount(count);
+    }
+    return null;
   }
 }
 
@@ -236,6 +313,21 @@ class ParticipantModel extends UserModel {
   bool get isPending => status == 'pending';
   bool get isAccepted => status == 'accepted';
   bool get isRejected => status == 'rejected';
+
+  String get userId => id.toString();
+
+  double get progress => currentProgress;
+
+  ParticipantStatus get participantStatus {
+    switch (status) {
+      case 'accepted':
+        return ParticipantStatus.accepted;
+      case 'pending':
+        return ParticipantStatus.pending;
+      default:
+        return ParticipantStatus.rejected;
+    }
+  }
 
   bool get hasStreak7Badge => badges.contains('streak_7');
   bool get hasStreak30Badge => badges.contains('streak_30');

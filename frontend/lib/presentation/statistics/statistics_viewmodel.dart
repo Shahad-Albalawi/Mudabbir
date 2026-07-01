@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mudabbir/data/local/database_helper.dart';
 import 'package:mudabbir/domain/services/financial_aggregator.dart';
-import 'package:mudabbir/presentation/resources/statistics_strings.dart';
+import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/service/getit_init.dart';
 
 class StatisticsState {
@@ -148,7 +148,7 @@ class StatisticsViewModel extends StateNotifier<StatisticsState> {
     } catch (_) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: StatisticsStrings.loadFailed,
+        errorMessage: AppStrings.statsScreenLoadFailed,
       );
     }
   }

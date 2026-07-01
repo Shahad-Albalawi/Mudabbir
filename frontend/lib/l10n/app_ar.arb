@@ -129,6 +129,8 @@
   "statsAnalysisSubtitle": "رؤى مالية ذكية ومقارنات شهرية",
   "snackSuccessTitle": "نجاح",
   "snackErrorTitle": "خطأ",
+  "snackWarningTitle": "تنبيه",
+  "snackInfoTitle": "معلومة",
   "retry": "إعادة المحاولة",
   "goalsAddAmountTitle": "إضافة مبلغ للهدف",
   "goalsAmountLabel": "المبلغ المراد إضافته",
@@ -157,6 +159,48 @@
   "analysisSavingsRateLabel": "معدل الادخار:",
   "analysisCategoryInsightsTitle": "رؤى إنفاق الفئات",
   "analysisRecommendationsTitle": "التوصيات الشخصية",
+  "analysisBalanceCritical": "حرج: أنت في حالة دين! نفقاتك تتجاوز دخلك بمقدار {amount}. يتطلب إجراء فوري.",
+  "analysisBalanceZero": "تحذير: أنت تحقق التعادل بدون مدخرات. هذا يجعلك عرضة للنفقات غير المتوقعة.",
+  "analysisBalanceLow": "تنبيه: رصيدك منخفض ({amount}). حاول بناء صندوق طوارئ.",
+  "analysisBalanceFair": "مقبول: لديك بعض المدخرات ({amount})، لكن هناك مجال للتحسين.",
+  "analysisBalanceGreat": "ممتاز: تحتفظ برصيد صحي بقيمة {amount}. استمر في العمل الجيد!",
+  "analysisSpendingCritical": "حرج: أنت تنفق {ratio}% من دخلك! أنت تعيش فوق إمكانياتك وتتراكم عليك الديون.",
+  "analysisSpendingWarning90": "تحذير: أنت تنفق {ratio}% من دخلك. لديك مجال ضئيل جداً للادخار أو حالات الطوارئ.",
+  "analysisSpendingAlert80": "تنبيه: أنت تنفق {ratio}% من دخلك. فكر في تقليل النفقات غير الأساسية.",
+  "analysisSpendingFair70": "مقبول: أنت تنفق {ratio}% من دخلك. هذا مقبول ولكن يمكن تحسينه.",
+  "analysisSpendingGood50": "جيد: أنت تنفق {ratio}% من دخلك. تحافظ على توازن صحي بين الإنفاق والادخار.",
+  "analysisSpendingExcellent": "ممتاز: أنت تنفق {ratio}% فقط من دخلك. أنت منضبط جداً في شؤونك المالية!",
+  "analysisSavingsCritical": "حرج: لديك معدل ادخار سلبي ({rate}%). أنت تنفق أكثر مما تكسب.",
+  "analysisSavingsWeak5": "ضعيف: معدل ادخارك هو {rate}%. ينصح الخبراء الماليون بادخار 10-20% على الأقل من الدخل.",
+  "analysisSavingsFair10": "مقبول: معدل ادخارك هو {rate}%. أنت تدخر شيئاً، لكن اهدف إلى 10-20% على الأقل.",
+  "analysisSavingsGood20": "جيد: معدل ادخارك هو {rate}%. أنت على الطريق الصحيح! حاول الوصول إلى 20% إن أمكن.",
+  "analysisSavingsExcellent30": "ممتاز: معدل ادخارك هو {rate}%. أنت تقوم بعمل رائع بانضباطك المالي!",
+  "analysisSavingsOutstanding": "استثنائي: معدل ادخارك هو {rate}%. أنت بطل في الادخار! هذا سيؤمن مستقبلك المالي.",
+  "analysisCategoryDominant40": "تنبيه: {percent}% - هذه الفئة تهيمن على إنفاقك! فكر في البدائل أو وضع ميزانية.",
+  "analysisCategoryHigh30": "عالي: {percent}% - جزء كبير من ميزانيتك. راقب هذا عن كثب.",
+  "analysisCategoryMedium20": "متوسط: {percent}% - مستوى إنفاق معقول.",
+  "analysisCategoryLow10": "منخفض: {percent}% - إنفاق جيد التحكم.",
+  "analysisCategoryVeryLow": "قليل جداً: {percent}% - منضبط جداً في هذا المجال.",
+  "analysisHealthExcellent": "ممتاز",
+  "analysisHealthGood": "جيد",
+  "analysisHealthFair": "مقبول",
+  "analysisHealthWeak": "ضعيف",
+  "analysisHealthCritical": "حرج",
+  "analysisRecUrgentNegativeSavings": "🚨 عاجل: أنشئ خطة ميزانية طوارئ. قلل جميع النفقات غير الأساسية فوراً.",
+  "analysisRecExtraIncome": "💡 فكر في مصادر دخل إضافية أو عمل بدوام جزئي لتغطية العجز.",
+  "analysisRecIncreaseSavings": "📊 زد معدل ادخارك من خلال تقليل الإنفاق التقديري.",
+  "analysisRecAim1020": "💰 اهدف لادخار 10-20% على الأقل من دخلك للأمان المالي.",
+  "analysisRecPushTo20": "✨ أنت تدخر بشكل جيد! حاول دفع معدل ادخارك إلى 20% للصحة المالية المثلى.",
+  "analysisRecDebtPayoff": "⚠️ أنشئ خطة لسداد الديون. ركز على إلغاء الديون قبل الأهداف المالية الأخرى.",
+  "analysisRecEmergencyFund": "🎯 ابنِ صندوق طوارئ يغطي 3-6 أشهر من النفقات.",
+  "analysisRecReviewCategories": "📉 راجع الإنفاق في: {categories}. فكر في وضع ميزانيات للفئات.",
+  "analysisRecDiversifyIncome": "💼 فكر في تنويع مصادر دخلك لاستقرار مالي أفضل.",
+  "analysisRecSetGoals": "🎯 ضع أهدافاً مالية لتبقى متحفزاً وتتابع تقدمك.",
+  "analysisRecIncreaseContributions": "📈 زد المساهمات في: {goals}.",
+  "analysisRecCreateBudgets": "📝 أنشئ ميزانيات للفئات للتحكم بشكل أفضل في إنفاقك.",
+  "analysisRecGreatJob": "🌟 عمل رائع! أنت تدير أموالك بشكل جيد. استمر في العمل الممتاز!",
+  "analysisRecKeepTracking": "💡 استمر في مراقبة نفقاتك والتزم بخطة ادخارك.",
+  "analysisRecReadInvesting": "📚 فكر في القراءة عن استراتيجيات الاستثمار لتنمية ثروتك أكثر.",
   "themeModeTooltip": "وضع المظهر",
   "languageTooltip": "اللغة",
   "themeSystem": "حسب النظام",
@@ -251,5 +295,1022 @@
   "privacyPolicySecurityBody": "تسجيل الدخول يستخدم رموزاً مشفّرة في تخزين آمن على الجهاز. يمكنك تسجيل الخروج من الإعدادات في أي وقت.",
   "privacyPolicyContactTitle": "التواصل",
   "privacyPolicyContactBody": "لأسئلة الخصوصية، تواصل مع مطوّر التطبيق عبر صفحة Play Store أو مشرف المشروع.",
-  "exportPdfReport": "تصدير تقرير PDF"
+  "exportPdfReport": "تصدير تقرير PDF",
+  "navChallenges": "التحديات",
+  "notificationsTitle": "الإشعارات",
+  "addTransactionTitle": "معاملة جديدة",
+  "notificationsEmpty": "لا توجد إشعارات بعد",
+  "homeActiveGoals": "الأهداف النشطة",
+  "homeViewAll": "عرض الكل",
+  "homeRecentTransactions": "آخر المعاملات",
+  "homeFinancialHealthSubtitle": "عرض لوحة التحليل",
+  "healthScoreExcellent": "ممتاز",
+  "healthScoreGood": "جيد",
+  "healthScoreFair": "متوسط",
+  "healthScoreWeak": "ضعيف",
+  "homeQaExpense": "مصروف",
+  "homeQaIncome": "دخل",
+  "homeQaPdfReport": "تقرير PDF",
+  "homeQaAnalysis": "تحليل",
+  "homeBudgetManage": "إدارة",
+  "homeBudgetEmptyCategories": "لا توجد مصروفات مصنّفة هذا الشهر",
+  "offlineSavedPendingSync": "حُفظ محلياً. سيُزامَن عند عودة الاتصال.",
+  "budgetLoadFailed": "تعذر تحميل الميزانيات.",
+  "budgetSyncFailed": "فشلت مزامنة الميزانية.",
+  "budgetCardLabel": "الميزانية",
+  "budgetStatusOverBudget": "تجاوزت الميزانية",
+  "budgetStatusNearLimit": "قريب من الحد",
+  "budgetStatusOnTrack": "ضمن الميزانية",
+  "budgetRemainingOfPrefix": "متبقي من ",
+  "notificationBudgetWarningTitle": "الميزانية على وشك النفاد",
+  "notificationBudgetWarningBody": "أنفقت {spent} من {limit} ﷼ (أكثر من 80%).",
+  "notificationBudgetExceededTitle": "تجاوزت الميزانية",
+  "notificationBudgetExceededBody": "الإنفاق {spent} ﷼ يتجاوز حد {limit} ﷼.",
+  "goalNameLabel": "اسم الهدف",
+  "goalChangePhoto": "تغيير الصورة",
+  "goalLoadFailed": "تعذر تحميل الأهداف.",
+  "goalSyncFailed": "فشلت مزامنة الأهداف.",
+  "goalDeadlineLabel": "الموعد النهائي",
+  "goalProjectedLabel": "تاريخ الوصول المتوقع",
+  "goalRemainingLabel": "المتبقي",
+  "goalContributeHint": "اضغط لإضافة مساهمة",
+  "goalMonthlyNeeded": "المطلوب شهرياً للوصول للموعد",
+  "goalAvgMonthly": "متوسط مساهماتك الشهرية",
+  "goalStatusOnTrack": "على المسار",
+  "goalStatusBehind": "متأخر عن الجدول",
+  "goalStatusOverdue": "تجاوز الموعد",
+  "goalStatusCompleted": "مكتمل",
+  "goalStatusNotStarted": "لم تبدأ بعد",
+  "goalTypeSaving": "ادخار",
+  "goalTypeInvestment": "استثمار",
+  "goalTypeDebt": "دين",
+  "goalTypeOther": "أخرى",
+  "goalNotEnoughData": "بيانات غير كافية",
+  "goalContributionTitle": "إضافة مساهمة",
+  "goalAddContributionButton": "أضف مساهمة",
+  "goalContributionNote": "ملاحظة (اختياري)",
+  "goalContributionSuccessTitle": "تم حفظ المساهمة!",
+  "goalContributionSuccessBody": "أُضيف {amount} إلى هدفك.",
+  "goalContributionSnackbarAction": "واصل!",
+  "goalJourneyMotivationTapHint": "اضغط للتحفيز",
+  "goalUpdateFailed": "فشل تحديث الهدف",
+  "goalCompletedAlertTitle": "تم تحقيق الهدف!",
+  "goalCompletedAlertBody": "مبروك! أكملت هدف \"{name}\".",
+  "goalContributeButtonShort": "+ مساهمة",
+  "goalDetailsButton": "التفاصيل",
+  "goalOfPrefix": "من",
+  "goalLeftLabel": "متبقي",
+  "expensesTitle": "المصروفات",
+  "expensesAddButton": "إضافة مصروف",
+  "expensesEditButton": "تعديل مصروف",
+  "expensesSaveButton": "حفظ",
+  "expensesEmptyTitle": "لا توجد مصروفات بعد",
+  "expensesEmptySubtitle": "أضف أول مصروف لبدء تتبع إنفاقك.",
+  "expensesFilterMonth": "الشهر",
+  "expensesFilterCategory": "الفئة",
+  "expensesFilterType": "النوع",
+  "expensesFilterAll": "الكل",
+  "expensesFilterRecurring": "المتكررة فقط",
+  "expensesRecurringMonthly": "متكرر شهرياً",
+  "expensesAmountTooLarge": "المبلغ كبير جداً.",
+  "expensesDateRequired": "التاريخ مطلوب.",
+  "expensesDateInvalid": "تاريخ غير صالح.",
+  "expensesDateCannotBeFuture": "لا يمكن اختيار تاريخ في المستقبل.",
+  "expensesAccountRequired": "اختر حساباً.",
+  "expensesCategoryRequired": "اختر فئة.",
+  "expensesTextTooLong": "النص طويل جداً (الحد الأقصى 255 حرف).",
+  "expensesLoadFailed": "تعذر تحميل المصروفات.",
+  "expensesSyncFailed": "فشلت مزامنة المصروفات.",
+  "expensesSaveFailed": "تعذر حفظ المصروف.",
+  "expensesUpdateFailed": "تعذر تحديث المصروف.",
+  "expensesDeleteFailed": "تعذر حذف المصروف.",
+  "expensesSavedSuccess": "تم حفظ المصروف.",
+  "expensesUpdatedSuccess": "تم تحديث المصروف.",
+  "expensesDeletedSuccess": "تم حذف المصروف.",
+  "expensesBudgetExceeded": "هذا المصروف يتجاوز المتبقي من الميزانية ({remaining}).",
+  "expensesBudgetLinked": "ربط الميزانية: صرفت {spent} / {budget} — المتبقي {remaining}.",
+  "expensesViewAll": "عرض كل المصروفات",
+  "expensesTotalFiltered": "إجمالي الفلتر",
+  "expensesRecurringBadge": "متكرر",
+  "statsScreenLoadFailed": "تعذر تحميل الإحصائيات. اسحب للتحديث أو اضغط إعادة المحاولة.",
+  "statsAnalysisLoadFailed": "تعذر إنشاء التحليل المالي.",
+  "statsHomeLoadFailed": "تعذر تحميل ملخصك المالي.",
+  "statsScreenEmptyTitle": "لا توجد بيانات مالية بعد",
+  "statsScreenEmptySubtitle": "أضف دخلاً أو مصروفات لعرض الإحصائيات والرؤى.",
+  "statsSpendingTrendTitle": "اتجاه الإنفاق",
+  "statsCategoryBreakdownTitle": "الإنفاق حسب الفئة",
+  "statsQuickInsightsTitle": "رؤى سريعة",
+  "statsTotalExpenseLabel": "إجمالي الإنفاق",
+  "statsTotalIncomeLabel": "إجمالي الدخل",
+  "statsNetSavingsLabel": "صافي التوفير",
+  "statsSavingsRateLabel": "معدل الادخار",
+  "statsDailyAverageLabel": "متوسط يومي",
+  "statsHighestExpenseLabel": "أعلى مصروف",
+  "statsTransactionCountLabel": "عدد العمليات",
+  "statsChartTotalLabel": "إجمالي",
+  "statsNoDataForPeriod": "لا توجد بيانات للفترة المحددة",
+  "statsNoCategoriesYet": "لا توجد فئات بعد",
+  "statsTopCategoryInsight": "فئة «{name}» تمثل {percent}% من إنفاقك.",
+  "statsSpendingUpInsight": "الإنفاق ارتفع {percent}% مقارنة بالفترة السابقة.",
+  "statsSpendingDownInsight": "الإنفاق انخفض {percent}% مقارنة بالفترة السابقة.",
+  "statsSteadySpendingInsight": "إنفاقك مستقر مقارنة بالفترة السابقة.",
+  "statsPeriodWeek": "أسبوع",
+  "statsPeriodMonth": "شهر",
+  "statsPeriodQuarter": "3 أشهر",
+  "statsPeriodYear": "سنة",
+  "statsChartWeekday0": "أحد",
+  "statsChartWeekday1": "إثن",
+  "statsChartWeekday2": "ثلا",
+  "statsChartWeekday3": "أرب",
+  "statsChartWeekday4": "خمي",
+  "statsChartWeekday5": "جمع",
+  "statsChartWeekday6": "سبت",
+  "statsChartMonth0": "ينا",
+  "statsChartMonth1": "فبر",
+  "statsChartMonth2": "مار",
+  "statsChartMonth3": "أبر",
+  "statsChartMonth4": "ماي",
+  "statsChartMonth5": "يون",
+  "statsChartMonth6": "يول",
+  "statsChartMonth7": "أغس",
+  "statsChartMonth8": "سبت",
+  "statsChartMonth9": "أكت",
+  "statsChartMonth10": "نوف",
+  "statsChartMonth11": "ديس",
+  "txSheetCatShopping": "تسوق",
+  "txSheetCatTransport": "مواصلات",
+  "txSheetCatRestaurants": "مطاعم",
+  "txSheetCatHealth": "صحة",
+  "txSheetCatEntertainment": "ترفيه",
+  "txSheetCatHousing": "سكن",
+  "txSheetCatSalary": "راتب",
+  "txSheetCatOther": "أخرى",
+  "entityCatSalary": "راتب",
+  "entityCatBonus": "مكافأة",
+  "entityCatGift": "هبه",
+  "entityCatOther": "اخرى",
+  "entityCatFood": "طعام",
+  "entityCatTransport": "نقل",
+  "entityCatShopping": "تسوق",
+  "entityCatBills": "فواتير",
+  "entityCatHealth": "صحة",
+  "entityCatEntertainment": "ترفيه",
+  "entityAccountCash": "النقدية",
+  "entityAccountBank": "البنك",
+  "homeGreetingHello": "مرحباً 👋",
+  "homeGreetingNamed": "مرحباً، {name} 👋",
+  "homeMonthlyReportTitle": "التقرير الشهري",
+  "goalDeadlinePassed": "انتهى الموعد",
+  "goalDaysLeft": "{days} يوم متبقي",
+  "goalMilestoneComplete": "مكتمل",
+  "goalMotivationBannerStart": "ابدأ رحلتك! كل ريال يُقربك من حلمك",
+  "goalMotivationBannerEarly": "{percent}% خطوة أولى رائعة! استمر",
+  "goalMotivationBannerHalf": "نصف الطريق! أنت تتفوق على أغلب المدّخرين",
+  "goalMotivationBannerNear": "اقتربت جداً! المحطة الأخيرة في المتناول",
+  "goalMotivationBannerDone": "أحسنت! حققت هدفك بالكامل",
+  "behavioralScoreTitle": "التحليل المالي",
+  "behavioralScoreSubtitle": "ملخص سريع لصحة إنفاقك هذا الشهر",
+  "behavioralViewDetailsLabel": "التحليل التفصيلي",
+  "behavioralViewDetailsHint": "مقارنات، أنماط، وتوصيات",
+  "behavioralMonthComparisonTitle": "مقارنة بالأشهر السابقة",
+  "behavioralAnomaliesTitle": "أنماط إنفاق غير طبيعية",
+  "behavioralNoAnomalies": "لم نكتشف أنماطاً غير طبيعية هذا الشهر. استمر!",
+  "behavioralWeekdayPatternTitle": "الإنفاق حسب اليوم",
+  "behavioralPersonalizedRecsTitle": "توصيات مخصصة لك",
+  "behavioralPreviousMonthLabel": "الشهر الماضي",
+  "behavioralTrailingAvgLabel": "متوسط 3 أشهر",
+  "behavioralNoWeekdayData": "لا توجد بيانات كافية لتحليل الإنفاق اليومي بعد.",
+  "behavioralRatingExcellent": "ممتاز",
+  "behavioralRatingGood": "جيد",
+  "behavioralRatingFair": "مقبول",
+  "behavioralRatingNeedsWork": "يحتاج تحسين",
+  "behavioralRatingAtRisk": "معرض للخطر",
+  "behavioralMonthlySpikeTitle": "قفزة في الإنفاق الشهري",
+  "behavioralOverspendingTitle": "الإنفاق يتجاوز الدخل",
+  "behavioralCategorySpikeTitle": "ارتفاع في فئة",
+  "behavioralLargeTransactionTitle": "معاملة كبيرة",
+  "behavioralWeekendSplurgeTitle": "إنفاق نهاية الأسبوع",
+  "behavioralSpendingBurstTitle": "تكرار معاملات مرتفع",
+  "behavioralUnusualPatternTitle": "نمط غير عادي",
+  "behavioralMonthlySpikeMessage": "هذا الشهر أعلى بنسبة {pct}% من متوسط 3 أشهر ({amount}).",
+  "behavioralOverspendingMessage": "تجاوزت دخلك بمقدار {amount} هذا الشهر.",
+  "behavioralCategorySpikeMessage": "فئة {category} ارتفعت {pct}% عن الشهر الماضي.",
+  "behavioralLargeTransactionMessage": "معاملة بقيمة {amount} تبرز هذا الشهر.",
+  "behavioralWeekendSplurgeMessage": "{pct}% من إنفاقك في عطلة نهاية الأسبوع.",
+  "behavioralSpendingBurstMessage": "{count} معاملة مصروف هذا الشهر — راجع المشتريات اليومية الصغيرة.",
+  "behavioralReviewPattern": "راجع هذا النمط.",
+  "behavioralMonthCompareNoHistory": "إنفاق هذا الشهر: {amount}. أضف المزيد من السجل للمقارنة.",
+  "behavioralMonthCompareUp": "أنفقت أكثر بنسبة {pct}% من الشهر الماضي ({current} مقابل {previous}).",
+  "behavioralMonthCompareDown": "أنفقت أقل بنسبة {pct}% من الشهر الماضي. انضباط ممتاز!",
+  "behavioralMonthCompareStable": "إنفاقك مستقر مقارنة بالشهر الماضي ({current} مقابل {previous}).",
+  "behavioralMonthCompareTrailing": "هذا الشهر: {current} مقابل متوسط 3 أشهر {avg}.",
+  "behavioralWeekdayInsight": "أكثر إنفاقك في {day} ({amount} هذا الشهر).",
+  "behavioralRecReduceVsLastMonth": "📊 الإنفاق ارتفع عن الشهر الماضي — راجع الاشتراكات والمطاعم.",
+  "behavioralRecKeepDiscipline": "✨ إنفاقك أقل من متوسط 3 أشهر. حافظ على هذا الإيقاع!",
+  "behavioralRecIncreaseSavings": "💰 حاول ادخار 10% على الأقل من دخلك هذا الشهر.",
+  "behavioralRecSetGoals": "🎯 ضع هدف ادخار للبقاء متحفزاً.",
+  "behavioralRecCreateBudget": "📝 أضف ميزانيات للفئات للتحكم في الإنفاق.",
+  "behavioralRecGreatScore": "🌟 سلوك مالي قوي هذا الشهر!",
+  "behavioralRecDefault": "💡 استمر بتسجيل المصروفات لتحسين التحليل.",
+  "behavioralRecMonthlySpike": "📉 ضع سقفاً أسبوعياً للإنفاق لإعادة هذا الشهر للمسار.",
+  "behavioralRecOverspending": "🚨 أوقف المشتريات غير الضرورية حتى يغطي الدخل المصروفات.",
+  "behavioralRecCategorySpike": "🎯 أنشئ ميزانية لفئة {category}.",
+  "behavioralRecLargeTransaction": "🔍 تأكد أن المصروفات الكبيرة مخططة؛ قسّمها مستقبلاً إن أمكن.",
+  "behavioralRecWeekendSplurge": "📅 خطط لأنشطة نهاية الأسبوع بميزانية محددة مسبقاً.",
+  "behavioralRecSpendingBurst": "☕ تتبع المصروفات اليومية الصغيرة — تتراكم بسرعة.",
+  "authAppBrandName": "مدبّر",
+  "authOrDivider": "أو",
+  "authForgotPassword": "نسيت كلمة المرور؟",
+  "authForgotPasswordSoon": "استعادة كلمة المرور ستتوفر قريباً",
+  "authLoginTitle": "مرحباً بك",
+  "authLoginTagline": "سجّل دخولك لمتابعة مالك",
+  "authRegisterTitle": "إنشاء حساب",
+  "authRegisterTagline": "ابدأ رحلتك المالية بذكاء",
+  "authSignUpNow": "سجّل الآن",
+  "authRegisterSubmit": "إنشاء حساب",
+  "authFullNameLabel": "الاسم الكامل",
+  "authFullNameRequired": "الاسم الكامل مطلوب",
+  "authNameRequired": "الاسم مطلوب",
+  "authEmailFormatInvalid": "صيغة البريد غير صحيحة",
+  "authConfirmPasswordRequired": "تأكيد كلمة المرور مطلوب",
+  "authTermsAcceptRequired": "يجب الموافقة على الشروط والأحكام",
+  "authTermsCheckboxLabel": "أوافق على الشروط والأحكام وسياسة الخصوصية",
+  "authContinueAsGuest": "المتابعة كزائر",
+  "authNetworkError": "تحقق من اتصالك بالإنترنت",
+  "authInvalidCredentials": "البريد أو كلمة المرور غير صحيحة",
+  "settingsAppearance": "المظهر",
+  "settingsNotificationsLabel": "الإشعارات",
+  "settingsTermsLink": "الشروط",
+  "settingsTermsTitle": "الشروط والأحكام",
+  "settingsEditProfile": "تعديل الملف",
+  "settingsProfileNameLabel": "الاسم المعروض",
+  "settingsProfileSaved": "تم تحديث الملف",
+  "settingsVersionLabel": "الإصدار {version}",
+  "settingsTermsIntro": "باستخدامك تطبيق مدبّر فإنك توافق على هذه الشروط. التطبيق يساعدك على إدارة أموالك الشخصية ولا يقدّم استشارات مالية منظّمة.",
+  "settingsTermsUseTitle": "الاستخدام المقبول",
+  "settingsTermsUseBody": "استخدم التطبيق بشكل قانوني. لا تحاول الوصول لبيانات مستخدمين آخرين أو تعطيل الخدمة.",
+  "settingsTermsDataTitle": "بياناتك",
+  "settingsTermsDataBody": "أنت تملك البيانات المالية التي تُدخلها. يمكنك تصديرها أو حذفها عبر الدعم أو إزالة حسابك.",
+  "settingsTermsChangesTitle": "التعديلات",
+  "settingsTermsChangesBody": "قد نحدّث هذه الشروط. استمرارك في الاستخدام بعد التعديل يعني موافقتك على الشروط المحدّثة.",
+  "chatbotReduceCategoryHint": "لخفض الإنفاق في فئة معينة، اكتب: \"حلل فئة الطعام\" أو \"كيف أقلل إنفاق النقل؟\".",
+  "chatbotUndoNone": "لا توجد عملية حديثة يمكن التراجع عنها.",
+  "chatbotUndoDone": "تم التراجع عن العملية: {summary} ↩️",
+  "chatbotUndoMissing": "تعذر التراجع لأن السجل غير موجود حالياً.",
+  "chatbotUndoError": "حدث خطأ أثناء محاولة التراجع.",
+  "chatbotWhatIfError": "تعذر حساب سيناريو \"ماذا لو\" الآن. حاول مرة أخرى.",
+  "chatbotSubsError": "تعذر تحليل الاشتراكات حاليًا. حاول لاحقًا.",
+  "chatbotInsightError": "تعذر تحليل المؤشرات المالية الآن. جرّب مرة أخرى بعد قليل.",
+  "chatbotGenericProcessError": "عذراً، حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى.",
+  "chatbotPendingHint": "لدي عملية معلّقة. اكتب \"تأكيد\" للتنفيذ أو \"إلغاء\" للإلغاء.",
+  "chatbotPendingCancelled": "تم إلغاء العملية المعلّقة.",
+  "chatbotGoalCreatedSummary": "إنشاء هدف {name}",
+  "chatbotGoalCreatedOk": "تم إنشاء الهدف \"{name}\" بنجاح.",
+  "chatbotBudgetCreatedSummary": "إنشاء ميزانية {amount} ﷼",
+  "chatbotBudgetCreatedOk": "تم إنشاء الميزانية للشهر القادم بقيمة {amount} ﷼.",
+  "chatbotNeedGoalAmount": "لفهم أمر إنشاء الهدف، أحتاج المبلغ. مثال: أنشئ هدف سيارة 25000 خلال 12 شهر.",
+  "chatbotNeedBudgetAmount": "لفهم أمر الميزانية، أحتاج قيمة الميزانية. مثال: أنشئ ميزانية 3000 الشهر القادم.",
+  "chatbotNoAccountForBudget": "لا يوجد حساب متاح لإنشاء الميزانية.",
+  "chatbotDefaultNewGoalName": "هدفي الجديد",
+  "chatbotInsightBody": "درجة الصحة المالية الحالية: {score}/100\\nالحالة: {status}\\n\\n{alertBlock}",
+  "chatbotNoSpendingAlerts": "لا توجد تنبيهات إنفاق غير طبيعي حاليًا.",
+  "chatbotWhatIfNeedAmount": "لعمل سيناريو \"ماذا لو\"، اذكر مبلغًا واضحًا. مثال: لو أوفر 300 ريال شهريًا متى أوصل لهدفي؟",
+  "chatbotWhatIfNoGoals": "لا يوجد لديك أهداف محفوظة حاليًا. أضف هدفًا أولًا ثم احسب سيناريو \"ماذا لو\".",
+  "chatbotWhatIfAllGoalsDone": "ممتاز، يبدو أنك حققت جميع أهدافك الحالية.",
+  "chatbotNextGoalFallback": "هدفك القادم",
+  "chatbotOptimizerNoGoals": "لا توجد أهداف حالياً. أضف أهدافك أولاً لأبني لك خطة توزيع ادخار.",
+  "chatbotOptimizerNoSurplus": "حالياً لا يوجد فائض ادخار شهري واضح. ابدأ بتقليل مصروفاتك أولاً ثم أقدر أبني خطة أهداف دقيقة.",
+  "chatbotDefaultGoalWord": "هدف",
+  "chatbotOptimizerGoalsDone": "ممتاز، أهدافك الحالية مكتملة تقريباً.",
+  "chatbotOptimizerLine": "- {name}: {perMonth} ﷼/شهر (متبقي {remaining} ﷼)",
+  "chatbotOptimizerIntro": "محسّن الأهداف\\nبناءً على فائضك الشهري ({monthly} ﷼)، هذه أفضل خطة توزيع:\\n",
+  "chatbotAlertExpenseOverIncome": "مصروفات هذا الشهر أعلى من الدخل.",
+  "chatbotAlertSpendingGrowth": "الإنفاق ارتفع بنسبة {pct}% مقارنة بالشهر الماضي.",
+  "chatbotSubsNone": "لم أكتشف اشتراكات متكررة واضحة في معاملاتك الحالية.",
+  "chatbotSubsLine": "- {name}: حوالي {amount} ﷼ (تكرر {count} مرات)",
+  "chatbotSubsSummary": "الاشتراكات المتكررة المكتشفة 📌\\n{lines}\\n\\nالإجمالي الشهري التقريبي: {total} ﷼",
+  "chatbotUnnamedRecurring": "مصروف متكرر غير مسمى",
+  "chatbotPdfOk": "تم توليد التقرير الشهري PDF وفتح المشاركة بنجاح.",
+  "chatbotPdfFail": "تعذر إنشاء تقرير PDF حالياً. تأكد من توفر بيانات ثم حاول مرة أخرى.",
+  "chatbotDlgCreateGoalTitle": "إنشاء هدف سريع",
+  "chatbotDlgGoalNameLabel": "اسم الهدف",
+  "chatbotDlgGoalTargetLabel": "المبلغ المستهدف",
+  "chatbotRequiredField": "مطلوب",
+  "chatbotInvalidNumber": "رقم غير صحيح",
+  "chatbotDlgCreate": "إنشاء",
+  "chatbotDlgAdjustBudgetTitle": "تعديل الميزانية سريعًا",
+  "chatbotDlgMonthlyBudgetLabel": "مبلغ الميزانية الشهرية",
+  "chatbotDlgSave": "حفظ",
+  "chatbotDlgCancel": "إلغاء",
+  "chatbotGoalCreatedDialog": "تم إنشاء الهدف \"{name}\" بنجاح.",
+  "chatbotBudgetCreatedDialog": "تم إنشاء ميزانية الشهر القادم بقيمة {amount} ﷼.",
+  "chatbotWhoAmI": "أنا مدبر، مساعدك الذكي في إدارة الأموال الشخصية.",
+  "chatbotGreetBack": "مرحباً بك. كيف يمكنني مساعدتك في إدارة أموالك اليوم؟",
+  "chatbotDateToday": "اليوم هو {day}، {d} {month} {y}.",
+  "chatbotThanksReply": "العفو، سعيد بمساعدتك دائماً.",
+  "chatbotHowAreYouReply": "بخير والحمد لله. شكراً لسؤالك. كيف يمكنني مساعدتك في إدارة أموالك؟",
+  "chatbotJsonNoData": "لا توجد بيانات",
+  "chatbotRateLimited": "عذراً، تم تجاوز حد الطلبات. يرجى المحاولة لاحقاً.",
+  "chatbotServer53": "الخدمة الذكية غير متاحة حالياً (خطأ خادم 53). يرجى المحاولة بعد قليل.",
+  "chatbotHttpError": "عذراً، حدث خطأ في الاتصال. (رمز: {code})",
+  "chatbotRequestTimeout": "عذراً، استغرق الطلب وقتاً طويلاً. يرجى التحقق من الاتصال والمحاولة مرة أخرى.",
+  "chatbotNoInternet": "عذراً، لا يوجد اتصال بالإنترنت. يرجى التحقق من الاتصال.",
+  "chatbotAssistantUnreachable": "تعذر الوصول إلى خدمة المساعد حالياً. يرجى المحاولة لاحقاً.",
+  "chatbotParseResponseFail": "عذراً، لم أتمكن من فهم السؤال.",
+  "chatbotParseError": "عذراً، حدث خطأ في معالجة الاستجابة.",
+  "chatbotChatCleared": "تم مسح المحادثة. كيف يمكنني مساعدتك؟",
+  "chatbotQuickCreateGoal": "أنشئ هدف",
+  "chatbotQuickAdjustBudget": "عدّل ميزانيتي",
+  "chatbotQuickReduceCategory": "خفّض فئة إنفاق",
+  "chatbotQuickPdf": "تقرير PDF",
+  "chatbotQuickUndo": "تراجع آخر عملية",
+  "chatbotSuggestBalanceTitle": "اسأل عن رصيدك",
+  "chatbotSuggestBalanceSubtitle": "تابع حساباتك المالية",
+  "chatbotSuggestExpenseTitle": "تحليل المصروفات",
+  "chatbotSuggestExpenseSubtitle": "راجع معاملاتك وميزانياتك",
+  "chatbotSuggestGoalsTitle": "تتبع الأهداف",
+  "chatbotSuggestGoalsSubtitle": "اعرف تقدمك نحو أهدافك",
+  "chatbotSuggestBalancePrompt": "ما رصيدي هذا الشهر؟",
+  "chatbotSuggestExpensePrompt": "حلل مصروفاتي هذا الشهر",
+  "chatbotSuggestGoalsPrompt": "كيف تسير أهداف ادخاري؟",
+  "chatbotClearDialogTitle": "مسح المحادثة",
+  "chatbotClearDialogBody": "هل تريد بدء محادثة جديدة؟ سيتم حذف جميع الرسائل الحالية.",
+  "chatbotClearDialogConfirm": "مسح",
+  "chatbotLocalFallbackQuotaNotice": "المساعد الذكي غير متاح مؤقتاً — هذا رد من بياناتك المحفوظة:",
+  "chatbotLocalFallbackOfflineNotice": "تعذر الاتصال بالمساعد السحابي — هذا رد من بياناتك المحفوظة:",
+  "chatbotLocalFallbackNoGoals": "لا توجد أهداف محفوظة. أضف هدفاً من شاشة الأهداف أو اكتب \"أنشئ هدف\".",
+  "chatbotLocalFallbackGoalLine": "- {name}: {current} / {target} ﷼ ({pct}%)",
+  "chatbotLocalFallbackGoalsIntro": "أهدافك:\\n{lines}\\n\\nالفائض الشهري: {surplus} ﷼ (الدخل {income} ﷼).",
+  "chatbotLocalFallbackNoBudget": "لا توجد ميزانية نشطة. مصروفاتك هذا الشهر حتى الآن: {expense} ﷼.",
+  "chatbotLocalFallbackNoExpenses": "لا توجد مصروفات مسجلة لهذا الشهر بعد.",
+  "chatbotLocalFallbackCategoryLine": "- {name}: {amount} ﷼ ({share}%)",
+  "chatbotLocalFallbackExpenses": "مصروفات هذا الشهر: {total} ﷼\\nأعلى الفئات:\\n{lines}",
+  "chatbotLocalFallbackNoCategoryData": "لا توجد بيانات فئات لهذا الشهر.",
+  "chatbotLocalFallbackTopCategory": "أعلى فئة إنفاق: {name} ({amount} ﷼)",
+  "chatbotLocalFallbackGoalsNone": "لا توجد أهداف قيد التنفيذ.",
+  "chatbotLocalFallbackGoalsCount": "أهداف قيد التنفيذ: {count}",
+  "chatbotLocalFallbackOtherCategory": "أخرى",
+  "chatbotScreenTitle": "مُدَبِّر AI",
+  "chatbotSuggestSavingsTitle": "وفر أكثر",
+  "chatbotSuggestSavingsPrompt": "كيف أوفر أكثر؟",
+  "chatbotAssistantSubtitle": "اسألني عن ميزانيتك وأهدافك ومصاريفك",
+  "chatbotAssistantHeadline": "مساعدك المالي الذكي",
+  "chatbotSuggestedQuestionsTitle": "أسئلة مقترحة",
+  "chatbotRefreshSuggestionsTooltip": "اقتراحات جديدة",
+  "chatbotInputHint": "اسألني عن ميزانيتك...",
+  "chatbotClearChatTitle": "مسح المحادثة",
+  "chatbotClearChatMessage": "هل تريد حذف جميع الرسائل؟",
+  "chatbotClearChatConfirm": "مسح",
+  "challengeUnexpectedError": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.",
+  "challengeUnexpectedErrorLater": "حدث خطأ غير متوقع. يرجى المحاولة لاحقاً.",
+  "challengeLoadFailed": "تعذر تحميل التحديات.",
+  "challengeSyncFailed": "تعذر مزامنة بيانات التحدي.",
+  "challengeChallengeCreatedSuccess": "تم إنشاء التحدي بنجاح",
+  "challengeChallengeUpdatedSuccess": "تم تحديث التحدي بنجاح",
+  "challengeChallengeDeletedSuccess": "تم حذف التحدي بنجاح",
+  "challengeUserInvitedSuccess": "تم إرسال الدعوة بنجاح",
+  "challengeParticipantRemovedSuccess": "تم إزالة المشارك بنجاح",
+  "challengeChallengeMarkedAchieved": "تم تسجيل إنجاز التحدي! 🎉",
+  "challengeChallengeMarkedNotAchieved": "تم إلغاء تسجيل الإنجاز",
+  "challengeInvitationAccepted": "تم قبول التحدي! 🎉",
+  "challengeInvitationRejected": "تم رفض الدعوة",
+  "challengeServerMaintenanceHint": "قد يكون الخادم قيد الصيانة. جرّب مرة أخرى بعد قليل.",
+  "challengeRetry": "إعادة المحاولة",
+  "challengeInviteAppBarTitle": "شارك التطبيق",
+  "challengeInviteFriendsTitle": "ادعُ أصدقاءك",
+  "challengeInviteFriendsSubtitle": "شارك التطبيق مع أصدقائك واربحوا المكافآت معًا!",
+  "challengeInviteShareButton": "مشاركة التطبيق",
+  "challengeInviteShareMessage": "انضم إليّ في تطبيق مدبر! استخدم رابط الدعوة للبدء: {link}",
+  "challengeInviteShareSubject": "جرّب تطبيق مدبر!",
+  "challengeLocalPopupTitle": "إنشاء تحدي",
+  "challengeLocalPopupSubtitle": "حدد تحدي مالي جديد",
+  "challengeLocalNameSection": "اسم التحدي",
+  "challengeLocalNameHint": "أدخل اسم التحدي",
+  "challengeLocalNameRequired": "الاسم مطلوب",
+  "challengeLocalStatusSection": "حالة التحدي",
+  "challengeLocalStatusHint": "اختر الحالة",
+  "challengeLocalStatusRequired": "يرجى اختيار حالة",
+  "challengeLocalPeriodSection": "فترة التحدي",
+  "challengeLocalStartDate": "تاريخ البداية",
+  "challengeLocalEndDate": "تاريخ النهاية",
+  "challengeLocalStartRequired": "تاريخ البداية مطلوب",
+  "challengeLocalEndRequired": "تاريخ النهاية مطلوب",
+  "challengeLocalEndAfterStart": "يجب أن تكون النهاية بعد البداية",
+  "challengeLocalCancel": "إلغاء",
+  "challengeLocalCreateButton": "إنشاء التحدي",
+  "challengeLocalCreateSuccess": "تم إنشاء التحدي بنجاح! 🎉",
+  "challengeLocalCreateFailed": "فشل في إنشاء التحدي: {e}",
+  "challengeListTitle": "التحديات",
+  "challengeNewChallengeFab": "تحدي جديد",
+  "challengeTabActive": "نشطة",
+  "challengeTabUpcoming": "قادمة",
+  "challengeTabCompleted": "مكتملة",
+  "challengeTabInvitations": "الدعوات",
+  "challengeTabExpired": "منتهي",
+  "challengeEmptyActive": "لا توجد تحديات نشطة",
+  "challengeEmptyActiveSubtitle": "أنشئ تحدياً وادعُ أصدقاءك للادخار معاً.",
+  "challengeEmptyUpcoming": "لا توجد تحديات قادمة",
+  "challengeEmptyUpcomingSubtitle": "ستظهر التحديات المجدولة هنا.",
+  "challengeEmptyCompleted": "لا توجد تحديات مكتملة",
+  "challengeEmptyCompletedSubtitle": "التحديات المنتهية بنجاح تظهر هنا.",
+  "challengeEmptyExpired": "لا توجد تحديات منتهية",
+  "challengeEmptyExpiredSubtitle": "التحديات المنتهية دون إكمال تظهر هنا.",
+  "challengeEmptyInvitations": "لا توجد دعوات معلّقة",
+  "challengeEmptyInvitationsSubtitle": "عندما يدعوك أصدقاؤك لتحدي، ستظهر الدعوة هنا.",
+  "challengeDailyCheckInStripTitle": "تسجيل الحضور اليومي",
+  "challengeCheckInForChallenge": "تسجيل حضور — {name}",
+  "challengeCreateTitle": "إنشاء تحدي",
+  "challengeSectionDetails": "تفاصيل التحدي",
+  "challengeSectionSchedule": "الجدول الزمني",
+  "challengeFieldChallengeName": "اسم التحدي",
+  "challengeHintChallengeName": "مثال: ادخار 1000 ريال هذا الشهر",
+  "challengeValNameRequired": "الرجاء إدخال اسم التحدي",
+  "challengeValNameMin": "يجب أن يكون الاسم 3 أحرف على الأقل",
+  "challengeFieldTargetAmount": "المبلغ المستهدف",
+  "challengeHintTargetAmount": "مثال: 1000",
+  "challengeCurrencyAmountPrefix": "﷼ ",
+  "challengeValAmountRequired": "الرجاء إدخال المبلغ المستهدف",
+  "challengeValAmountInvalid": "الرجاء إدخال مبلغ صحيح",
+  "challengePickStartDate": "الرجاء اختيار تاريخ البداية",
+  "challengePickEndDate": "الرجاء اختيار تاريخ النهاية",
+  "challengeChooseDate": "اختر التاريخ",
+  "challengeCreateSubmit": "إنشاء التحدي",
+  "challengeDetailTitle": "تفاصيل التحدي",
+  "challengeStartDateLabel": "تاريخ البداية",
+  "challengeEndDateLabel": "تاريخ النهاية",
+  "challengeStatusLabel": "الحالة",
+  "challengeTargetAmountLabel": "المبلغ المستهدف",
+  "challengeCurrentAmountLabel": "المبلغ الحالي",
+  "challengeCreatorTargetLine": "المبلغ المستهدف: ${amount}",
+  "challengeProgressLabel": "التقدم",
+  "challengeDaysUntilStart": "يبدأ خلال {days} يوم",
+  "challengeDaysRemaining": "متبقي {days} يوم",
+  "challengeUpdateAmountAchieved": "تم تحقيق الهدف",
+  "challengeUpdateAmountButton": "تحديث المبلغ",
+  "challengeAddAmountTitle": "إضافة مبلغ",
+  "challengeAddAmountSubmit": "إضافة",
+  "challengeAddAmountLabel": "المبلغ المراد إضافته",
+  "challengeAddAmountHint": "أدخل المبلغ",
+  "challengeGoalCongrats": "🎉 تهانينا! لقد حققت الهدف",
+  "challengeAddedAmountSuccess": "تم إضافة ${amount} بنجاح",
+  "challengeInvalidAmountSnack": "الرجاء إدخال مبلغ صحيح",
+  "challengeParticipantsTitle": "المشاركون ({n})",
+  "challengeInviteButton": "دعوة",
+  "challengeInviteDialogTitle": "دعوة مستخدم",
+  "challengeInviteEmailLabel": "البريد الإلكتروني",
+  "challengeInviteEmailHint": "أدخل البريد الإلكتروني للمستخدم",
+  "challengeInviteInvalidEmail": "الرجاء إدخال بريد إلكتروني صحيح.",
+  "challengeRemoveParticipantTitle": "إزالة مشارك",
+  "challengeRemoveParticipantBody": "هل أنت متأكد من إزالة هذا المشارك؟",
+  "challengeRemoveButton": "إزالة",
+  "challengeCancel": "إلغاء",
+  "challengeCardCompleted": "مكتمل",
+  "challengeCardExpired": "منتهي",
+  "challengeCardActive": "نشط",
+  "challengeActiveSectionTitle": "نشطة",
+  "challengeQuickTemplatesTitle": "قوالب سريعة",
+  "challengeLogButton": "تسجيل",
+  "challengeStreakFire": "🔥 {days} أيام",
+  "challengeCardUpcoming": "قادم",
+  "challengeGoalAmount": "الهدف: ${amount}",
+  "challengeAcceptedCount": "{n} قبلوا",
+  "challengePendingTitle": "الدعوات المعلقة",
+  "challengePendingEmpty": "لا توجد دعوات معلقة",
+  "challengePendingEmptySubtitle": "عندما يدعوك أحد لتحدي، ستظهر الدعوة هنا.",
+  "challengePendingStatus": "معلق",
+  "challengeFromCreator": "من: {name}",
+  "challengeTotalAmount": "المبلغ الإجمالي: ${amount}",
+  "challengeAcceptedBeforeInvite": "{n} مشارك قبل الدعوة",
+  "challengeSplitHint": "إذا قبلت، سيتم تقسيم المبلغ بالتساوي بين جميع المشاركين",
+  "challengeDecline": "رفض",
+  "challengeAccept": "قبول",
+  "challengeRoleCreator": "المنشئ",
+  "challengeInviteAccepted": "مقبول",
+  "challengeInvitePendingStatus": "معلق",
+  "challengeInviteDeclined": "مرفوض",
+  "challengeTemplatesTitle": "تحديات جاهزة",
+  "challengeTemplatesSubtitle": "ابدأ تحدياً شائعاً بنقرة واحدة",
+  "challengeUseTemplate": "ابدأ",
+  "challengeTemplateDays": "{days} يوم",
+  "challengeStreakTitle": "السلسلة اليومية",
+  "challengeStreakDays": "سلسلة {days} يوم",
+  "challengeCheckInButton": "تسجيل حضور اليوم",
+  "challengeAlreadyCheckedIn": "سجّلت حضورك اليوم",
+  "challengeLeaderboardTitle": "لوحة المتصدرين",
+  "challengeLeaderboardEmpty": "لا يوجد مشاركون بعد",
+  "challengeRankLabel": "المركز {rank}",
+  "challengeBadge7Title": "سلسلة 7 أيام",
+  "challengeBadge30Title": "سلسلة 30 يوم",
+  "challengeBadge7Earned": "حصلت على شارة 7 أيام!",
+  "challengeBadge30Earned": "حصلت على شارة 30 يوم!",
+  "challengeCheckInSuccess": "تم تسجيل الحضور بنجاح",
+  "challengeTemplateCreated": "تم بدء التحدي من القالب",
+  "challengeOfflineBanner": "وضع عدم الاتصال — عرض بيانات محفوظة. ستُزامَن التغييرات عند عودة الشبكة.",
+  "challengeProgressSaved": "تم حفظ التقدم",
+  "challengeProgressQueuedOffline": "حُفظ محلياً — سيُزامَن عند الاتصال",
+  "challengeCreateRequiresOnline": "إنشاء تحدي يتطلب اتصالاً بالإنترنت. اتصل بالشبكة وحاول مجدداً.",
+  "challengeWriteRequiresOnline": "يتطلب هذا الإجراء اتصالاً بالإنترنت. اتصل بالشبكة وحاول مجدداً.",
+  "@chatbotUndoDone": {
+    "placeholders": {
+      "summary": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotGoalCreatedSummary": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotGoalCreatedOk": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotBudgetCreatedSummary": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotBudgetCreatedOk": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotInsightBody": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      },
+      "alertBlock": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotOptimizerLine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "perMonth": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotOptimizerIntro": {
+    "placeholders": {
+      "monthly": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotAlertSpendingGrowth": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotSubsLine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@chatbotSubsSummary": {
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotBudgetCreatedDialog": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotDateToday": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "d": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      },
+      "y": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotHttpError": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "@chatbotLocalFallbackGoalLine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "current": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotLocalFallbackGoalsIntro": {
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      },
+      "surplus": {
+        "type": "String"
+      },
+      "income": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotLocalFallbackNoBudget": {
+    "placeholders": {
+      "expense": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotLocalFallbackCategoryLine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "share": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotLocalFallbackExpenses": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      },
+      "lines": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotLocalFallbackTopCategory": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotLocalFallbackGoalsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@challengeInviteShareMessage": {
+    "placeholders": {
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "@challengeLocalCreateFailed": {
+    "placeholders": {
+      "e": {
+        "type": "String"
+      }
+    }
+  },
+  "@challengeCheckInForChallenge": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@challengeCreatorTargetLine": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@challengeDaysUntilStart": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "@challengeDaysRemaining": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "@challengeAddedAmountSuccess": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@challengeParticipantsTitle": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "@challengeStreakFire": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "@challengeAcceptedCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "@challengeFromCreator": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@challengeAcceptedBeforeInvite": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "@challengeTemplateDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "@challengeStreakDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "@challengeRankLabel": {
+    "placeholders": {
+      "rank": {
+        "type": "int"
+      }
+    }
+  },
+  "chatbotPreviewGoal": "مراجعة قبل التنفيذ 🧾\n- نوع العملية: إنشاء هدف\n- الاسم: {name}\n- المبلغ: {amount} ﷼\n- المدة: {months} شهر\n\nاكتب \"تأكيد\" للتنفيذ أو \"إلغاء\" للإلغاء.",
+  "chatbotPreviewBudget": "مراجعة قبل التنفيذ 🧾\n- نوع العملية: إنشاء ميزانية\n- القيمة: {amount} ﷼\n- الفترة: {start} إلى {end}\n\nاكتب \"تأكيد\" للتنفيذ أو \"إلغاء\" للإلغاء.",
+  "chatbotWhatIfScenario": "سيناريو ماذا لو 💡\n- إذا ادخرت {amount} ﷼ شهريًا\n- الهدف: {name}\n- المتبقي: {remaining} ﷼\n- المدة المتوقعة: حوالي {months} شهر\n- التاريخ المتوقع للإنجاز: {eta}",
+  "chatbotTimeNow": "الساعة الآن {displayHour}:{minute} {period}.",
+  "chatbotLocalFallbackBalance": "ملخص هذا الشهر:\n• الدخل: {income} ﷼\n• المصروفات: {expense} ﷼\n• الرصيد: {balance} ﷼\n• درجة الصحة المالية: {score}/100 ({status})",
+  "chatbotLocalFallbackSnapshot": "لمحة سريعة من بياناتك 📊\n• الدخل: {income} ﷼ | المصروفات: {expense} ﷼ | الرصيد: {balance} ﷼\n• درجة الصحة المالية: {score}/100 ({status})\n• التنبيهات: {alerts}\n• {topCategory}\n• {goalsLine}",
+  "chatbotLocalFallbackBudget": "الميزانية: {budget} ﷼\nالمصروف: {spent} ﷼ ({usedPct}%)\nالمتبقي: {remaining} ﷼",
+  "chatbotInsightStatusStrong": "ممتازة",
+  "chatbotInsightStatusGood": "جيدة مع مجال للتحسين",
+  "chatbotInsightStatusNeeds": "تحتاج متابعة",
+  "chatbotTimePeriodAm": "صباحاً",
+  "chatbotTimePeriodPm": "مساءً",
+  "challengeStatusActiveLabel": "نشط",
+  "challengeStatusCompletedLabel": "مكتمل",
+  "challengeStatusCancelledLabel": "ملغي",
+  "challengeParticipantCountOne": "مشارك واحد",
+  "challengeParticipantCountMany": "{n} مشاركين",
+  "chatbotWeekday0": "الأحد",
+  "chatbotWeekday1": "الاثنين",
+  "chatbotWeekday2": "الثلاثاء",
+  "chatbotWeekday3": "الأربعاء",
+  "chatbotWeekday4": "الخميس",
+  "chatbotWeekday5": "الجمعة",
+  "chatbotWeekday6": "السبت",
+  "chatbotMonth0": "يناير",
+  "chatbotMonth1": "فبراير",
+  "chatbotMonth2": "مارس",
+  "chatbotMonth3": "أبريل",
+  "chatbotMonth4": "مايو",
+  "chatbotMonth5": "يونيو",
+  "chatbotMonth6": "يوليو",
+  "chatbotMonth7": "أغسطس",
+  "chatbotMonth8": "سبتمبر",
+  "chatbotMonth9": "أكتوبر",
+  "chatbotMonth10": "نوفمبر",
+  "chatbotMonth11": "ديسمبر",
+  "chatbotDefaultSuggestion0": "كيف أوفر أكثر؟",
+  "chatbotDefaultSuggestion1": "حلل مصاريفي",
+  "chatbotDefaultSuggestion2": "خطة توفير الشهر",
+  "chatbotAlternateSuggestion0": "أين أصرف أكثر؟",
+  "chatbotAlternateSuggestion1": "كيف أضبط ميزانيتي؟",
+  "chatbotAlternateSuggestion2": "نصائح لتقليل المصاريف",
+  "chatbotAlternateSuggestion3": "متى أصل لهدفي؟",
+  "chatbotAlternateSuggestion4": "قارن مصاريفي بالشهر الماضي",
+  "chatbotAlternateSuggestion5": "ما أهم نصيحة مالية اليوم؟",
+  "@chatbotPreviewGoal": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "@chatbotPreviewBudget": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotWhatIfScenario": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      },
+      "months": {
+        "type": "int"
+      },
+      "eta": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotTimeNow": {
+    "placeholders": {
+      "displayHour": {
+        "type": "int"
+      },
+      "minute": {
+        "type": "String"
+      },
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotLocalFallbackBalance": {
+    "placeholders": {
+      "income": {
+        "type": "String"
+      },
+      "expense": {
+        "type": "String"
+      },
+      "balance": {
+        "type": "String"
+      },
+      "score": {
+        "type": "int"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotLocalFallbackSnapshot": {
+    "placeholders": {
+      "income": {
+        "type": "String"
+      },
+      "expense": {
+        "type": "String"
+      },
+      "balance": {
+        "type": "String"
+      },
+      "score": {
+        "type": "int"
+      },
+      "status": {
+        "type": "String"
+      },
+      "alerts": {
+        "type": "String"
+      },
+      "topCategory": {
+        "type": "String"
+      },
+      "goalsLine": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotLocalFallbackBudget": {
+    "placeholders": {
+      "budget": {
+        "type": "String"
+      },
+      "spent": {
+        "type": "String"
+      },
+      "usedPct": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotGoalCreatedDialog": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@challengeParticipantCountMany": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "@challengeGoalAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@challengeTotalAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  }
 }

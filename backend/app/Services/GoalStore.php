@@ -26,6 +26,7 @@ class GoalStore
         return [
             'next_goal_id' => 1,
             'next_contribution_id' => 1,
+            'next_milestone_id' => 1,
             'goals' => [],
         ];
     }
@@ -100,6 +101,7 @@ class GoalStore
                 'is_completed' => $reached,
                 'completed_at' => $reached ? $now->toISOString() : null,
                 'contributions' => $contributions,
+                'milestones' => [],
                 'created_at' => $now->toISOString(),
                 'updated_at' => $now->toISOString(),
             ]);
@@ -142,6 +144,7 @@ class GoalStore
                     ? ($goal['completed_at'] ?? Carbon::now()->toISOString())
                     : null;
                 $merged['updated_at'] = Carbon::now()->toISOString();
+                $merged = $this->applyMilestoneProgress($merged);
 
                 $data['goals'][$idx] = $this->normalizeGoal($merged);
 
@@ -197,6 +200,7 @@ class GoalStore
                 $goal['is_completed'] = $reached;
                 $goal['completed_at'] = $reached ? Carbon::now()->toISOString() : null;
                 $goal['updated_at'] = Carbon::now()->toISOString();
+                $goal = $this->applyMilestoneProgress($goal);
 
                 $data['goals'][$idx] = $this->normalizeGoal($goal);
 
@@ -205,6 +209,65 @@ class GoalStore
 
             return null;
         });
+    }
+
+    public function addMilestone(int $goalId, array $payload, int $userId): ?array
+    {
+        return $this->mutateStore(function (array &$data) use ($goalId, $payload, $userId): ?array {
+            foreach ($data['goals'] as $idx => $goal) {
+                if ((int) $goal['id'] !== $goalId || (int) ($goal['user_id'] ?? 0) !== $userId) {
+                    continue;
+                }
+
+                $milestoneId = (int) $data['next_milestone_id'];
+                $data['next_milestone_id'] = $milestoneId + 1;
+
+                $targetAmount = (float) $payload['target_amount'];
+                $currentAmount = (float) ($goal['current_amount'] ?? 0);
+                $milestones = $goal['milestones'] ?? [];
+                $milestones[] = [
+                    'id' => $milestoneId,
+                    'goal_id' => $goalId,
+                    'title' => (string) $payload['title'],
+                    'target_amount' => $targetAmount,
+                    'is_achieved' => $currentAmount >= $targetAmount,
+                    'achieved_at' => $currentAmount >= $targetAmount
+                        ? Carbon::now()->toISOString()
+                        : null,
+                    'created_at' => Carbon::now()->toISOString(),
+                ];
+
+                $goal['milestones'] = $milestones;
+                $goal['updated_at'] = Carbon::now()->toISOString();
+                $data['goals'][$idx] = $this->normalizeGoal($goal);
+
+                return $data['goals'][$idx];
+            }
+
+            return null;
+        });
+    }
+
+    /**
+     * @param  array<string, mixed>  $goal
+     * @return array<string, mixed>
+     */
+    private function applyMilestoneProgress(array $goal): array
+    {
+        $current = (float) ($goal['current_amount'] ?? 0);
+        $milestones = $goal['milestones'] ?? [];
+        foreach ($milestones as $i => $milestone) {
+            if (! empty($milestone['is_achieved'])) {
+                continue;
+            }
+            if ($current >= (float) ($milestone['target_amount'] ?? 0)) {
+                $milestones[$i]['is_achieved'] = true;
+                $milestones[$i]['achieved_at'] = Carbon::now()->toISOString();
+            }
+        }
+        $goal['milestones'] = $milestones;
+
+        return $goal;
     }
 
     public function delete(int $id, int $userId): bool
@@ -246,6 +309,19 @@ class GoalStore
             ];
         }
 
+        $milestones = [];
+        foreach ($goal['milestones'] ?? [] as $milestone) {
+            $milestones[] = [
+                'id' => (int) $milestone['id'],
+                'goal_id' => (int) $milestone['goal_id'],
+                'title' => (string) $milestone['title'],
+                'target_amount' => (float) $milestone['target_amount'],
+                'is_achieved' => (bool) ($milestone['is_achieved'] ?? false),
+                'achieved_at' => $milestone['achieved_at'] ?? null,
+                'created_at' => $milestone['created_at'] ?? null,
+            ];
+        }
+
         return [
             'id' => (int) $goal['id'],
             'user_id' => (int) ($goal['user_id'] ?? 0),
@@ -259,6 +335,7 @@ class GoalStore
             'is_completed' => (bool) ($goal['is_completed'] ?? false),
             'completed_at' => $goal['completed_at'] ?? null,
             'contributions' => $contributions,
+            'milestones' => $milestones,
             'created_at' => $goal['created_at'] ?? null,
             'updated_at' => $goal['updated_at'] ?? null,
         ];

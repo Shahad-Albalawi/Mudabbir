@@ -1,60 +1,101 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:mudabbir/domain/models/behavioral_snapshot.dart';
-import 'package:mudabbir/presentation/resources/app_colors.dart';
-import 'package:mudabbir/presentation/resources/behavioral_strings.dart';
+import 'package:mudabbir/constants/app_theme.dart';
+import 'package:mudabbir/presentation/analysis/analysis_trend_utils.dart';
+import 'package:mudabbir/presentation/analysis/analysis_viewmodel.dart';
+import 'package:mudabbir/presentation/analysis/widgets/analysis_bar_chart.dart';
+import 'package:mudabbir/presentation/analysis/widgets/analysis_behavior_sections.dart';
+import 'package:mudabbir/presentation/analysis/widgets/analysis_donut_chart.dart';
+import 'package:mudabbir/presentation/analysis/widgets/analysis_kpi_grid.dart';
+import 'package:mudabbir/presentation/analysis/widgets/analysis_pdf_exporter.dart';
+import 'package:mudabbir/presentation/analysis/widgets/health_gauge.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
-import 'package:mudabbir/presentation/resources/analysis_colors.dart';
-import 'package:mudabbir/presentation/widgets/app_card.dart';
-import 'package:mudabbir/presentation/widgets/app_skeleton.dart';
-import 'package:mudabbir/presentation/widgets/behavioral_score_card.dart';
-import 'package:mudabbir/presentation/widgets/chart_empty_state.dart';
-import 'package:mudabbir/presentation/resources/entity_localizations.dart';
-import 'package:mudabbir/presentation/resources/font_manager.dart';
-import 'package:mudabbir/presentation/widgets/app_grouped_scaffold.dart';
+import 'package:mudabbir/presentation/analysis/behavioral_copy_helpers.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
-import 'package:mudabbir/presentation/resources/styles_manager.dart';
-import 'package:mudabbir/presentation/resources/values_manager.dart';
+import 'package:mudabbir/presentation/statistics/statistics_viewmodel.dart';
+import 'package:mudabbir/presentation/widgets/app_card.dart';
+import 'package:mudabbir/presentation/widgets/app_grouped_scaffold.dart';
+import 'package:mudabbir/presentation/widgets/app_skeleton.dart';
+import 'package:mudabbir/presentation/widgets/section_title_text.dart';
 import 'package:mudabbir/presentation/widgets/ios_empty_state.dart';
-import 'analysis_viewmodel.dart';
 
-class AnalysisView extends ConsumerWidget {
-  const AnalysisView({super.key});
+const _sectionGap = AppSpacing.lg;
+
+/// Unified analysis dashboard — health score, KPIs, charts, insights, PDF.
+class AnalysisView extends ConsumerStatefulWidget {
+  const AnalysisView({super.key, this.financialHealthFocus = false});
+
+  /// When true, opened from الإحصائيات → الصحة المالية (narrower title).
+  final bool financialHealthFocus;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(analysisProvider);
-    final scheme = Theme.of(context).colorScheme;
+  ConsumerState<AnalysisView> createState() => _AnalysisViewState();
+}
 
-    if (state.isLoading) {
-      return AppGroupedScaffold(
-        showBackButton: false,
-        largeTitle: true,
-        titleText: AppStrings.statsAnalysisTitle,
+class _AnalysisViewState extends ConsumerState<AnalysisView> {
+  bool _exporting = false;
+
+  String get _pageTitle {
+    if (widget.financialHealthFocus) {
+      return AppStrings.financialHealth;
+    }
+    return AppStrings.isEnglishLocale
+        ? 'Statistics & financial health'
+        : 'الإحصائيات وصحة مالك';
+  }
+
+  Future<void> _exportPdf() async {
+    if (_exporting) return;
+    setState(() => _exporting = true);
+    try {
+      final analysis = ref.read(analysisProvider);
+      final stats = ref.read(statisticsProvider);
+      await AnalysisPdfExporter.exportPDF(
+        analysis: analysis,
+        statistics: stats,
+      );
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(analysisProvider);
+    final stats = ref.watch(statisticsProvider);
+    final colors = context.colors;
+    final pageBg = colors.background;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (state.isLoading || stats.isLoading) {
+      return _scaffold(
+        pageBg: pageBg,
         body: ListView(
-          padding: const EdgeInsets.all(AppPadding.p16),
+          padding: _pagePadding,
           children: const [
-            AppSkeletonBox(height: 120),
-            SizedBox(height: 20),
-            AppSkeletonBox(height: 88),
-            SizedBox(height: 20),
-            AppSkeletonBox(height: 160),
-            SizedBox(height: 20),
-            AppSkeletonBox(height: 100),
-            SizedBox(height: 16),
-            AppSkeletonBox(height: 100),
+            AppSkeletonBox(
+              height: 200,
+              borderRadius: BorderRadius.all(Radius.circular(AppRadius.card)),
+            ),
+            SizedBox(height: _sectionGap),
+            AppSkeletonBox(
+              height: 200,
+              borderRadius: BorderRadius.all(Radius.circular(AppRadius.card)),
+            ),
+            SizedBox(height: _sectionGap),
+            AppSkeletonBox(
+              height: 280,
+              borderRadius: BorderRadius.all(Radius.circular(AppRadius.card)),
+            ),
           ],
         ),
       );
     }
 
     if (state.error != null && state.error!.isNotEmpty) {
-      return AppGroupedScaffold(
-        showBackButton: false,
-        largeTitle: true,
-        titleText: AppStrings.statsAnalysisTitle,
+      return _scaffold(
+        pageBg: pageBg,
         body: Center(
           child: IOSEmptyState(
             icon: Icons.cloud_off_rounded,
@@ -67,660 +108,166 @@ class AnalysisView extends ConsumerWidget {
       );
     }
 
+    final netSavings = stats.totalIncome - stats.totalExpense;
+    final healthRating = state.financialHealthRating.isNotEmpty
+        ? state.financialHealthRating
+        : BehavioralCopyHelpers.ratingForScore(state.healthScore.round());
+    final trends = AnalysisDashboardTrends.fromMonthlyTrend(
+      state.monthlyTrend,
+      state.savingsRate,
+    );
+
+    return _scaffold(
+      pageBg: pageBg,
+      body: RefreshIndicator(
+        onRefresh: () => ref.read(analysisProvider.notifier).retry(),
+        color: colors.primary,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          padding: _pagePadding,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SectionTitleText(
+                _pageTitle,
+                style: AppTypography.headlineSmall(
+                  colors.primary,
+                ).copyWith(fontWeight: AppFontWeights.bold),
+              ),
+              const SizedBox(height: _sectionGap),
+              _HealthGaugeCard(
+                score: state.healthScore.round(),
+                rating: healthRating,
+                savingsRate: state.savingsRate,
+                isDark: isDark,
+              ),
+              const SizedBox(height: _sectionGap),
+              AnalysisKpiGrid(
+                totalIncome: stats.totalIncome,
+                totalExpense: stats.totalExpense,
+                netSavings: netSavings,
+                savingsRate: state.savingsRate,
+                trends: trends,
+                isDark: isDark,
+              ),
+              const SizedBox(height: _sectionGap),
+              AnalysisBarChart(points: state.monthlyTrend),
+              const SizedBox(height: _sectionGap),
+              AnalysisDonutChart(
+                expenseByCategory: stats.expenseByCategory,
+              ),
+              const SizedBox(height: _sectionGap),
+              AnalysisBehaviorSections(
+                analysis: state,
+                statistics: stats,
+                isDark: isDark,
+              ),
+              const SizedBox(height: _sectionGap),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: _exporting ? null : _exportPdf,
+                  icon: _exporting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.picture_as_pdf_outlined),
+                  label: Text(AppStrings.exportPdfReport),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.navy1,
+                    foregroundColor: AppColors.textInverse,
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _scaffold({required Color pageBg, required Widget body}) {
     return AppGroupedScaffold(
-      showBackButton: false,
       largeTitle: true,
-      titleText: AppStrings.statsAnalysisTitle,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          AppPadding.p16,
-          8,
-          AppPadding.p16,
-          AppLayout.bottomNavClearance,
+      titleText: _pageTitle,
+      actions: [
+        IconButton(
+          tooltip: AppStrings.exportPdfReport,
+          onPressed: _exporting ? null : _exportPdf,
+          icon: const Icon(CupertinoIcons.doc_text),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildBehavioralScoreCard(context, state),
-            const SizedBox(height: 20),
-            _buildMonthComparisonCard(context, state),
-            const SizedBox(height: 20),
-            _buildAnomaliesSection(context, state),
-            const SizedBox(height: 20),
-            _buildHealthScoreCard(context, state),
-            const SizedBox(height: 20),
-            _buildStatusCard(
-              context,
-              AppStrings.analysisBalanceTitle,
-              state.balanceStatus,
-              CupertinoIcons.money_dollar_circle,
-              _getStatusColor(scheme, state.balanceStatus),
-            ),
-            const SizedBox(height: 16),
-            _buildStatusCard(
-              context,
-              AppStrings.analysisSpendingTitle,
-              state.spendingAnalysis,
-              CupertinoIcons.cart,
-              _getStatusColor(scheme, state.spendingAnalysis),
-            ),
-            const SizedBox(height: 16),
-            _buildStatusCard(
-              context,
-              AppStrings.analysisSavingsBehaviorTitle,
-              state.savingsAnalysis,
-              CupertinoIcons.money_dollar,
-              _getStatusColor(scheme, state.savingsAnalysis),
-            ),
-            const SizedBox(height: 20),
-            _buildCategoryInsights(context, state),
-            const SizedBox(height: 20),
-            if (state.weekdayInsight.isNotEmpty)
-              _buildWeekdayInsight(context, state),
-            if (state.weekdayInsight.isNotEmpty) const SizedBox(height: 20),
-            _buildRecommendations(context, state),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
+      ],
+      body: ColoredBox(color: pageBg, child: body),
     );
   }
 
-  Widget _buildBehavioralScoreCard(BuildContext context, AnalysisState state) {
-    return BehavioralScoreCard(
-      score: state.behavioralScore,
-      rating: state.behavioralRating,
-      summary: state.monthComparisonSummary,
-      accentColor: AnalysisColors.forScore(
-        Theme.of(context).colorScheme,
-        state.behavioralScore,
-      ),
-    );
-  }
+  static const _pagePadding = EdgeInsets.fromLTRB(
+    AppLayout.pageGutter,
+    AppSpacing.sm,
+    AppLayout.pageGutter,
+    AppLayout.bottomNavClearance,
+  );
+}
 
-  Widget _buildMonthComparisonCard(BuildContext context, AnalysisState state) {
-    if (state.monthlyTrend.isEmpty) return const SizedBox.shrink();
-    final scheme = Theme.of(context).colorScheme;
-    final maxY = state.monthlyTrend
-        .map((p) => p.expense)
-        .fold(0.0, (a, b) => a > b ? a : b);
-    final palette = GamificationPalette.milestones;
+class _HealthGaugeCard extends StatelessWidget {
+  const _HealthGaugeCard({
+    required this.score,
+    required this.rating,
+    required this.savingsRate,
+    required this.isDark,
+  });
+
+  final int score;
+  final String rating;
+  final double savingsRate;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final textSecondary = isDark ? AppColors.t2Dark : AppColors.t2Light;
+    final chipBg = AppColors.greenS;
+    final chipColor = AppColors.green;
 
     return AppCard(
       margin: EdgeInsets.zero,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          HealthGauge(score: score),
+          const SizedBox(height: AppSpacing.sm),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.xs + 2,
+            ),
+            decoration: BoxDecoration(
+              color: chipBg.withValues(alpha: isDark ? 0.35 : 1),
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+            ),
+            child: Text(
+              '$rating · ${savingsRate.toStringAsFixed(1)}%',
+              style: AppTypography.labelMedium(chipColor).copyWith(
+                fontWeight: AppFontWeights.semiBold,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
           Text(
-            BehavioralStrings.monthComparisonTitle,
-            style: getBoldStyle(fontSize: FontSize.s16, color: scheme.onSurface),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 180,
-            child: BarChart(
-              BarChartData(
-                maxY: maxY <= 0 ? 100 : maxY * 1.2,
-                gridData: const FlGridData(show: false),
-                borderData: FlBorderData(show: false),
-                titlesData: FlTitlesData(
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  leftTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        final index = value.toInt();
-                        if (index < 0 || index >= state.monthlyTrend.length) {
-                          return const SizedBox.shrink();
-                        }
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: Text(
-                            state.monthlyTrend[index].label,
-                            style: getRegularStyle(
-                              fontSize: FontSize.s12,
-                              color: scheme.textMuted,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                barGroups: [
-                  for (var i = 0; i < state.monthlyTrend.length; i++)
-                    BarChartGroupData(
-                      x: i,
-                      barRods: [
-                        BarChartRodData(
-                          toY: state.monthlyTrend[i].expense,
-                          width: 14,
-                          color: i == state.monthlyTrend.length - 1
-                              ? palette[i % palette.length]
-                              : palette[i % palette.length]
-                                  .withValues(alpha: 0.45),
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(6),
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
-              ),
-            ),
+            AppStrings.statsSavingsRateLabel,
+            style: AppTypography.bodySmall(textSecondary),
           ),
         ],
       ),
     );
-  }
-
-  Widget _buildAnomaliesSection(BuildContext context, AnalysisState state) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          BehavioralStrings.anomaliesTitle,
-          style: getBoldStyle(fontSize: FontSize.s20, color: scheme.onSurface),
-        ),
-        const SizedBox(height: 12),
-        if (state.anomalies.isEmpty)
-          ChartEmptyState(
-            icon: CupertinoIcons.checkmark_seal,
-            message: BehavioralStrings.noAnomalies,
-            height: 120,
-          )
-        else
-          ...state.anomalies.map(
-            (anomaly) => _buildAnomalyCard(context, anomaly),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildAnomalyCard(BuildContext context, SpendingAnomaly anomaly) {
-    final scheme = Theme.of(context).colorScheme;
-    final color = _anomalyColor(scheme, anomaly.severity);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(_anomalyIcon(anomaly.type), color: color, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  BehavioralStrings.anomalyTitle(anomaly),
-                  style: getSemiBoldStyle(
-                    fontSize: FontSize.s14,
-                    color: scheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  BehavioralStrings.anomalyMessage(anomaly),
-                  style: getRegularStyle(
-                    fontSize: FontSize.s12,
-                    color: scheme.textMuted,
-                  ).copyWith(height: 1.4),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWeekdayInsight(BuildContext context, AnalysisState state) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: scheme.outline.withValues(alpha: 0.18)),
-      ),
-      child: Row(
-        children: [
-          Icon(CupertinoIcons.calendar, color: scheme.chromeIcon),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  BehavioralStrings.weekdayPatternTitle,
-                  style: getSemiBoldStyle(
-                    fontSize: FontSize.s14,
-                    color: scheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  state.weekdayInsight,
-                  style: getRegularStyle(
-                    fontSize: FontSize.s12,
-                    color: scheme.textMuted,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Color _anomalyColor(ColorScheme scheme, AnomalySeverity severity) {
-    switch (severity) {
-      case AnomalySeverity.critical:
-        return scheme.error;
-      case AnomalySeverity.warning:
-        return scheme.warning;
-      case AnomalySeverity.info:
-        return scheme.chromeIcon;
-    }
-  }
-
-  IconData _anomalyIcon(AnomalyType type) {
-    switch (type) {
-      case AnomalyType.monthlySpike:
-        return Icons.trending_up_rounded;
-      case AnomalyType.overspending:
-        return Icons.warning_amber_rounded;
-      case AnomalyType.categorySpike:
-        return Icons.category_rounded;
-      case AnomalyType.largeTransaction:
-        return Icons.payments_rounded;
-      case AnomalyType.weekendSplurge:
-        return Icons.weekend_rounded;
-      case AnomalyType.spendingBurst:
-        return Icons.receipt_long_rounded;
-    }
-  }
-
-  Widget _buildHealthScoreCard(BuildContext context, AnalysisState state) {
-    final scheme = Theme.of(context).colorScheme;
-    final color = _getHealthColor(scheme, state.financialHealthRating);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(AppLayout.cardRadius),
-        border: Border.all(color: scheme.outline.withValues(alpha: 0.18)),
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                AppStrings.analysisHealthScoreTitle,
-                style: getBoldStyle(
-                  fontSize: FontSize.s18,
-                  color: scheme.onSurface,
-                ),
-              ),
-              Icon(
-                _getHealthIcon(state.financialHealthRating),
-                color: color,
-                size: 32,
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: 150,
-            width: 150,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                SizedBox(
-                  height: 150,
-                  width: 150,
-                  child: CircularProgressIndicator(
-                    value: (state.healthScore.clamp(0, 100)) / 100,
-                    strokeWidth: 12,
-                    backgroundColor: scheme.outline.withValues(alpha: 0.2),
-                    valueColor: AlwaysStoppedAnimation<Color>(color),
-                  ),
-                ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      state.healthScore.toStringAsFixed(0),
-                      style: TextStyle(
-                        fontSize: 40,
-                        fontWeight: FontWeight.bold,
-                        color: color,
-                      ),
-                    ),
-                    Text(
-                      state.financialHealthRating,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: color,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: scheme.groupedFill,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  AppStrings.analysisSavingsRateLabel,
-                  style: getSemiBoldStyle(
-                    fontSize: FontSize.s16,
-                    color: scheme.onSurface,
-                  ),
-                ),
-                Text(
-                  "${state.savingsRate.toStringAsFixed(1)}%",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: _getSavingsRateColor(scheme, state.savingsRate),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusCard(
-    BuildContext context,
-    String title,
-    String description,
-    IconData icon,
-    Color color,
-  ) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: scheme.outline.withValues(alpha: 0.18)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(icon, color: color, size: 24),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: getBoldStyle(
-                      fontSize: FontSize.s16,
-                      color: scheme.onSurface,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: color.withValues(alpha: 0.3)),
-              ),
-              child: Text(
-                description,
-                style: getRegularStyle(
-                  fontSize: FontSize.s14,
-                  color: scheme.textMuted,
-                ).copyWith(height: 1.5),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategoryInsights(BuildContext context, AnalysisState state) {
-    if (state.categoryInsights.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    final scheme = Theme.of(context).colorScheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          AppStrings.analysisCategoryInsightsTitle,
-          style: getBoldStyle(fontSize: FontSize.s20, color: scheme.onSurface),
-        ),
-        const SizedBox(height: 12),
-        ...state.categoryInsights.entries.map((entry) {
-          return AppCard(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  EntityLocalizations.categoryEmoji(entry.key),
-                  style: const TextStyle(fontSize: 26, height: 1.2),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        EntityLocalizations.categoryName(entry.key),
-                        style: getSemiBoldStyle(
-                          fontSize: FontSize.s14,
-                          color: scheme.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        entry.value,
-                        style: getRegularStyle(
-                          fontSize: FontSize.s12,
-                          color: scheme.textMuted,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-      ],
-    );
-  }
-
-  Widget _buildRecommendations(BuildContext context, AnalysisState state) {
-    final recs = state.personalizedRecommendations.isNotEmpty
-        ? state.personalizedRecommendations
-        : state.recommendations;
-    if (recs.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    final scheme = Theme.of(context).colorScheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          BehavioralStrings.personalizedRecsTitle,
-          style: getBoldStyle(fontSize: FontSize.s20, color: scheme.onSurface),
-        ),
-        const SizedBox(height: 12),
-        ...recs.map((recommendation) {
-          final parts = _recommendationParts(recommendation);
-          return Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: scheme.groupedFill,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: scheme.outline.withValues(alpha: 0.2),
-              ),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  parts.$1,
-                  style: const TextStyle(fontSize: 26, height: 1.2),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    parts.$2,
-                    style: getRegularStyle(
-                      fontSize: FontSize.s14,
-                      color: scheme.onSurface,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-      ],
-    );
-  }
-
-  static (String emoji, String body) _recommendationParts(String text) {
-    final trimmed = text.trim();
-    if (trimmed.isEmpty) return ('💡', trimmed);
-
-    final space = trimmed.indexOf(' ');
-    if (space > 0) {
-      final head = trimmed.substring(0, space);
-      if (!_startsWithWord(head)) {
-        return (head, trimmed.substring(space).trimLeft());
-      }
-    }
-    return ('💡', trimmed);
-  }
-
-  static bool _startsWithWord(String token) {
-    return RegExp(r'^[a-zA-Z\u0600-\u06FF]').hasMatch(token);
-  }
-
-  static bool _isAr(String rating, String ar, String en) {
-    final l = rating.toLowerCase();
-    return l == ar || l == en;
-  }
-
-  Color _getHealthColor(ColorScheme scheme, String rating) {
-    return AnalysisColors.health(scheme, rating);
-  }
-
-  IconData _getHealthIcon(String rating) {
-    final l = rating.toLowerCase();
-    if (_isAr(rating, 'ممتاز', 'excellent') || l == 'outstanding') {
-      return Icons.sentiment_very_satisfied;
-    }
-    if (_isAr(rating, 'جيد', 'good')) {
-      return Icons.sentiment_satisfied;
-    }
-    if (_isAr(rating, 'مقبول', 'fair')) {
-      return Icons.sentiment_neutral;
-    }
-    if (_isAr(rating, 'ضعيف', 'weak')) {
-      return Icons.sentiment_dissatisfied;
-    }
-    if (_isAr(rating, 'حرج', 'critical')) {
-      return Icons.sentiment_very_dissatisfied;
-    }
-    return Icons.help_outline;
-  }
-
-  Color _getStatusColor(ColorScheme scheme, String description) {
-    final d = description.toLowerCase();
-    if (d.startsWith('حرج') || d.startsWith('critical') || d.startsWith('🚨')) {
-      return scheme.error;
-    }
-    if (d.startsWith('تحذير') || d.startsWith('warning') || d.startsWith('⚠️')) {
-      return scheme.warning;
-    }
-    if (d.startsWith('تنبيه') || d.startsWith('alert')) return scheme.warning;
-    if (d.startsWith('مقبول') || d.startsWith('fair')) {
-      return scheme.warning.withValues(alpha: 0.85);
-    }
-    if (d.startsWith('جيد') || d.startsWith('good')) return scheme.success;
-    if (d.startsWith('ممتاز') ||
-        d.startsWith('excellent') ||
-        d.startsWith('استثنائي') ||
-        d.startsWith('outstanding')) {
-      return scheme.success;
-    }
-    if (d.startsWith('weak') || d.startsWith('ضعيف')) return scheme.warning;
-    return scheme.primary;
-  }
-
-  Color _getSavingsRateColor(ColorScheme scheme, double rate) {
-    if (rate < 0) return scheme.error;
-    if (rate < 10) return scheme.warning;
-    if (rate < 20) return scheme.warning.withValues(alpha: 0.85);
-    if (rate < 30) return scheme.success.withValues(alpha: 0.85);
-    return scheme.success;
   }
 }

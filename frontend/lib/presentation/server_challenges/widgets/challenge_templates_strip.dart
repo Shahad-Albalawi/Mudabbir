@@ -1,95 +1,88 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mudabbir/presentation/resources/app_layout.dart';
-import 'package:mudabbir/presentation/resources/server_challenge_strings.dart';
-import 'package:mudabbir/presentation/server_challenges/models/challenge_model.dart';
+import 'package:mudabbir/constants/app_theme.dart';
+import 'package:mudabbir/presentation/server_challenges/challenge_copy_helpers.dart';
 import 'package:mudabbir/presentation/server_challenges/providers/challenge_provider.dart';
-import 'package:mudabbir/presentation/widgets/app_card.dart';
-import 'package:mudabbir/presentation/widgets/app_skeleton.dart';
+import 'package:mudabbir/presentation/widgets/section_title_text.dart';
 import 'package:mudabbir/service/haptic_service.dart';
+
+/// Preset quick-start templates — compact navy cards in a horizontal strip.
+class _QuickPreset {
+  const _QuickPreset({
+    required this.templateId,
+    required this.icon,
+    required this.labelAr,
+    required this.labelEn,
+  });
+
+  final String templateId;
+  final IconData icon;
+  final String labelAr;
+  final String labelEn;
+
+  String get label =>
+      ServerChallengeStrings.isArabic ? labelAr : labelEn;
+}
+
+const _presets = [
+  _QuickPreset(
+    templateId: 'save_500_month',
+    icon: Icons.savings_outlined,
+    labelAr: 'ادخار أسبوع',
+    labelEn: 'Weekly save',
+  ),
+  _QuickPreset(
+    templateId: 'no_extra_week',
+    icon: Icons.money_off_csred_outlined,
+    labelAr: 'بدون مصروف',
+    labelEn: 'No spend',
+  ),
+  _QuickPreset(
+    templateId: 'save_500_month',
+    icon: Icons.groups_outlined,
+    labelAr: 'هدف مشترك',
+    labelEn: 'Shared goal',
+  ),
+];
 
 class ChallengeTemplatesStrip extends ConsumerWidget {
   const ChallengeTemplatesStrip({super.key});
 
-  IconData _iconFor(String icon) {
-    switch (icon) {
-      case 'week':
-        return Icons.date_range_rounded;
-      case 'savings':
-        return Icons.savings_outlined;
-      case 'coffee':
-        return Icons.local_cafe_outlined;
-      case 'moon':
-        return Icons.nightlight_round;
-      default:
-        return Icons.flag_outlined;
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
-    final templatesAsync = ref.watch(challengeTemplatesProvider);
+    final textTheme = Theme.of(context).textTheme;
 
-    return templatesAsync.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-        child: Row(
-          children: [
-            AppSkeletonBox(height: 132, width: 220),
-            SizedBox(width: 12),
-            AppSkeletonBox(height: 132, width: 220),
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+          child: SectionTitleText(
+            ServerChallengeStrings.quickTemplatesTitle,
+            style: textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ),
-      ),
-      error: (_, __) => const SizedBox.shrink(),
-      data: (templates) {
-        if (templates.isEmpty) return const SizedBox.shrink();
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    ServerChallengeStrings.templatesTitle,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                  Text(
-                    ServerChallengeStrings.templatesSubtitle,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: scheme.textMuted,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(
-              height: 132,
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                scrollDirection: Axis.horizontal,
-                itemCount: templates.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
-                itemBuilder: (context, index) {
-                  final template = templates[index];
-                  return _TemplateCard(
-                    template: template,
-                    icon: _iconFor(template.icon),
-                    onStart: () => _startTemplate(ref, template.id),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-        );
-      },
+        SizedBox(
+          height: 92,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            scrollDirection: Axis.horizontal,
+            itemCount: _presets.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (context, index) {
+              final preset = _presets[index];
+              return _QuickTemplateCard(
+                icon: preset.icon,
+                label: preset.label,
+                onTap: () => _startTemplate(ref, preset.templateId),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 4),
+      ],
     );
   }
 
@@ -102,74 +95,53 @@ class ChallengeTemplatesStrip extends ConsumerWidget {
   }
 }
 
-class _TemplateCard extends StatelessWidget {
-  final ChallengeTemplateModel template;
-  final IconData icon;
-  final VoidCallback onStart;
-
-  const _TemplateCard({
-    required this.template,
+class _QuickTemplateCard extends StatelessWidget {
+  const _QuickTemplateCard({
     required this.icon,
-    required this.onStart,
+    required this.label,
+    required this.onTap,
   });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor =
+        isDark ? context.colors.primary : AppColors.navy1;
 
     return SizedBox(
-      width: 220,
-      child: AppCard(
-        margin: EdgeInsets.zero,
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-          Row(
-            children: [
-              Icon(icon, color: scheme.chromeIcon, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  template.localizedName,
+      width: 108,
+      child: Material(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: AppColors.gold, size: 26),
+                const SizedBox(height: 8),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Expanded(
-            child: Text(
-              template.localizedDescription,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.textMuted,
+                  style: const TextStyle(
+                    color: AppColors.textInverse,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    height: 1.25,
                   ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Text(
-                ServerChallengeStrings.templateDays(template.durationDays),
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: scheme.textMuted,
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              const Spacer(),
-              TextButton(
-                onPressed: onStart,
-                child: Text(ServerChallengeStrings.useTemplate),
-              ),
-            ],
-          ),
-          ],
         ),
       ),
     );

@@ -1,30 +1,32 @@
-import 'package:flutter/material.dart';
 import 'dart:ui';
+
+import 'package:flutter/material.dart';
+import 'package:mudabbir/constants/app_colors.dart';
+import 'package:mudabbir/constants/app_theme.dart';
 import 'package:mudabbir/presentation/resources/app_icons.dart';
 import 'package:mudabbir/presentation/resources/design_tokens.dart';
-import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/service/haptic_service.dart';
 
-/// iOS-style tab bar — flat, Cupertino icons, brand primary active state.
+/// iOS-style tab bar with center FAB for adding transactions.
 class ModernBottomNavBar extends StatelessWidget {
-  final int currentIndex;
-  final ValueChanged<int> onTap;
-
   const ModernBottomNavBar({
     super.key,
     required this.currentIndex,
-    required this.onTap,
+    required this.onTabSelected,
+    required this.onFabPressed,
   });
+
+  /// Logical tab index: 0 home, 1 statistics, 2 goals, 3 challenges.
+  final int currentIndex;
+  final ValueChanged<int> onTabSelected;
+  final VoidCallback onFabPressed;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final bottomInset = MediaQuery.of(context).padding.bottom;
-
-    final chromeFill = scheme.elevatedSurface.withValues(
-      alpha: scheme.brightness == Brightness.dark ? 0.78 : 0.86,
-    );
+    final colors = context.colors;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final chromeFill = colors.background.withValues(alpha: isDark ? 0.92 : 0.94);
 
     return ClipRect(
       child: BackdropFilter(
@@ -34,9 +36,7 @@ class ModernBottomNavBar extends StatelessWidget {
             color: chromeFill,
             border: Border(
               top: BorderSide(
-                color: scheme.outline.withValues(
-                  alpha: scheme.brightness == Brightness.dark ? 0.45 : 1,
-                ),
+                color: colors.border.withValues(alpha: isDark ? 0.45 : 1),
                 width: 0.5,
               ),
             ),
@@ -44,7 +44,7 @@ class ModernBottomNavBar extends StatelessWidget {
           child: SafeArea(
             top: false,
             child: SizedBox(
-              height: AppLayout.bottomNavHeight + (bottomInset > 0 ? 0 : 6),
+              height: 56,
               child: Row(
                 children: [
                   _Tab(
@@ -53,7 +53,7 @@ class ModernBottomNavBar extends StatelessWidget {
                     label: AppStrings.navHome,
                     index: 0,
                     currentIndex: currentIndex,
-                    onTap: onTap,
+                    onTap: onTabSelected,
                   ),
                   _Tab(
                     icon: AppIcons.statistics,
@@ -61,15 +61,24 @@ class ModernBottomNavBar extends StatelessWidget {
                     label: AppStrings.navStatistics,
                     index: 1,
                     currentIndex: currentIndex,
-                    onTap: onTap,
+                    onTap: onTabSelected,
                   ),
+                  _CenterFab(onPressed: onFabPressed),
                   _Tab(
                     icon: AppIcons.goals,
                     activeIcon: AppIcons.goalsFilled,
                     label: AppStrings.navGoals,
                     index: 2,
                     currentIndex: currentIndex,
-                    onTap: onTap,
+                    onTap: onTabSelected,
+                  ),
+                  _Tab(
+                    icon: AppIcons.trophy,
+                    activeIcon: AppIcons.trophyFilled,
+                    label: AppStrings.navChallenges,
+                    index: 3,
+                    currentIndex: currentIndex,
+                    onTap: onTabSelected,
                   ),
                 ],
               ),
@@ -81,14 +90,50 @@ class ModernBottomNavBar extends StatelessWidget {
   }
 }
 
-class _Tab extends StatelessWidget {
-  final IconData icon;
-  final IconData activeIcon;
-  final String label;
-  final int index;
-  final int currentIndex;
-  final ValueChanged<int> onTap;
+class _CenterFab extends StatelessWidget {
+  const _CenterFab({required this.onPressed});
 
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+
+    return SizedBox(
+      width: 72,
+      child: Transform.translate(
+        offset: const Offset(0, -14),
+        child: Semantics(
+          label: AppStrings.addTransactionTitle,
+          button: true,
+          child: Material(
+            elevation: 0,
+            color: colors.primary,
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: () {
+                HapticService.medium();
+                onPressed();
+              },
+              child: const SizedBox(
+                width: 52,
+                height: 52,
+                child: Icon(
+                  AppIcons.add,
+                  color: AppColors.textInverse,
+                  size: 28,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Tab extends StatelessWidget {
   const _Tab({
     required this.icon,
     required this.activeIcon,
@@ -98,12 +143,17 @@ class _Tab extends StatelessWidget {
     required this.onTap,
   });
 
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final int index;
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final colors = context.colors;
     final isActive = currentIndex == index;
-    final activeColor = scheme.primary;
-    final inactiveColor = scheme.textMuted;
 
     return Expanded(
       child: Semantics(
@@ -117,33 +167,23 @@ class _Tab extends StatelessWidget {
           },
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 isActive ? activeIcon : icon,
-                size: 24,
-                color: isActive ? activeColor : inactiveColor,
+                size: 22,
+                color: isActive ? colors.primary : colors.textTertiary,
               ),
-              const SizedBox(height: AppSpacing.xs),
+              const SizedBox(height: 2),
               Text(
                 label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: AppTypographyScale.caption,
-                  fontWeight: FontWeight.w500,
-                  color: isActive ? activeColor : inactiveColor,
-                  height: 1.1,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              AnimatedContainer(
-                duration: AppMotion.fast,
-                curve: AppMotion.standard,
-                width: isActive ? 22 : 6,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? activeColor
-                      : inactiveColor.withValues(alpha: 0.22),
-                  borderRadius: BorderRadius.circular(999),
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                  color: isActive ? colors.primary : colors.textTertiary,
+                  height: 1.0,
                 ),
               ),
             ],

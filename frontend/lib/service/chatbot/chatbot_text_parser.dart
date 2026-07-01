@@ -1,4 +1,4 @@
-import 'package:mudabbir/presentation/resources/chatbot_ui_strings.dart';
+import 'package:mudabbir/presentation/chatbot/chatbot_copy_helpers.dart';
 
 /// Pure text parsing and intent detection for chatbot commands.
 abstract final class ChatbotTextParser {

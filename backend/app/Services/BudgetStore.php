@@ -49,6 +49,19 @@ class BudgetStore
         ));
     }
 
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function allUsersBudgets(): array
+    {
+        $data = $this->mutateStore(fn (array $data): array => $data);
+
+        return array_values(array_map(
+            fn (array $budget): array => $this->normalizeBudget($budget),
+            $data['budgets'] ?? []
+        ));
+    }
+
     public function find(int $id, int $userId): ?array
     {
         return $this->mutateStore(function (array $data) use ($id, $userId): ?array {

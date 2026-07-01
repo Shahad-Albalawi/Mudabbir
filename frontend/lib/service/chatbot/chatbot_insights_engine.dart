@@ -1,6 +1,6 @@
 import 'package:mudabbir/domain/services/health_score_calculator.dart';
 import 'package:mudabbir/domain/services/insight_thresholds.dart';
-import 'package:mudabbir/presentation/resources/chatbot_ui_strings.dart';
+import 'package:mudabbir/presentation/chatbot/chatbot_copy_helpers.dart';
 import 'package:mudabbir/service/chatbot/chatbot_text_parser.dart';
 
 /// Offline financial insight and reply builders for the chatbot.

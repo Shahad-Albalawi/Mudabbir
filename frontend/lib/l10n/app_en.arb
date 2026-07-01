@@ -129,6 +129,8 @@
   "statsAnalysisSubtitle": "Smart insights and monthly comparisons",
   "snackSuccessTitle": "Success",
   "snackErrorTitle": "Error",
+  "snackWarningTitle": "Notice",
+  "snackInfoTitle": "Info",
   "retry": "Try again",
   "goalsAddAmountTitle": "Add to goal",
   "goalsAmountLabel": "Amount to add",
@@ -157,6 +159,48 @@
   "analysisSavingsRateLabel": "Savings rate:",
   "analysisCategoryInsightsTitle": "Category spending insights",
   "analysisRecommendationsTitle": "Personal recommendations",
+  "analysisBalanceCritical": "Critical: You are in debt. Spending exceeds income by {amount}. Take action now.",
+  "analysisBalanceZero": "Warning: You break even with no savings buffer. Unexpected expenses are risky.",
+  "analysisBalanceLow": "Alert: Low balance ({amount}). Build an emergency fund.",
+  "analysisBalanceFair": "Fair: You have some savings ({amount}), but room to improve.",
+  "analysisBalanceGreat": "Great: Healthy balance of {amount}. Keep it up!",
+  "analysisSpendingCritical": "Critical: You spend {ratio}% of income — living beyond your means.",
+  "analysisSpendingWarning90": "Warning: {ratio}% of income goes to expenses. Very little margin.",
+  "analysisSpendingAlert80": "Alert: {ratio}% of income. Consider cutting non-essentials.",
+  "analysisSpendingFair70": "Fair: {ratio}% of income. Acceptable but improvable.",
+  "analysisSpendingGood50": "Good: {ratio}% of income. Healthy balance.",
+  "analysisSpendingExcellent": "Excellent: Only {ratio}% of income spent. Very disciplined!",
+  "analysisSavingsCritical": "Critical: Negative savings ({rate}%). You spend more than you earn.",
+  "analysisSavingsWeak5": "Weak: {rate}% saved. Aim for at least 10–20%.",
+  "analysisSavingsFair10": "Fair: {rate}% saved. Try to reach 10–20%.",
+  "analysisSavingsGood20": "Good: {rate}% saved. On the right track toward 20%.",
+  "analysisSavingsExcellent30": "Excellent: {rate}% saved. Great discipline!",
+  "analysisSavingsOutstanding": "Outstanding: {rate}% saved. You are a savings champion!",
+  "analysisCategoryDominant40": "Alert: {percent}% — this category dominates spending. Consider alternatives or a budget.",
+  "analysisCategoryHigh30": "High: {percent}% — a large share. Monitor closely.",
+  "analysisCategoryMedium20": "Medium: {percent}% — reasonable level.",
+  "analysisCategoryLow10": "Low: {percent}% — well controlled.",
+  "analysisCategoryVeryLow": "Very low: {percent}% — very disciplined here.",
+  "analysisHealthExcellent": "Excellent",
+  "analysisHealthGood": "Good",
+  "analysisHealthFair": "Fair",
+  "analysisHealthWeak": "Weak",
+  "analysisHealthCritical": "Critical",
+  "analysisRecUrgentNegativeSavings": "🚨 Urgent: Build an emergency budget. Cut all non-essential spending now.",
+  "analysisRecExtraIncome": "💡 Consider extra income sources to cover the gap.",
+  "analysisRecIncreaseSavings": "📊 Increase savings by trimming discretionary spending.",
+  "analysisRecAim1020": "💰 Aim to save at least 10–20% of income.",
+  "analysisRecPushTo20": "✨ You save well! Try pushing toward 20% for optimal financial health.",
+  "analysisRecDebtPayoff": "⚠️ Make a debt payoff plan. Clear debt before other money goals.",
+  "analysisRecEmergencyFund": "🎯 Build an emergency fund covering 3–6 months of expenses.",
+  "analysisRecReviewCategories": "📉 Review spending in: {categories}. Set category budgets.",
+  "analysisRecDiversifyIncome": "💼 Diversify income sources for more stability.",
+  "analysisRecSetGoals": "🎯 Set financial goals to stay motivated and track progress.",
+  "analysisRecIncreaseContributions": "📈 Increase contributions toward: {goals}.",
+  "analysisRecCreateBudgets": "📝 Create budgets per category to control spending better.",
+  "analysisRecGreatJob": "🌟 Great job managing your money. Keep it up!",
+  "analysisRecKeepTracking": "💡 Keep tracking expenses and stick to your savings plan.",
+  "analysisRecReadInvesting": "📚 Read about investing strategies to grow wealth further.",
   "themeModeTooltip": "Theme mode",
   "languageTooltip": "Language",
   "themeSystem": "System",
@@ -252,6 +296,263 @@
   "privacyPolicyContactTitle": "Contact",
   "privacyPolicyContactBody": "For privacy questions, contact the app developer through the Play Store listing or your course supervisor.",
   "exportPdfReport": "Export PDF report",
+  "navChallenges": "Challenges",
+  "notificationsTitle": "Notifications",
+  "addTransactionTitle": "New transaction",
+  "notificationsEmpty": "No notifications yet",
+  "homeActiveGoals": "Active goals",
+  "homeViewAll": "View all",
+  "homeRecentTransactions": "Recent transactions",
+  "homeFinancialHealthSubtitle": "View analysis dashboard",
+  "healthScoreExcellent": "Excellent",
+  "healthScoreGood": "Good",
+  "healthScoreFair": "Fair",
+  "healthScoreWeak": "Weak",
+  "homeQaExpense": "Expense",
+  "homeQaIncome": "Income",
+  "homeQaPdfReport": "PDF report",
+  "homeQaAnalysis": "Analysis",
+  "homeBudgetManage": "Manage",
+  "homeBudgetEmptyCategories": "No categorized spending this month",
+  "offlineSavedPendingSync": "Saved locally. Will sync when online.",
+  "budgetLoadFailed": "Failed to load budgets.",
+  "budgetSyncFailed": "Budget sync failed.",
+  "budgetCardLabel": "Budget",
+  "budgetStatusOverBudget": "Over budget",
+  "budgetStatusNearLimit": "Near limit",
+  "budgetStatusOnTrack": "On track",
+  "budgetRemainingOfPrefix": "remaining of ",
+  "notificationBudgetWarningTitle": "Budget almost used",
+  "notificationBudgetWarningBody": "You spent {spent} of {limit} ﷼ (80%+).",
+  "notificationBudgetExceededTitle": "Budget exceeded",
+  "notificationBudgetExceededBody": "Spending {spent} ﷼ exceeds your {limit} ﷼ limit.",
+  "goalNameLabel": "Goal name",
+  "goalChangePhoto": "Change photo",
+  "goalLoadFailed": "Failed to load goals.",
+  "goalSyncFailed": "Goal sync failed.",
+  "goalDeadlineLabel": "Deadline",
+  "goalProjectedLabel": "Expected completion",
+  "goalRemainingLabel": "Remaining",
+  "goalContributeHint": "Tap to add contribution",
+  "goalMonthlyNeeded": "Needed monthly to meet deadline",
+  "goalAvgMonthly": "Your avg. monthly contributions",
+  "goalStatusOnTrack": "On track",
+  "goalStatusBehind": "Behind schedule",
+  "goalStatusOverdue": "Past deadline",
+  "goalStatusCompleted": "Completed",
+  "goalStatusNotStarted": "Not started",
+  "goalTypeSaving": "Saving",
+  "goalTypeInvestment": "Investment",
+  "goalTypeDebt": "Debt",
+  "goalTypeOther": "Other",
+  "goalNotEnoughData": "Not enough data",
+  "goalContributionTitle": "Add contribution",
+  "goalAddContributionButton": "Add contribution",
+  "goalContributionNote": "Note (optional)",
+  "goalContributionSuccessTitle": "Contribution saved!",
+  "goalContributionSuccessBody": "Added {amount} to your goal.",
+  "goalContributionSnackbarAction": "Keep going!",
+  "goalJourneyMotivationTapHint": "Tap for encouragement",
+  "goalUpdateFailed": "Failed to update goal",
+  "goalCompletedAlertTitle": "Goal reached!",
+  "goalCompletedAlertBody": "Congratulations! You completed \"{name}\".",
+  "goalContributeButtonShort": "Contribute",
+  "goalDetailsButton": "Details",
+  "goalOfPrefix": "of",
+  "goalLeftLabel": "Left",
+  "expensesTitle": "Expenses",
+  "expensesAddButton": "Add expense",
+  "expensesEditButton": "Edit expense",
+  "expensesSaveButton": "Save",
+  "expensesEmptyTitle": "No expenses yet",
+  "expensesEmptySubtitle": "Add your first expense to start tracking spending.",
+  "expensesFilterMonth": "Month",
+  "expensesFilterCategory": "Category",
+  "expensesFilterType": "Type",
+  "expensesFilterAll": "All",
+  "expensesFilterRecurring": "Recurring only",
+  "expensesRecurringMonthly": "Monthly recurring",
+  "expensesAmountTooLarge": "Amount is too large.",
+  "expensesDateRequired": "Date is required.",
+  "expensesDateInvalid": "Invalid date.",
+  "expensesDateCannotBeFuture": "Date cannot be in the future.",
+  "expensesAccountRequired": "Select an account.",
+  "expensesCategoryRequired": "Select a category.",
+  "expensesTextTooLong": "Text is too long (max 255 characters).",
+  "expensesLoadFailed": "Failed to load expenses.",
+  "expensesSyncFailed": "Expense sync failed.",
+  "expensesSaveFailed": "Failed to save expense.",
+  "expensesUpdateFailed": "Failed to update expense.",
+  "expensesDeleteFailed": "Failed to delete expense.",
+  "expensesSavedSuccess": "Expense saved.",
+  "expensesUpdatedSuccess": "Expense updated.",
+  "expensesDeletedSuccess": "Expense deleted.",
+  "expensesBudgetExceeded": "This expense exceeds the remaining budget ({remaining}).",
+  "expensesBudgetLinked": "Budget link: spent {spent} / {budget} — remaining {remaining}.",
+  "expensesViewAll": "View all expenses",
+  "expensesTotalFiltered": "Filtered total",
+  "expensesRecurringBadge": "Recurring",
+  "statsScreenLoadFailed": "Could not load statistics. Pull to refresh or tap retry.",
+  "statsAnalysisLoadFailed": "Could not build your financial analysis.",
+  "statsHomeLoadFailed": "Could not load your financial summary.",
+  "statsScreenEmptyTitle": "No financial data yet",
+  "statsScreenEmptySubtitle": "Add income or expenses to see statistics and insights.",
+  "statsSpendingTrendTitle": "Spending trend",
+  "statsCategoryBreakdownTitle": "Spending by category",
+  "statsQuickInsightsTitle": "Quick insights",
+  "statsTotalExpenseLabel": "Total spending",
+  "statsTotalIncomeLabel": "Total income",
+  "statsNetSavingsLabel": "Net savings",
+  "statsSavingsRateLabel": "Savings rate",
+  "statsDailyAverageLabel": "Daily average",
+  "statsHighestExpenseLabel": "Highest expense",
+  "statsTransactionCountLabel": "Transactions",
+  "statsChartTotalLabel": "Total",
+  "statsNoDataForPeriod": "No data for this period",
+  "statsNoCategoriesYet": "No categories yet",
+  "statsTopCategoryInsight": "{name} accounts for {percent}% of your spending.",
+  "statsSpendingUpInsight": "Spending is up {percent}% vs the previous period.",
+  "statsSpendingDownInsight": "Spending is down {percent}% vs the previous period.",
+  "statsSteadySpendingInsight": "Spending is steady compared to the previous period.",
+  "statsPeriodWeek": "Week",
+  "statsPeriodMonth": "Month",
+  "statsPeriodQuarter": "3 mo",
+  "statsPeriodYear": "Year",
+  "statsChartWeekday0": "Sun",
+  "statsChartWeekday1": "Mon",
+  "statsChartWeekday2": "Tue",
+  "statsChartWeekday3": "Wed",
+  "statsChartWeekday4": "Thu",
+  "statsChartWeekday5": "Fri",
+  "statsChartWeekday6": "Sat",
+  "statsChartMonth0": "Jan",
+  "statsChartMonth1": "Feb",
+  "statsChartMonth2": "Mar",
+  "statsChartMonth3": "Apr",
+  "statsChartMonth4": "May",
+  "statsChartMonth5": "Jun",
+  "statsChartMonth6": "Jul",
+  "statsChartMonth7": "Aug",
+  "statsChartMonth8": "Sep",
+  "statsChartMonth9": "Oct",
+  "statsChartMonth10": "Nov",
+  "statsChartMonth11": "Dec",
+  "txSheetCatShopping": "Shopping",
+  "txSheetCatTransport": "Transport",
+  "txSheetCatRestaurants": "Restaurants",
+  "txSheetCatHealth": "Health",
+  "txSheetCatEntertainment": "Entertainment",
+  "txSheetCatHousing": "Housing",
+  "txSheetCatSalary": "Salary",
+  "txSheetCatOther": "Other",
+  "entityCatSalary": "Salary",
+  "entityCatBonus": "Bonus",
+  "entityCatGift": "Gift",
+  "entityCatOther": "Other",
+  "entityCatFood": "Food",
+  "entityCatTransport": "Transport",
+  "entityCatShopping": "Shopping",
+  "entityCatBills": "Bills",
+  "entityCatHealth": "Health",
+  "entityCatEntertainment": "Entertainment",
+  "entityAccountCash": "Cash",
+  "entityAccountBank": "Bank",
+  "homeGreetingHello": "Hello 👋",
+  "homeGreetingNamed": "Hello, {name} 👋",
+  "homeMonthlyReportTitle": "Monthly report",
+  "goalDeadlinePassed": "Deadline passed",
+  "goalDaysLeft": "{days} days left",
+  "goalMilestoneComplete": "Complete",
+  "goalMotivationBannerStart": "Start your journey! Every riyal brings you closer",
+  "goalMotivationBannerEarly": "{percent}% — great first step! Keep going",
+  "goalMotivationBannerHalf": "Halfway there! You are ahead of most savers",
+  "goalMotivationBannerNear": "So close! The finish line is within reach",
+  "goalMotivationBannerDone": "Well done! You reached your goal",
+  "behavioralScoreTitle": "Financial analysis",
+  "behavioralScoreSubtitle": "Quick snapshot of your spending health this month",
+  "behavioralViewDetailsLabel": "Detailed analysis",
+  "behavioralViewDetailsHint": "Comparisons, patterns & tips",
+  "behavioralMonthComparisonTitle": "Month-over-month comparison",
+  "behavioralAnomaliesTitle": "Unusual spending patterns",
+  "behavioralNoAnomalies": "No unusual patterns detected this month. Keep it up!",
+  "behavioralWeekdayPatternTitle": "Spending by day",
+  "behavioralPersonalizedRecsTitle": "Personalized tips",
+  "behavioralPreviousMonthLabel": "Last month",
+  "behavioralTrailingAvgLabel": "3-month avg",
+  "behavioralNoWeekdayData": "Not enough data to analyze daily patterns yet.",
+  "behavioralRatingExcellent": "Excellent",
+  "behavioralRatingGood": "Good",
+  "behavioralRatingFair": "Fair",
+  "behavioralRatingNeedsWork": "Needs work",
+  "behavioralRatingAtRisk": "At risk",
+  "behavioralMonthlySpikeTitle": "Monthly spending spike",
+  "behavioralOverspendingTitle": "Spending exceeds income",
+  "behavioralCategorySpikeTitle": "Category surge",
+  "behavioralLargeTransactionTitle": "Large transaction",
+  "behavioralWeekendSplurgeTitle": "Weekend spending",
+  "behavioralSpendingBurstTitle": "High transaction frequency",
+  "behavioralUnusualPatternTitle": "Unusual pattern",
+  "behavioralMonthlySpikeMessage": "This month is {pct}% above your 3-month average ({amount}).",
+  "behavioralOverspendingMessage": "You overspent by {amount} this month.",
+  "behavioralCategorySpikeMessage": "{category} rose {pct}% vs last month.",
+  "behavioralLargeTransactionMessage": "A single expense of {amount} stands out.",
+  "behavioralWeekendSplurgeMessage": "{pct}% of spending happens on weekends.",
+  "behavioralSpendingBurstMessage": "{count} expense transactions this month — review small daily purchases.",
+  "behavioralReviewPattern": "Review this pattern.",
+  "behavioralMonthCompareNoHistory": "This month: {amount}. Add more history for comparisons.",
+  "behavioralMonthCompareUp": "You spent {pct}% more than last month ({current} vs {previous}).",
+  "behavioralMonthCompareDown": "You spent {pct}% less than last month. Great discipline!",
+  "behavioralMonthCompareStable": "Spending is stable vs last month ({current} vs {previous}).",
+  "behavioralMonthCompareTrailing": "This month: {current} vs 3-month avg {avg}.",
+  "behavioralWeekdayInsight": "You spend most on {day} ({amount} this month).",
+  "behavioralRecReduceVsLastMonth": "📊 Spending rose vs last month — review subscriptions and dining out.",
+  "behavioralRecKeepDiscipline": "✨ You are below your 3-month average. Maintain this pace!",
+  "behavioralRecIncreaseSavings": "💰 Try saving at least 10% of income this month.",
+  "behavioralRecSetGoals": "🎯 Set a savings goal to stay motivated.",
+  "behavioralRecCreateBudget": "📝 Add category budgets to control spending.",
+  "behavioralRecGreatScore": "🌟 Strong financial behavior this month!",
+  "behavioralRecDefault": "💡 Keep logging expenses to sharpen your insights.",
+  "behavioralRecMonthlySpike": "📉 Set a weekly spending cap to bring this month back in line.",
+  "behavioralRecOverspending": "🚨 Pause non-essential purchases until income covers expenses.",
+  "behavioralRecCategorySpike": "🎯 Create a category budget for {category}.",
+  "behavioralRecLargeTransaction": "🔍 Confirm large purchases were planned; split future ones if possible.",
+  "behavioralRecWeekendSplurge": "📅 Plan weekend activities with a fixed budget beforehand.",
+  "behavioralRecSpendingBurst": "☕ Track small daily expenses — they add up quickly.",
+  "authAppBrandName": "Mudabbir",
+  "authOrDivider": "or",
+  "authForgotPassword": "Forgot password?",
+  "authForgotPasswordSoon": "Password recovery is coming soon",
+  "authLoginTitle": "Welcome",
+  "authLoginTagline": "Sign in to manage your money",
+  "authRegisterTitle": "Create account",
+  "authRegisterTagline": "Start your smart money journey",
+  "authSignUpNow": "Sign up now",
+  "authRegisterSubmit": "Create account",
+  "authFullNameLabel": "Full name",
+  "authFullNameRequired": "Full name is required",
+  "authNameRequired": "Name is required",
+  "authEmailFormatInvalid": "Enter a valid email address",
+  "authConfirmPasswordRequired": "Please confirm your password",
+  "authTermsAcceptRequired": "You must accept the terms and conditions",
+  "authTermsCheckboxLabel": "I agree to the terms of service and privacy policy",
+  "authContinueAsGuest": "Continue as guest",
+  "authNetworkError": "Check your internet connection",
+  "authInvalidCredentials": "Incorrect email or password",
+  "settingsAppearance": "Appearance",
+  "settingsNotificationsLabel": "Notifications",
+  "settingsTermsLink": "Terms",
+  "settingsTermsTitle": "Terms of Service",
+  "settingsEditProfile": "Edit profile",
+  "settingsProfileNameLabel": "Display name",
+  "settingsProfileSaved": "Profile updated",
+  "settingsVersionLabel": "Version {version}",
+  "settingsTermsIntro": "By using Mudabbir you agree to these terms. The app helps you track personal finances; it does not provide regulated financial advice.",
+  "settingsTermsUseTitle": "Acceptable use",
+  "settingsTermsUseBody": "Use the app lawfully. Do not attempt to access other users' data or disrupt the service.",
+  "settingsTermsDataTitle": "Your data",
+  "settingsTermsDataBody": "You own the financial data you enter. Export or delete it by contacting support or removing your account.",
+  "settingsTermsChangesTitle": "Changes",
+  "settingsTermsChangesBody": "We may update these terms. Continued use after changes means you accept the updated terms.",
   "@txNoCategories": {
     "placeholders": {
       "type": {
@@ -307,6 +608,963 @@
   "@goalDeleteConfirmBody": {
     "placeholders": {
       "goalName": {
+        "type": "String"
+      }
+    }
+  },
+  "@notificationBudgetWarningBody": {
+    "placeholders": {
+      "spent": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "@notificationBudgetExceededBody": {
+    "placeholders": {
+      "spent": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "@goalContributionSuccessBody": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@goalCompletedAlertBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@expensesBudgetExceeded": {
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "@expensesBudgetLinked": {
+    "placeholders": {
+      "spent": {
+        "type": "String"
+      },
+      "budget": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsTopCategoryInsight": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsSpendingUpInsight": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsSpendingDownInsight": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "@behavioralMonthlySpikeMessage": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@behavioralOverspendingMessage": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@behavioralCategorySpikeMessage": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "@behavioralLargeTransactionMessage": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@behavioralWeekendSplurgeMessage": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "@behavioralSpendingBurstMessage": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "@behavioralMonthCompareNoHistory": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@behavioralMonthCompareUp": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      },
+      "current": {
+        "type": "String"
+      },
+      "previous": {
+        "type": "String"
+      }
+    }
+  },
+  "@behavioralMonthCompareDown": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "@behavioralMonthCompareStable": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "previous": {
+        "type": "String"
+      }
+    }
+  },
+  "@behavioralMonthCompareTrailing": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "avg": {
+        "type": "String"
+      }
+    }
+  },
+  "@behavioralWeekdayInsight": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@behavioralRecCategorySpike": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "@settingsVersionLabel": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "chatbotReduceCategoryHint": "To cut spending in a category, try: \"analyze food category\" or \"how do I reduce transport spending?\".",
+  "chatbotUndoNone": "Nothing recent to undo.",
+  "chatbotUndoDone": "Undone: {summary} ↩️",
+  "chatbotUndoMissing": "Could not undo — record not found.",
+  "chatbotUndoError": "Something went wrong while undoing.",
+  "chatbotWhatIfError": "Could not run the what-if scenario. Try again.",
+  "chatbotSubsError": "Could not analyze subscriptions right now. Try later.",
+  "chatbotInsightError": "Could not compute financial indicators now. Try again shortly.",
+  "chatbotGenericProcessError": "Sorry, something went wrong processing your request. Please try again.",
+  "chatbotPendingHint": "You have a pending action. Type \"confirm\" to run or \"cancel\" to abort.",
+  "chatbotPendingCancelled": "Pending action cancelled.",
+  "chatbotGoalCreatedSummary": "Create goal {name}",
+  "chatbotGoalCreatedOk": "Goal \"{name}\" created successfully.",
+  "chatbotBudgetCreatedSummary": "Create budget {amount} ﷼",
+  "chatbotBudgetCreatedOk": "Next month's budget created: {amount} ﷼.",
+  "chatbotNeedGoalAmount": "To create a goal I need an amount. Example: create goal car 25000 in 12 months.",
+  "chatbotNeedBudgetAmount": "I need a budget amount. Example: create budget 3000 next month.",
+  "chatbotNoAccountForBudget": "No account available to attach this budget.",
+  "chatbotDefaultNewGoalName": "My new goal",
+  "chatbotInsightBody": "Financial health score: {score}/100\\nStatus: {status}\\n\\n{alertBlock}",
+  "chatbotNoSpendingAlerts": "No unusual spending alerts right now.",
+  "chatbotWhatIfNeedAmount": "For a what-if scenario, include an amount. Example: if I save 300 a month when do I reach my goal?",
+  "chatbotWhatIfNoGoals": "You have no saved goals yet. Add a goal first, then run a what-if.",
+  "chatbotWhatIfAllGoalsDone": "Great — it looks like you've completed your current goals.",
+  "chatbotNextGoalFallback": "Your next goal",
+  "chatbotOptimizerNoGoals": "No goals yet. Add goals first so I can suggest a savings split.",
+  "chatbotOptimizerNoSurplus": "No clear monthly surplus yet. Reduce expenses first for a precise goal plan.",
+  "chatbotDefaultGoalWord": "Goal",
+  "chatbotOptimizerGoalsDone": "Great — your current goals are nearly complete.",
+  "chatbotOptimizerLine": "- {name}: {perMonth} ﷼/month (remaining {remaining} ﷼)",
+  "chatbotOptimizerIntro": "Goal optimizer\\nBased on your monthly surplus ({monthly} ﷼), suggested split:\\n",
+  "chatbotAlertExpenseOverIncome": "This month's spending is higher than income.",
+  "chatbotAlertSpendingGrowth": "Spending rose about {pct}% vs last month.",
+  "chatbotSubsNone": "I didn't find clear recurring subscriptions in your transactions.",
+  "chatbotSubsLine": "- {name}: ~{amount} ﷼ (repeated {count} times)",
+  "chatbotSubsSummary": "Recurring patterns found 📌\\n{lines}\\n\\nApprox. monthly total: {total} ﷼",
+  "chatbotUnnamedRecurring": "Unnamed recurring expense",
+  "chatbotPdfOk": "Monthly PDF report generated and share sheet opened.",
+  "chatbotPdfFail": "Could not create the PDF report. Ensure you have data and try again.",
+  "chatbotDlgCreateGoalTitle": "Quick create goal",
+  "chatbotDlgGoalNameLabel": "Goal name",
+  "chatbotDlgGoalTargetLabel": "Target amount",
+  "chatbotRequiredField": "Required",
+  "chatbotInvalidNumber": "Invalid number",
+  "chatbotDlgCreate": "Create",
+  "chatbotDlgAdjustBudgetTitle": "Quick budget",
+  "chatbotDlgMonthlyBudgetLabel": "Monthly budget amount",
+  "chatbotDlgSave": "Save",
+  "chatbotDlgCancel": "Cancel",
+  "chatbotGoalCreatedDialog": "Goal \"{name}\" created successfully.",
+  "chatbotBudgetCreatedDialog": "Next month's budget set to {amount} ﷼.",
+  "chatbotWhoAmI": "I'm Mudabbir, your smart assistant for personal finance.",
+  "chatbotGreetBack": "Hello! How can I help you manage your money today?",
+  "chatbotDateToday": "Today is {day}, {d} {month} {y}.",
+  "chatbotThanksReply": "You're welcome — happy to help anytime.",
+  "chatbotHowAreYouReply": "I'm doing well, thanks for asking. How can I help with your finances?",
+  "chatbotJsonNoData": "No data",
+  "chatbotRateLimited": "Sorry, rate limit reached. Try again later.",
+  "chatbotServer53": "Smart service unavailable (server error 53). Try again shortly.",
+  "chatbotHttpError": "Connection error (code: {code}).",
+  "chatbotRequestTimeout": "The request took too long. Check your connection and try again.",
+  "chatbotNoInternet": "No internet connection. Please check your network.",
+  "chatbotAssistantUnreachable": "Could not reach the assistant service. Try again later.",
+  "chatbotParseResponseFail": "Sorry, I couldn't parse the response.",
+  "chatbotParseError": "Sorry, an error occurred while reading the response.",
+  "chatbotChatCleared": "Chat cleared. How can I help?",
+  "chatbotQuickCreateGoal": "Create goal",
+  "chatbotQuickAdjustBudget": "Adjust budget",
+  "chatbotQuickReduceCategory": "Cut category spend",
+  "chatbotQuickPdf": "PDF report",
+  "chatbotQuickUndo": "Undo last action",
+  "chatbotSuggestBalanceTitle": "Ask about your balance",
+  "chatbotSuggestBalanceSubtitle": "Track your accounts",
+  "chatbotSuggestExpenseTitle": "Spending analysis",
+  "chatbotSuggestExpenseSubtitle": "Review transactions and budgets",
+  "chatbotSuggestGoalsTitle": "Track goals",
+  "chatbotSuggestGoalsSubtitle": "See progress toward your goals",
+  "chatbotSuggestBalancePrompt": "What is my balance this month?",
+  "chatbotSuggestExpensePrompt": "Analyze my spending this month",
+  "chatbotSuggestGoalsPrompt": "How are my savings goals progressing?",
+  "chatbotClearDialogTitle": "Clear chat",
+  "chatbotClearDialogBody": "Start a new chat? All current messages will be removed.",
+  "chatbotClearDialogConfirm": "Clear",
+  "chatbotLocalFallbackQuotaNotice": "Smart coach is temporarily busy — here is an answer from your saved data:",
+  "chatbotLocalFallbackOfflineNotice": "Could not reach the cloud coach — here is an answer from your saved data:",
+  "chatbotLocalFallbackNoGoals": "You have no saved goals yet. Add one from the Goals tab or say \"create goal\".",
+  "chatbotLocalFallbackGoalLine": "- {name}: {current} / {target} ﷼ ({pct}%)",
+  "chatbotLocalFallbackGoalsIntro": "Your goals:\\n{lines}\\n\\nMonthly surplus: {surplus} ﷼ (income {income} ﷼).",
+  "chatbotLocalFallbackNoBudget": "No active budget found. This month's spending so far: {expense} ﷼.",
+  "chatbotLocalFallbackNoExpenses": "No expense transactions recorded this month yet.",
+  "chatbotLocalFallbackCategoryLine": "- {name}: {amount} ﷼ ({share}%)",
+  "chatbotLocalFallbackExpenses": "This month's spending: {total} ﷼\\nTop categories:\\n{lines}",
+  "chatbotLocalFallbackNoCategoryData": "No category spending data this month.",
+  "chatbotLocalFallbackTopCategory": "Top category: {name} ({amount} ﷼)",
+  "chatbotLocalFallbackGoalsNone": "No active goals in progress.",
+  "chatbotLocalFallbackGoalsCount": "Active goals: {count}",
+  "chatbotLocalFallbackOtherCategory": "Other",
+  "chatbotScreenTitle": "Mudabbir AI",
+  "chatbotSuggestSavingsTitle": "Save more",
+  "chatbotSuggestSavingsPrompt": "How can I save more?",
+  "chatbotAssistantSubtitle": "Ask about your budget, goals, and spending",
+  "chatbotAssistantHeadline": "Your smart financial coach",
+  "chatbotSuggestedQuestionsTitle": "Suggested questions",
+  "chatbotRefreshSuggestionsTooltip": "New suggestions",
+  "chatbotInputHint": "Ask about your budget...",
+  "chatbotClearChatTitle": "Clear conversation",
+  "chatbotClearChatMessage": "Delete all messages in this chat?",
+  "chatbotClearChatConfirm": "Clear",
+  "challengeUnexpectedError": "Something went wrong. Please try again.",
+  "challengeUnexpectedErrorLater": "Something went wrong. Please try again later.",
+  "challengeLoadFailed": "Could not load challenges.",
+  "challengeSyncFailed": "Could not sync challenge data.",
+  "challengeChallengeCreatedSuccess": "Challenge created successfully",
+  "challengeChallengeUpdatedSuccess": "Challenge updated successfully",
+  "challengeChallengeDeletedSuccess": "Challenge deleted successfully",
+  "challengeUserInvitedSuccess": "Invitation sent successfully",
+  "challengeParticipantRemovedSuccess": "Participant removed successfully",
+  "challengeChallengeMarkedAchieved": "Challenge marked as achieved! 🎉",
+  "challengeChallengeMarkedNotAchieved": "Challenge marked as not achieved",
+  "challengeInvitationAccepted": "Challenge accepted! 🎉",
+  "challengeInvitationRejected": "Invitation declined",
+  "challengeServerMaintenanceHint": "The server may be under maintenance. Try again shortly.",
+  "challengeRetry": "Retry",
+  "challengeInviteAppBarTitle": "Share the app",
+  "challengeInviteFriendsTitle": "Invite friends",
+  "challengeInviteFriendsSubtitle": "Share the app with friends and earn rewards together!",
+  "challengeInviteShareButton": "Share app",
+  "challengeInviteShareMessage": "Join me on Mudabbir! Use my invite link to get started: {link}",
+  "challengeInviteShareSubject": "Try Mudabbir!",
+  "challengeLocalPopupTitle": "Create challenge",
+  "challengeLocalPopupSubtitle": "Set a new money challenge",
+  "challengeLocalNameSection": "Challenge name",
+  "challengeLocalNameHint": "Enter challenge name",
+  "challengeLocalNameRequired": "Name is required",
+  "challengeLocalStatusSection": "Status",
+  "challengeLocalStatusHint": "Select status",
+  "challengeLocalStatusRequired": "Please select a status",
+  "challengeLocalPeriodSection": "Challenge period",
+  "challengeLocalStartDate": "Start date",
+  "challengeLocalEndDate": "End date",
+  "challengeLocalStartRequired": "Start date is required",
+  "challengeLocalEndRequired": "End date is required",
+  "challengeLocalEndAfterStart": "End date must be after start date",
+  "challengeLocalCancel": "Cancel",
+  "challengeLocalCreateButton": "Create challenge",
+  "challengeLocalCreateSuccess": "Challenge created! 🎉",
+  "challengeLocalCreateFailed": "Could not create challenge: {e}",
+  "challengeListTitle": "Challenges",
+  "challengeNewChallengeFab": "New challenge",
+  "challengeTabActive": "Active",
+  "challengeTabUpcoming": "Upcoming",
+  "challengeTabCompleted": "Completed",
+  "challengeTabInvitations": "Invitations",
+  "challengeTabExpired": "Ended",
+  "challengeEmptyActive": "No active challenges",
+  "challengeEmptyActiveSubtitle": "Create a challenge and invite friends to save together.",
+  "challengeEmptyUpcoming": "No upcoming challenges",
+  "challengeEmptyUpcomingSubtitle": "Scheduled challenges will appear here.",
+  "challengeEmptyCompleted": "No completed challenges",
+  "challengeEmptyCompletedSubtitle": "Finished challenges are listed here.",
+  "challengeEmptyExpired": "No ended challenges",
+  "challengeEmptyExpiredSubtitle": "Expired challenges without completion appear here.",
+  "challengeEmptyInvitations": "No pending invitations",
+  "challengeEmptyInvitationsSubtitle": "When friends invite you to a challenge, it appears here.",
+  "challengeDailyCheckInStripTitle": "Daily check-in",
+  "challengeCheckInForChallenge": "Check in — {name}",
+  "challengeCreateTitle": "Create challenge",
+  "challengeSectionDetails": "Challenge details",
+  "challengeSectionSchedule": "Schedule",
+  "challengeFieldChallengeName": "Challenge name",
+  "challengeHintChallengeName": "e.g. Save 1,000 SAR this month",
+  "challengeValNameRequired": "Please enter a name",
+  "challengeValNameMin": "Name must be at least 3 characters",
+  "challengeFieldTargetAmount": "Target amount",
+  "challengeHintTargetAmount": "e.g. 1000",
+  "challengeCurrencyAmountPrefix": "SAR ",
+  "challengeValAmountRequired": "Please enter target amount",
+  "challengeValAmountInvalid": "Please enter a valid amount",
+  "challengePickStartDate": "Please pick a start date",
+  "challengePickEndDate": "Please pick an end date",
+  "challengeChooseDate": "Choose date",
+  "challengeCreateSubmit": "Create challenge",
+  "challengeDetailTitle": "Challenge details",
+  "challengeStartDateLabel": "Start date",
+  "challengeEndDateLabel": "End date",
+  "challengeStatusLabel": "Status",
+  "challengeTargetAmountLabel": "Target amount",
+  "challengeCurrentAmountLabel": "Current amount",
+  "challengeCreatorTargetLine": "Target amount: ${amount}",
+  "challengeProgressLabel": "Progress",
+  "challengeDaysUntilStart": "Starts in {days} days",
+  "challengeDaysRemaining": "{days} days left",
+  "challengeUpdateAmountAchieved": "Goal reached",
+  "challengeUpdateAmountButton": "Update amount",
+  "challengeAddAmountTitle": "Add amount",
+  "challengeAddAmountSubmit": "Add",
+  "challengeAddAmountLabel": "Amount to add",
+  "challengeAddAmountHint": "Enter amount",
+  "challengeGoalCongrats": "🎉 Congratulations! Goal reached",
+  "challengeAddedAmountSuccess": "Added ${amount} successfully",
+  "challengeInvalidAmountSnack": "Please enter a valid amount",
+  "challengeParticipantsTitle": "Participants ({n})",
+  "challengeInviteButton": "Invite",
+  "challengeInviteDialogTitle": "Invite user",
+  "challengeInviteEmailLabel": "Email",
+  "challengeInviteEmailHint": "Enter user email",
+  "challengeInviteInvalidEmail": "Please enter a valid email.",
+  "challengeRemoveParticipantTitle": "Remove participant",
+  "challengeRemoveParticipantBody": "Are you sure you want to remove this participant?",
+  "challengeRemoveButton": "Remove",
+  "challengeCancel": "Cancel",
+  "challengeCardCompleted": "Completed",
+  "challengeCardExpired": "Ended",
+  "challengeCardActive": "Active",
+  "challengeActiveSectionTitle": "Active",
+  "challengeQuickTemplatesTitle": "Quick start",
+  "challengeLogButton": "Log",
+  "challengeStreakFire": "🔥 {days} days",
+  "challengeCardUpcoming": "Upcoming",
+  "challengeGoalAmount": "Goal: ${amount}",
+  "challengeAcceptedCount": "{n} accepted",
+  "challengePendingTitle": "Pending invitations",
+  "challengePendingEmpty": "No pending invitations",
+  "challengePendingEmptySubtitle": "When someone invites you to a challenge, it appears here.",
+  "challengePendingStatus": "Pending",
+  "challengeFromCreator": "From: {name}",
+  "challengeTotalAmount": "Total amount: ${amount}",
+  "challengeAcceptedBeforeInvite": "{n} participant(s) joined before the invite",
+  "challengeSplitHint": "If you accept, the amount will be split evenly among all participants.",
+  "challengeDecline": "Decline",
+  "challengeAccept": "Accept",
+  "challengeRoleCreator": "Creator",
+  "challengeInviteAccepted": "Accepted",
+  "challengeInvitePendingStatus": "Pending",
+  "challengeInviteDeclined": "Declined",
+  "challengeTemplatesTitle": "Ready-made challenges",
+  "challengeTemplatesSubtitle": "Start a popular challenge in one tap",
+  "challengeUseTemplate": "Start",
+  "challengeTemplateDays": "{days} days",
+  "challengeStreakTitle": "Daily streak",
+  "challengeStreakDays": "{days} day streak",
+  "challengeCheckInButton": "Check in today",
+  "challengeAlreadyCheckedIn": "Already checked in today",
+  "challengeLeaderboardTitle": "Leaderboard",
+  "challengeLeaderboardEmpty": "No participants yet",
+  "challengeRankLabel": "#{rank}",
+  "challengeBadge7Title": "7-day streak",
+  "challengeBadge30Title": "30-day streak",
+  "challengeBadge7Earned": "You earned the 7-day badge!",
+  "challengeBadge30Earned": "You earned the 30-day badge!",
+  "challengeCheckInSuccess": "Checked in successfully",
+  "challengeTemplateCreated": "Challenge started from template",
+  "challengeOfflineBanner": "Offline — showing saved data. Changes will sync when you reconnect.",
+  "challengeProgressSaved": "Progress saved",
+  "challengeProgressQueuedOffline": "Saved locally — will sync when online",
+  "challengeCreateRequiresOnline": "Creating a challenge requires an internet connection. Connect and try again.",
+  "challengeWriteRequiresOnline": "This action requires an internet connection. Connect and try again.",
+  "@chatbotUndoDone": {
+    "placeholders": {
+      "summary": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotGoalCreatedSummary": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotGoalCreatedOk": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotBudgetCreatedSummary": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotBudgetCreatedOk": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotInsightBody": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      },
+      "alertBlock": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotOptimizerLine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "perMonth": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotOptimizerIntro": {
+    "placeholders": {
+      "monthly": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotAlertSpendingGrowth": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotSubsLine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@chatbotSubsSummary": {
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotBudgetCreatedDialog": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotDateToday": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "d": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      },
+      "y": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotHttpError": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "@chatbotLocalFallbackGoalLine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "current": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotLocalFallbackGoalsIntro": {
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      },
+      "surplus": {
+        "type": "String"
+      },
+      "income": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotLocalFallbackNoBudget": {
+    "placeholders": {
+      "expense": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotLocalFallbackCategoryLine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "share": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotLocalFallbackExpenses": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      },
+      "lines": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotLocalFallbackTopCategory": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotLocalFallbackGoalsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@challengeInviteShareMessage": {
+    "placeholders": {
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "@challengeLocalCreateFailed": {
+    "placeholders": {
+      "e": {
+        "type": "String"
+      }
+    }
+  },
+  "@challengeCheckInForChallenge": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@challengeCreatorTargetLine": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@challengeDaysUntilStart": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "@challengeDaysRemaining": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "@challengeAddedAmountSuccess": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@challengeParticipantsTitle": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "@challengeStreakFire": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "@challengeAcceptedCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "@challengeFromCreator": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@challengeAcceptedBeforeInvite": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "@challengeTemplateDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "@challengeStreakDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "@challengeRankLabel": {
+    "placeholders": {
+      "rank": {
+        "type": "int"
+      }
+    }
+  },
+  "chatbotPreviewGoal": "Review 🧾\n- Action: Create goal\n- Name: {name}\n- Target: {amount} ﷼\n- Duration: {months} months\n\nType \"confirm\" to apply or \"cancel\" to abort.",
+  "chatbotPreviewBudget": "Review 🧾\n- Action: Create budget\n- Amount: {amount} ﷼\n- Period: {start} to {end}\n\nType \"confirm\" to apply or \"cancel\" to abort.",
+  "chatbotWhatIfScenario": "What-if scenario 💡\n- If you save {amount} ﷼ / month\n- Goal: {name}\n- Remaining: {remaining} ﷼\n- Estimated time: ~{months} months\n- Estimated finish date: {eta}",
+  "chatbotTimeNow": "The time is {displayHour}:{minute} {period}.",
+  "chatbotLocalFallbackBalance": "This month:\n• Income: {income} ﷼\n• Expenses: {expense} ﷼\n• Balance: {balance} ﷼\n• Health score: {score}/100 ({status})",
+  "chatbotLocalFallbackSnapshot": "Quick snapshot 📊\n• Income: {income} ﷼ | Expenses: {expense} ﷼ | Balance: {balance} ﷼\n• Health score: {score}/100 ({status})\n• Alerts: {alerts}\n• {topCategory}\n• {goalsLine}",
+  "chatbotLocalFallbackBudget": "Budget: {budget} ﷼\nSpent: {spent} ﷼ ({usedPct}%)\nRemaining: {remaining} ﷼",
+  "chatbotInsightStatusStrong": "Strong",
+  "chatbotInsightStatusGood": "Good with room to improve",
+  "chatbotInsightStatusNeeds": "Needs attention",
+  "chatbotTimePeriodAm": "AM",
+  "chatbotTimePeriodPm": "PM",
+  "challengeStatusActiveLabel": "Active",
+  "challengeStatusCompletedLabel": "Completed",
+  "challengeStatusCancelledLabel": "Cancelled",
+  "challengeParticipantCountOne": "1 participant",
+  "challengeParticipantCountMany": "{n} participants",
+  "chatbotWeekday0": "Sunday",
+  "chatbotWeekday1": "Monday",
+  "chatbotWeekday2": "Tuesday",
+  "chatbotWeekday3": "Wednesday",
+  "chatbotWeekday4": "Thursday",
+  "chatbotWeekday5": "Friday",
+  "chatbotWeekday6": "Saturday",
+  "chatbotMonth0": "January",
+  "chatbotMonth1": "February",
+  "chatbotMonth2": "March",
+  "chatbotMonth3": "April",
+  "chatbotMonth4": "May",
+  "chatbotMonth5": "June",
+  "chatbotMonth6": "July",
+  "chatbotMonth7": "August",
+  "chatbotMonth8": "September",
+  "chatbotMonth9": "October",
+  "chatbotMonth10": "November",
+  "chatbotMonth11": "December",
+  "chatbotDefaultSuggestion0": "How can I save more?",
+  "chatbotDefaultSuggestion1": "Analyze my spending",
+  "chatbotDefaultSuggestion2": "Monthly savings plan",
+  "chatbotAlternateSuggestion0": "Where do I spend the most?",
+  "chatbotAlternateSuggestion1": "How do I fix my budget?",
+  "chatbotAlternateSuggestion2": "Tips to cut expenses",
+  "chatbotAlternateSuggestion3": "When will I reach my goal?",
+  "chatbotAlternateSuggestion4": "Compare to last month",
+  "chatbotAlternateSuggestion5": "Best money tip for today?",
+  "@chatbotPreviewGoal": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "@chatbotPreviewBudget": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotWhatIfScenario": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      },
+      "months": {
+        "type": "int"
+      },
+      "eta": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotTimeNow": {
+    "placeholders": {
+      "displayHour": {
+        "type": "int"
+      },
+      "minute": {
+        "type": "String"
+      },
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotLocalFallbackBalance": {
+    "placeholders": {
+      "income": {
+        "type": "String"
+      },
+      "expense": {
+        "type": "String"
+      },
+      "balance": {
+        "type": "String"
+      },
+      "score": {
+        "type": "int"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotLocalFallbackSnapshot": {
+    "placeholders": {
+      "income": {
+        "type": "String"
+      },
+      "expense": {
+        "type": "String"
+      },
+      "balance": {
+        "type": "String"
+      },
+      "score": {
+        "type": "int"
+      },
+      "status": {
+        "type": "String"
+      },
+      "alerts": {
+        "type": "String"
+      },
+      "topCategory": {
+        "type": "String"
+      },
+      "goalsLine": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotLocalFallbackBudget": {
+    "placeholders": {
+      "budget": {
+        "type": "String"
+      },
+      "spent": {
+        "type": "String"
+      },
+      "usedPct": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatbotGoalCreatedDialog": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@challengeParticipantCountMany": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "@challengeGoalAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@challengeTotalAmount": {
+    "placeholders": {
+      "amount": {
         "type": "String"
       }
     }
