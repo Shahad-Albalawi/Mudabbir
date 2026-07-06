@@ -1,5 +1,7 @@
 # Mudabbir (مُدَبِّر)
 
+[![CI](https://github.com/Shahad-Albalawi/Mudabbir/actions/workflows/ci.yml/badge.svg)](https://github.com/Shahad-Albalawi/Mudabbir/actions/workflows/ci.yml)
+
 Personal finance app for Arabic and English speakers — track spending, set savings goals, analyze habits, compete in challenges, and get AI coaching.
 
 ---
