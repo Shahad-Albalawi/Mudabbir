@@ -32,7 +32,7 @@ class ExpensesFilterApiTest extends TestCase
 
         $response = $this->withApiAuth($auth)->getJson('/api/expenses?from=2025-05-01&to=2025-05-31&sort=amount');
         $response->assertOk()
-            ->assertJsonPath('status', 'success')
+            ->assertJsonPath('success', true)
             ->assertJsonPath('meta.per_page', 15)
             ->assertJsonPath('data.0.amount_formatted', '١٢٠٫٠٠ ﷼')
             ->assertJsonPath('data.0.category_icon', '🍽️');

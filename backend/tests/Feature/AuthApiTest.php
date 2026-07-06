@@ -55,12 +55,16 @@ class AuthApiTest extends TestCase
             $this->postJson('/api/login', [
                 'email' => 'auth-lockout@example.com',
                 'password' => 'wrong-password',
+            ], [
+                'Accept-Language' => 'en',
             ])->assertStatus(422);
         }
 
         $response = $this->postJson('/api/login', [
             'email' => 'auth-lockout@example.com',
             'password' => 'wrong-password',
+        ], [
+            'Accept-Language' => 'en',
         ]);
 
         $response

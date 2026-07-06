@@ -53,7 +53,8 @@ class RouteServiceProvider extends ServiceProvider
         RateLimiter::for('auth-login', function (Request $request) {
             $email = Str::lower((string) $request->input('email', ''));
 
-            return Limit::perMinute(5)->by($request->ip().'|'.$email);
+            // Keep above AuthService's 5-attempt lockout so validation errors surface first.
+            return Limit::perMinute(20)->by($request->ip().'|'.$email);
         });
 
         RateLimiter::for('auth-register', function (Request $request) {

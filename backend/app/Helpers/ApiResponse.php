@@ -84,7 +84,15 @@ final class ApiResponse
 
     public static function conflict(string $message, mixed $data = null): JsonResponse
     {
-        return self::error($message, 409, null, $data);
+        return response()->json(array_merge(
+            self::envelope(
+                success: false,
+                data: $data,
+                message: $message,
+                errors: null,
+            ),
+            ['conflict' => true],
+        ), 409);
     }
 
     public static function serverError(string $message = 'حدث خطأ داخلي في الخادم. يرجى المحاولة لاحقاً.'): JsonResponse

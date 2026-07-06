@@ -19,7 +19,7 @@ class RateLimitingTest extends TestCase
 
     public function test_login_route_rate_limit_returns_429(): void
     {
-        for ($i = 0; $i < 5; $i++) {
+        for ($i = 0; $i < 20; $i++) {
             $this->postJson('/api/login', [
                 'email' => 'rate-limit@example.com',
                 'password' => 'wrong',
