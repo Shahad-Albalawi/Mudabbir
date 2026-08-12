@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Concerns\DualWritesLegacyJson;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Challenge\CreateChallengeFromTemplateRequest;
 use App\Http\Requests\Challenge\InviteChallengeRequest;
@@ -9,40 +10,57 @@ use App\Http\Requests\Challenge\RecordChallengeProgressRequest;
 use App\Http\Requests\Challenge\RespondChallengeRequest;
 use App\Http\Requests\Challenge\StoreChallengeRequest;
 use App\Http\Requests\Challenge\UpdateChallengeRequest;
+use App\Models\Challenge;
 use App\Services\ChallengeStore;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ChallengeController extends Controller
 {
+    use DualWritesLegacyJson;
+
     public function __construct(private ChallengeStore $store) {}
 
     public function index(Request $request): JsonResponse
     {
         $userId = (int) $request->user()->id;
+        $challenges = Challenge::query()
+            ->with('participants')
+            ->accessibleBy($userId)
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn (Challenge $challenge): array => $challenge->toStoreArray())
+            ->values()
+            ->all();
 
-        return $this->success($this->store->all($userId));
+        return $this->success($challenges);
     }
 
     public function show(Request $request, int $id): JsonResponse
     {
         $userId = (int) $request->user()->id;
-        $challenge = $this->store->find($id, $userId);
+        $challenge = Challenge::query()
+            ->with('participants')
+            ->accessibleBy($userId)
+            ->whereKey($id)
+            ->first();
+
         if (! $challenge) {
             return $this->notFound('Challenge not found');
         }
 
-        return $this->success($challenge);
+        return $this->success($challenge->toStoreArray());
     }
 
     public function store(StoreChallengeRequest $request): JsonResponse
     {
-        return $this->created(
-            $this->store->create(
-                $request->validated(),
-                $this->creatorFromUser($request->user())
-            )
+        $challenge = $this->store->create(
+            $request->validated(),
+            $this->creatorFromUser($request->user())
         );
+        $this->mirrorChallengeToLegacyJson($challenge);
+
+        return $this->created($challenge);
     }
 
     public function update(UpdateChallengeRequest $request, int $id): JsonResponse
@@ -53,6 +71,8 @@ class ChallengeController extends Controller
             return $this->notFound('Challenge not found');
         }
 
+        $this->mirrorChallengeToLegacyJson($challenge);
+
         return $this->success($challenge);
     }
 
@@ -62,6 +82,8 @@ class ChallengeController extends Controller
         if (! $this->store->delete($id, $userId)) {
             return $this->notFound('Challenge not found');
         }
+
+        $this->mirrorChallengeDeleteToLegacyJson($id, $userId);
 
         return $this->success(null, 'Deleted');
     }
@@ -74,6 +96,8 @@ class ChallengeController extends Controller
             return $this->notFound('Challenge not found');
         }
 
+        $this->mirrorChallengeToLegacyJson($challenge);
+
         return $this->success($challenge);
     }
 
@@ -85,6 +109,8 @@ class ChallengeController extends Controller
             return $this->notFound('Challenge not found');
         }
 
+        $this->mirrorChallengeToLegacyJson($challenge);
+
         return $this->success($challenge);
     }
 
@@ -95,6 +121,8 @@ class ChallengeController extends Controller
         if (! $challenge) {
             return $this->notFound('Challenge not found');
         }
+
+        $this->mirrorChallengeToLegacyJson($challenge);
 
         return $this->success($challenge);
     }
@@ -111,6 +139,8 @@ class ChallengeController extends Controller
         if (! $challenge) {
             return $this->notFound('Challenge not found');
         }
+
+        $this->mirrorChallengeToLegacyJson($challenge);
 
         return $this->success($challenge);
     }
@@ -139,6 +169,8 @@ class ChallengeController extends Controller
             return $this->notFound('Template not found');
         }
 
+        $this->mirrorChallengeToLegacyJson($challenge);
+
         return $this->created($challenge);
     }
 
@@ -149,6 +181,8 @@ class ChallengeController extends Controller
         if (! $result) {
             return $this->notFound('Challenge or participant not found');
         }
+
+        $this->mirrorChallengeToLegacyJson($result['challenge']);
 
         return $this->success($result['challenge'], '', 200, [
             'meta' => $result['meta'],
@@ -166,6 +200,8 @@ class ChallengeController extends Controller
         if (! $challenge) {
             return $this->notFound('Challenge or participant not found');
         }
+
+        $this->mirrorChallengeToLegacyJson($challenge);
 
         return $this->success($challenge);
     }

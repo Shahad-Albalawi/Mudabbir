@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Concerns\DualWritesLegacyJson;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Expense\StoreExpenseRequest;
 use App\Http\Requests\Expense\UpdateExpenseRequest;
@@ -13,6 +14,8 @@ use Illuminate\Http\Request;
 
 class ExpenseController extends Controller
 {
+    use DualWritesLegacyJson;
+
     public function __construct(private ExpenseStore $store) {}
 
     public function index(Request $request): JsonResponse
@@ -46,18 +49,23 @@ class ExpenseController extends Controller
     public function show(Request $request, int $id): JsonResponse
     {
         $userId = (int) $request->user()->id;
-        $expense = $this->store->find($id, $userId);
+        $expense = Expense::query()
+            ->forUser($userId)
+            ->whereKey($id)
+            ->first();
+
         if (! $expense) {
             return $this->notFound('Expense not found');
         }
 
-        return $this->success(ExpenseResource::fromStoreArray($expense));
+        return $this->success(new ExpenseResource($expense));
     }
 
     public function store(StoreExpenseRequest $request): JsonResponse
     {
         $userId = (int) $request->user()->id;
         $expense = $this->store->create($request->validated(), $userId);
+        $this->mirrorExpenseToLegacyJson($expense);
 
         return $this->created(ExpenseResource::fromStoreArray($expense));
     }
@@ -82,6 +90,8 @@ class ExpenseController extends Controller
             );
         }
 
+        $this->mirrorExpenseToLegacyJson($result['data']);
+
         return $this->success(ExpenseResource::fromStoreArray($result['data']));
     }
 
@@ -91,6 +101,8 @@ class ExpenseController extends Controller
         if (! $this->store->delete($id, $userId)) {
             return $this->notFound('Expense not found');
         }
+
+        $this->mirrorExpenseDeleteToLegacyJson($id, $userId);
 
         return $this->success(null, 'Deleted');
     }

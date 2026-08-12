@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -37,6 +38,19 @@ class Challenge extends Model
     public function participants(): HasMany
     {
         return $this->hasMany(ChallengeParticipant::class);
+    }
+
+    public function scopeAccessibleBy(Builder $query, int $userId): Builder
+    {
+        return $query->where(function (Builder $inner) use ($userId): void {
+            $inner->where('creator_id', $userId)
+                ->orWhereHas(
+                    'participants',
+                    fn (Builder $participants): Builder => $participants
+                        ->where('participant_id', $userId)
+                        ->where('status', 'accepted')
+                );
+        });
     }
 
     /**
