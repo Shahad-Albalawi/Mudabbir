@@ -31,20 +31,23 @@ if [ "${MUDABBIR_SKIP_LEGACY_IMPORT:-}" != "1" ] && [ ! -f storage/app/.legacy-i
     fi
   done
 
-  if [ "$has_json" = false ] && [ -n "${MUDABBIR_LEGACY_JSON_BACKUP_URL:-}" ]; then
-    echo "Fetching legacy JSON backup for import..."
-    tmp_archive="$(mktemp /tmp/mudabbir-json-backup.XXXXXX.tar.gz)"
-    tmp_dir="$(mktemp -d /tmp/mudabbir-json-staging.XXXXXX)"
-    if curl -fsSL "${MUDABBIR_LEGACY_JSON_BACKUP_URL}" -o "${tmp_archive}"; then
-      tar -xzf "${tmp_archive}" -C "${tmp_dir}"
-      if [ -d "${tmp_dir}/storage-app" ]; then
-        find "${tmp_dir}/storage-app" -type f -name '*.json' -exec cp {} storage/app/ \;
-        has_json=true
+  if [ "$has_json" = false ]; then
+    backup_url="${MUDABBIR_LEGACY_JSON_BACKUP_URL:-https://raw.githubusercontent.com/Shahad-Albalawi/Mudabbir/backup/json-2026-08-12/mudabbir-json-2026-08-12-140250Z.tar.gz}"
+    if [ -n "${backup_url}" ]; then
+      echo "Fetching legacy JSON backup for import..."
+      tmp_archive="$(mktemp /tmp/mudabbir-json-backup.XXXXXX.tar.gz)"
+      tmp_dir="$(mktemp -d /tmp/mudabbir-json-staging.XXXXXX)"
+      if curl -fsSL "${backup_url}" -o "${tmp_archive}"; then
+        tar -xzf "${tmp_archive}" -C "${tmp_dir}"
+        if [ -d "${tmp_dir}/storage-app" ]; then
+          find "${tmp_dir}/storage-app" -type f -name '*.json' -exec cp {} storage/app/ \;
+          has_json=true
+        fi
+      else
+        echo "WARN: could not download legacy JSON backup."
       fi
-    else
-      echo "WARN: could not download legacy JSON backup."
+      rm -rf "${tmp_dir}" "${tmp_archive}"
     fi
-    rm -rf "${tmp_dir}" "${tmp_archive}"
   fi
 
   if [ "$has_json" = true ]; then
