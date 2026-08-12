@@ -50,7 +50,7 @@ Personal finance app for Arabic and English speakers — track spending, set sav
 | `presentation/` | UI screens, Riverpod providers/view models |
 | `domain/` | Models, repositories, business rules |
 | `data/` | SQLite, Hive cache, Dio HTTP |
-| `service/` | DI (GetIt), GoRouter, reporting, chatbot |
+| `service/` | Riverpod providers, GoRouter, reporting, chatbot |
 | `constants/` | Theme, API flags, Hive keys |
 | `l10n/` | Arabic / English strings (ARB) |
 | `utils/` | Debug logging (`devLog` — release-safe) |
@@ -141,8 +141,8 @@ flutter test
 
 ## Tech stack
 
-- **Client:** Flutter, Riverpod, GetIt, GoRouter, SQLite, Hive, Dio, fl_chart, pdf, printing
-- **Server:** Laravel 9, Sanctum auth, REST, Gemini AI
+- **Client:** Flutter, Riverpod, GoRouter, SQLite, Hive, Dio, fl_chart, pdf, printing
+- **Server:** Laravel 9, Sanctum auth, REST, OpenAI (chatbot SSE via `/api/ai/chat`)
 - **Fonts:** Thmanyah (primary), Tajawal (fallback glyphs)
 
 ---

@@ -27,5 +27,21 @@ services:
         sync: false
       - key: OPENAI_API_KEY
         sync: false
+      - key: AI_PROVIDER
+        value: openai
       - key: GEMINI_API_KEY
+        sync: false
+      - key: FCM_SERVER_KEY
+        sync: false
+      - key: MAIL_MAILER
+        value: smtp
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_PORT
+        sync: false
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_FROM_ADDRESS
         sync: false
