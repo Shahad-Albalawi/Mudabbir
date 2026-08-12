@@ -75,11 +75,12 @@ function Get-ApiData {
     return $resp
 }
 
-$expenses = @(Get-ApiData "/api/expenses?per_page=100")
+$expenses = @(Get-ApiData '/api/expenses?per_page=100')
 $page = 1
 while ($expenses.Count -ge 100) {
     $page++
-    $next = @(Get-ApiData "/api/expenses?per_page=100&page=$page")
+    $nextPath = '/api/expenses?per_page=100&page=' + $page
+    $next = @(Get-ApiData $nextPath)
     if ($next.Count -eq 0) { break }
     $expenses += $next
 }
