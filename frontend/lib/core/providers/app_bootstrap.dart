@@ -2,10 +2,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:mudabbir/core/providers/app_providers.dart';
 import 'package:mudabbir/core/providers/provider_reader.dart';
+import 'package:mudabbir/service/security/auth_token_migration.dart';
 
 /// Initializes Hive caches and language prefs using the root [ProviderContainer].
 Future<void> bootstrapApp(ProviderContainer container) async {
   bindProviderContainer(container);
+
+  await AuthTokenMigration.run(
+    hiveService: container.read(hiveServiceProvider),
+    secureStore: container.read(authTokenSecureStoreProvider),
+  );
 
   await container.read(appLanguageControllerProvider).load();
   await container.read(hiveServiceProvider).init();

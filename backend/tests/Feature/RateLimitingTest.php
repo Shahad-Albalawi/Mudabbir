@@ -2,8 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Services\AiCoachService;
 use Mockery;
+use App\Services\AiCoachService;
+use App\Services\OpenAiStreamService;
 use Tests\TestCase;
 
 class RateLimitingTest extends TestCase
@@ -19,7 +20,7 @@ class RateLimitingTest extends TestCase
 
     public function test_login_route_rate_limit_returns_429(): void
     {
-        for ($i = 0; $i < 20; $i++) {
+        for ($i = 0; $i < 10; $i++) {
             $this->postJson('/api/login', [
                 'email' => 'rate-limit@example.com',
                 'password' => 'wrong',
@@ -42,7 +43,7 @@ class RateLimitingTest extends TestCase
             $mock->shouldReceive('model')->andReturn('gpt-4o-mini');
         });
 
-        for ($i = 0; $i < 20; $i++) {
+        for ($i = 0; $i < 12; $i++) {
             $this->withApiAuth($auth)->postJson('/api/generate-content', [
                 'content' => 'Hello',
             ])->assertStatus(200);
@@ -50,6 +51,27 @@ class RateLimitingTest extends TestCase
 
         $this->withApiAuth($auth)->postJson('/api/generate-content', [
             'content' => 'Hello',
+        ])->assertStatus(429);
+    }
+
+    public function test_ai_chat_rate_limit_returns_429(): void
+    {
+        $auth = $this->registerUser('ai-chat-rate@example.com');
+
+        $this->mock(OpenAiStreamService::class, function (Mockery\MockInterface $mock): void {
+            $mock->shouldReceive('chat')->andReturn('ok');
+        });
+
+        for ($i = 0; $i < 12; $i++) {
+            $this->withApiAuth($auth)->postJson('/api/ai/chat', [
+                'message' => 'Hello',
+                'stream' => false,
+            ])->assertStatus(200);
+        }
+
+        $this->withApiAuth($auth)->postJson('/api/ai/chat', [
+            'message' => 'Hello',
+            'stream' => false,
         ])->assertStatus(429);
     }
 }

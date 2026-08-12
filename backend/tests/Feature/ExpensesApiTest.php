@@ -44,4 +44,21 @@ class ExpensesApiTest extends TestCase
     {
         $this->getJson('/api/expenses')->assertStatus(401);
     }
+
+    public function test_expense_create_validates_required_fields(): void
+    {
+        $auth = $this->registerUser('expense-validate@example.com');
+
+        $this->withApiAuth($auth)->postJson('/api/expenses', [])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['amount', 'date', 'account_id', 'category_id']);
+
+        $this->withApiAuth($auth)->postJson('/api/expenses', [
+            'amount' => 0,
+            'date' => '2099-01-01',
+            'account_id' => 0,
+            'category_id' => 0,
+        ])->assertStatus(422)
+            ->assertJsonValidationErrors(['amount', 'date', 'account_id', 'category_id']);
+    }
 }

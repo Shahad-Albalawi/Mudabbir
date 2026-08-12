@@ -53,16 +53,30 @@ class RouteServiceProvider extends ServiceProvider
         RateLimiter::for('auth-login', function (Request $request) {
             $email = Str::lower((string) $request->input('email', ''));
 
-            // Keep above AuthService's 5-attempt lockout so validation errors surface first.
-            return Limit::perMinute(20)->by($request->ip().'|'.$email);
+            return [
+                // Brute-force protection: 10 attempts/minute per IP+email.
+                Limit::perMinute(10)->by($request->ip().'|'.$email),
+            ];
         });
 
         RateLimiter::for('auth-register', function (Request $request) {
             return Limit::perMinute(5)->by($request->ip());
         });
 
+        RateLimiter::for('auth-password-reset', function (Request $request) {
+            $email = Str::lower((string) $request->input('email', ''));
+
+            return Limit::perMinute(5)->by($request->ip().'|'.$email);
+        });
+
         RateLimiter::for('ai', function (Request $request) {
-            return Limit::perMinute(20)->by($request->user()?->id ?: $request->ip());
+            $key = $request->user()?->id ?: $request->ip();
+
+            return [
+                // Cost control for OpenAI-backed endpoints.
+                Limit::perMinute(12)->by('ai-minute:'.$key),
+                Limit::perHour(120)->by('ai-hour:'.$key),
+            ];
         });
 
         RateLimiter::for('challenges-write', function (Request $request) {
