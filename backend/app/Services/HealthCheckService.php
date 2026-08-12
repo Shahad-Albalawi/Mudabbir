@@ -52,25 +52,53 @@ class HealthCheckService
     private function checkDatabase(): array
     {
         $started = microtime(true);
+        $timeoutSeconds = max(5, (int) config('mudabbir.health_db_timeout_seconds', 5));
+        $driver = (string) config('database.default');
+        $allowColdStart = $driver === 'pgsql';
+        $lastError = null;
+        $attempt = 0;
 
-        try {
-            DB::connection()->getPdo();
-            DB::select('select 1 as ok');
+        while (true) {
+            $attempt++;
 
-            return [
-                'ok' => true,
-                'driver' => (string) config('database.default'),
-                'latency_ms' => (int) round((microtime(true) - $started) * 1000),
-            ];
-        } catch (\Throwable $e) {
-            Log::warning('Health check: database failed', ['error' => $e->getMessage()]);
+            try {
+                DB::connection()->getPdo();
+                DB::select('select 1 as ok');
 
-            return [
-                'ok' => false,
-                'driver' => (string) config('database.default'),
-                'error' => 'Database connection failed',
-            ];
+                $result = [
+                    'ok' => true,
+                    'driver' => $driver,
+                    'latency_ms' => (int) round((microtime(true) - $started) * 1000),
+                ];
+
+                if ($allowColdStart && $attempt > 1) {
+                    $result['cold_start'] = true;
+                }
+
+                return $result;
+            } catch (\Throwable $e) {
+                $lastError = $e;
+                $elapsed = microtime(true) - $started;
+
+                if (! $allowColdStart || $elapsed >= $timeoutSeconds) {
+                    break;
+                }
+
+                usleep(500_000);
+            }
         }
+
+        Log::warning('Health check: database failed', [
+            'error' => $lastError?->getMessage(),
+            'attempts' => $attempt,
+            'elapsed_ms' => (int) round((microtime(true) - $started) * 1000),
+        ]);
+
+        return [
+            'ok' => false,
+            'driver' => $driver,
+            'error' => 'Database connection failed',
+        ];
     }
 
     /**

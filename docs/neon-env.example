@@ -1,0 +1,90 @@
+# Neon PostgreSQL — Mudabbir backend
+# Copy to backend/.env (local) or Render Dashboard -> Environment (production).
+#
+# ---------------------------------------------------------------------------
+# 1) Autosuspend / cold start (Neon Free Tier)
+# ---------------------------------------------------------------------------
+# Neon suspends compute after ~5 minutes of inactivity. The first query after
+# idle wakes the branch and adds ~1–2 seconds latency (cold start). This is
+# normal — not an outage. Health checks and client timeouts should allow >= 5s.
+#
+# ---------------------------------------------------------------------------
+# 2) Connection pooling (required for Laravel + serverless Postgres)
+# ---------------------------------------------------------------------------
+# Use the POOLED connection string (host contains "-pooler") for the app.
+# Never use the direct host for web requests — you will hit "too many connections".
+#
+# Dashboard: Neon project -> Connect -> "Pooled connection" -> copy URI.
+#
+# Example (replace with your values):
+# DATABASE_URL=postgresql://USER:PASSWORD@ep-xxxx-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require
+#
+# DB_CONNECTION=pgsql
+# DB_SSLMODE=require
+#
+# Do NOT set DB_HOST/DB_PORT when DATABASE_URL is set — Laravel reads the URL.
+#
+# ---------------------------------------------------------------------------
+# 3) Branches (free branching)
+# ---------------------------------------------------------------------------
+# - production branch  -> Render DATABASE_URL (main/live data)
+# - development branch -> local .env only (safe testing, reset anytime)
+#
+# Create a dev branch in Neon Console, copy its pooled URI to local .env:
+# DATABASE_URL=postgresql://...@ep-dev-xxxx-pooler.../neondb?sslmode=require
+#
+# Never point local experiments at the production branch URI.
+#
+# ---------------------------------------------------------------------------
+# 4) Backups (GitHub Actions)
+# ----------------------------------------------------------------#
+# Daily pg_dump uses NEON_DATABASE_URL_DIRECT (direct host, NOT pooler).
+# Add repo secret: NEON_DATABASE_URL_DIRECT
+# See .github/workflows/neon-db-backup.yml
+#
+# Neon free tier PITR is limited to a few days — the GitHub backup is extra safety.
+
+APP_NAME=Mudabbir
+APP_ENV=local
+APP_KEY=
+APP_DEBUG=true
+APP_URL=http://localhost
+
+LOG_CHANNEL=stack
+LOG_LEVEL=debug
+
+# --- Neon (local dev branch — pooled URI) ---
+DB_CONNECTION=pgsql
+DATABASE_URL=postgresql://USER:PASSWORD@ep-dev-xxxx-pooler.region.aws.neon.tech/neondb?sslmode=require
+DB_SSLMODE=require
+
+# Health check DB timeout (seconds). Keep >= 5 for Neon cold starts.
+HEALTH_DB_TIMEOUT_SECONDS=5
+
+# --- SQLite fallback (offline / CI without Neon) ---
+# DB_CONNECTION=sqlite
+# DB_DATABASE=/absolute/path/to/database.sqlite
+
+BROADCAST_DRIVER=log
+CACHE_DRIVER=file
+FILESYSTEM_DISK=local
+QUEUE_CONNECTION=sync
+SESSION_DRIVER=file
+SESSION_LIFETIME=120
+
+MAIL_MAILER=smtp
+MAIL_HOST=mailpit
+MAIL_PORT=1025
+MAIL_FROM_ADDRESS="hello@example.com"
+MAIL_FROM_NAME="${APP_NAME}"
+
+AI_PROVIDER=openai
+OPENAI_API_KEY=
+
+FCM_SERVER_KEY=
+SANCTUM_TOKEN_EXPIRATION=43200
+TRUSTED_PROXIES=
+
+# Dual-write JSON safety window (see config/mudabbir.php)
+MUDABBIR_DUAL_WRITE_JSON=true
+MUDABBIR_DUAL_WRITE_JSON_UNTIL=

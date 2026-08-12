@@ -1,4 +1,5 @@
-# Probes Mudabbir production API reachability (health + optional register smoke test).
+# Probes Mudabbir production API reachability (health check).
+# Neon cold start: allow >= 5s for DB wake-up (script uses 30s client timeout).
 param(
     [string]$ApiBaseUrl = ""
 )

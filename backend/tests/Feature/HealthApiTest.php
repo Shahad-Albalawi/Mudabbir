@@ -42,6 +42,11 @@ class HealthApiTest extends TestCase
             ->assertJsonPath('data.checks.ai.configured', false);
     }
 
+    public function test_health_db_timeout_defaults_to_at_least_five_seconds(): void
+    {
+        $this->assertGreaterThanOrEqual(5, (int) config('mudabbir.health_db_timeout_seconds'));
+    }
+
     public function test_health_returns_service_unavailable_when_database_fails(): void
     {
         DB::shouldReceive('connection')

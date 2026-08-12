@@ -1,0 +1,83 @@
+# Daily Neon PostgreSQL backup (pg_dump) — independent of Neon PITR limits.
+#
+# Required GitHub repository secrets:
+#   NEON_DATABASE_URL_DIRECT — direct (non-pooler) connection URI from Neon Console.
+#
+# Optional repository variable:
+#   NEON_BACKUP_RETENTION_DAYS — artifact retention (default 30)
+
+name: Neon DB Backup
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  pg-dump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Validate backup configuration
+        id: backup
+        env:
+          NEON_DATABASE_URL_DIRECT: ${{ secrets.NEON_DATABASE_URL_DIRECT }}
+        run: |
+          if [ -z "${NEON_DATABASE_URL_DIRECT}" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "NEON_DATABASE_URL_DIRECT not set — skipping backup (configure secret to enable)."
+            exit 0
+          fi
+          if echo "${NEON_DATABASE_URL_DIRECT}" | grep -qi pooler; then
+            echo "ERROR: pg_dump requires DIRECT URI (no -pooler host)."
+            exit 1
+          fi
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+
+      - name: pg_dump full database
+        if: steps.backup.outputs.enabled == 'true'
+        env:
+          NEON_DATABASE_URL_DIRECT: ${{ secrets.NEON_DATABASE_URL_DIRECT }}
+        run: |
+          STAMP="$(date -u +%Y-%m-%dT%H%M%SZ)"
+          pg_dump "${NEON_DATABASE_URL_DIRECT}" \
+            --format=custom \
+            --no-owner \
+            --no-acl \
+            --file="mudabbir-neon-${STAMP}.dump"
+          pg_dump "${NEON_DATABASE_URL_DIRECT}" \
+            --format=plain \
+            --no-owner \
+            --no-acl \
+            --file="mudabbir-neon-${STAMP}.sql"
+          echo "BACKUP_STAMP=${STAMP}" >> "$GITHUB_ENV"
+          ls -lh mudabbir-neon-*
+
+      - name: Upload backup artifacts
+        if: steps.backup.outputs.enabled == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mudabbir-neon-backup-${{ env.BACKUP_STAMP }}
+          path: |
+            mudabbir-neon-*.dump
+            mudabbir-neon-*.sql
+          retention-days: ${{ vars.NEON_BACKUP_RETENTION_DAYS || 30 }}
+
+      - name: Publish GitHub Release
+        if: steps.backup.outputs.enabled == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="db-backup-${BACKUP_STAMP}"
+          gh release create "${TAG}" \
+            --title "Neon backup ${BACKUP_STAMP}" \
+            --notes "Automated pg_dump (direct connection). Restore: pg_restore -d \$DATABASE_URL mudabbir-neon-*.dump" \
+            mudabbir-neon-*.dump \
+            mudabbir-neon-*.sql

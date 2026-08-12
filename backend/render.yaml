@@ -15,10 +15,28 @@ services:
       - key: APP_URL
         value: https://mudabbir-backend-api.onrender.com
       - key: DB_CONNECTION
-        value: sqlite
+        sync: false
+      - key: DB_SSLMODE
+        value: require
+      - key: HEALTH_DB_TIMEOUT_SECONDS
+        value: "5"
+      - key: DATABASE_URL
+        sync: false
       - key: LOG_CHANNEL
         value: stderr
       - key: LOG_LEVEL
         value: warning
       - key: TRUSTED_PROXIES
         value: "*"
+      - key: APP_KEY
+        sync: false
+      - key: TELESCOPE_ENABLED
+        value: "false"
+      - key: SENTRY_LARAVEL_DSN
+        sync: false
+      - key: SENTRY_TRACES_SAMPLE_RATE
+        value: "0.0"
+      - key: MUDABBIR_DUAL_WRITE_JSON
+        value: "true"
+      - key: MUDABBIR_DUAL_WRITE_JSON_UNTIL
+        value: "2026-08-14"
