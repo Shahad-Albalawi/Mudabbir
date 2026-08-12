@@ -2,51 +2,25 @@
 
 namespace App\Services;
 
-use App\Services\Concerns\ManagesJsonFileStore;
+use App\Models\Budget;
 use App\Services\Concerns\ResolvesSyncConflicts;
-use App\Services\Concerns\UsesJsonStorePath;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class BudgetStore
 {
-    use ManagesJsonFileStore;
     use ResolvesSyncConflicts;
-    use UsesJsonStorePath;
 
-    /** @var string */
-    private $path;
-
-    public function __construct()
-    {
-        $this->path = $this->jsonStorePath('budgets.json');
-    }
-
-    protected function emptyDocument(): array
-    {
-        return [
-            'next_budget_id' => 1,
-            'budgets' => [],
-        ];
-    }
-
-    protected function collectionKey(): string
-    {
-        return 'budgets';
-    }
-
+    /**
+     * @return list<array<string, mixed>>
+     */
     public function all(int $userId): array
     {
-        $data = $this->mutateStore(fn (array $data): array => $data);
-
-        $owned = array_values(array_filter(
-            $data['budgets'],
-            fn (array $budget): bool => (int) ($budget['user_id'] ?? 0) === $userId
-        ));
-
-        return array_values(array_map(
-            fn (array $budget): array => $this->normalizeBudget($budget),
-            $owned
-        ));
+        return Budget::query()
+            ->forUser($userId)
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn (Budget $budget): array => $budget->toStoreArray())
+            ->all();
     }
 
     /**
@@ -54,98 +28,81 @@ class BudgetStore
      */
     public function allUsersBudgets(): array
     {
-        $data = $this->mutateStore(fn (array $data): array => $data);
-
-        return array_values(array_map(
-            fn (array $budget): array => $this->normalizeBudget($budget),
-            $data['budgets'] ?? []
-        ));
+        return Budget::query()
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn (Budget $budget): array => $budget->toStoreArray())
+            ->all();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function find(int $id, int $userId): ?array
     {
-        return $this->mutateStore(function (array $data) use ($id, $userId): ?array {
-            foreach ($data['budgets'] as $budget) {
-                if ((int) $budget['id'] === $id && (int) ($budget['user_id'] ?? 0) === $userId) {
-                    return $this->normalizeBudget($budget);
-                }
-            }
+        $budget = Budget::query()->forUser($userId)->whereKey($id)->first();
 
-            return null;
-        });
+        return $budget?->toStoreArray();
     }
 
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
     public function create(array $payload, int $userId): array
     {
-        return $this->mutateStore(function (array &$data) use ($payload, $userId): array {
-            $id = (int) $data['next_budget_id'];
-            $data['next_budget_id'] = $id + 1;
-            $now = Carbon::now();
-
-            $budget = $this->normalizeBudget([
-                'id' => $id,
+        $budget = DB::transaction(function () use ($payload, $userId): Budget {
+            return Budget::query()->create([
+                'id' => $this->nextBudgetId(),
                 'user_id' => $userId,
                 'amount' => (float) $payload['amount'],
                 'start_date' => (string) $payload['start_date'],
                 'end_date' => (string) $payload['end_date'],
                 'account_id' => (int) $payload['account_id'],
-                'created_at' => $now->toISOString(),
-                'updated_at' => $now->toISOString(),
             ]);
-
-            $data['budgets'][] = $budget;
-
-            return $budget;
         });
+
+        return $budget->toStoreArray();
     }
 
     /**
+     * @param  array<string, mixed>  $updates
      * @return array{conflict: bool, data: array}|null
      */
     public function update(int $id, array $updates, int $userId, ?string $clientUpdatedAt = null): ?array
     {
-        return $this->mutateStore(function (array &$data) use ($id, $updates, $userId, $clientUpdatedAt): ?array {
-            foreach ($data['budgets'] as $idx => $budget) {
-                if ((int) $budget['id'] !== $id || (int) ($budget['user_id'] ?? 0) !== $userId) {
-                    continue;
-                }
-
-                $conflict = $this->resolveUpdateConflict(
-                    $budget,
-                    $clientUpdatedAt,
-                    fn (array $row): array => $this->normalizeBudget($row)
-                );
-                if ($conflict !== null) {
-                    return $conflict;
-                }
-
-                $merged = array_merge($budget, $this->filterUpdatable($updates));
-                $merged['updated_at'] = Carbon::now()->toISOString();
-                $data['budgets'][$idx] = $this->normalizeBudget($merged);
-
-                return [
-                    'conflict' => false,
-                    'data' => $data['budgets'][$idx],
-                ];
-            }
-
+        $budget = Budget::query()->forUser($userId)->whereKey($id)->first();
+        if ($budget === null) {
             return null;
-        });
+        }
+
+        $conflict = $this->resolveUpdateConflict(
+            $budget->toStoreArray(),
+            $clientUpdatedAt,
+            fn (array $row): array => $row
+        );
+        if ($conflict !== null) {
+            return $conflict;
+        }
+
+        $budget->fill($this->filterUpdatable($updates));
+        $budget->save();
+
+        return [
+            'conflict' => false,
+            'data' => $budget->fresh()->toStoreArray(),
+        ];
     }
 
     public function delete(int $id, int $userId): bool
     {
-        return $this->mutateStore(function (array &$data) use ($id, $userId): bool {
-            $before = count($data['budgets']);
-            $data['budgets'] = array_values(array_filter(
-                $data['budgets'],
-                fn (array $budget): bool => ! ((int) $budget['id'] === $id && (int) ($budget['user_id'] ?? 0) === $userId)
-            ));
-
-            return count($data['budgets']) < $before;
-        });
+        return Budget::query()->forUser($userId)->whereKey($id)->delete() > 0;
     }
 
+    /**
+     * @param  array<string, mixed>  $updates
+     * @return array<string, mixed>
+     */
     private function filterUpdatable(array $updates): array
     {
         $allowed = ['amount', 'start_date', 'end_date', 'account_id'];
@@ -159,17 +116,8 @@ class BudgetStore
         return $filtered;
     }
 
-    private function normalizeBudget(array $budget): array
+    private function nextBudgetId(): int
     {
-        return [
-            'id' => (int) $budget['id'],
-            'user_id' => (int) ($budget['user_id'] ?? 0),
-            'amount' => (float) $budget['amount'],
-            'start_date' => (string) $budget['start_date'],
-            'end_date' => (string) $budget['end_date'],
-            'account_id' => (int) $budget['account_id'],
-            'created_at' => $budget['created_at'] ?? null,
-            'updated_at' => $budget['updated_at'] ?? null,
-        ];
+        return ((int) Budget::query()->max('id')) + 1;
     }
 }
