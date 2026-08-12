@@ -6,6 +6,7 @@ import 'package:mudabbir/data/local/goal_hive_cache.dart';
 import 'package:mudabbir/data/local/local_database.dart';
 import 'package:mudabbir/service/debug/demo_seed_service.dart';
 import 'package:mudabbir/service/hive_service.dart';
+import 'package:mudabbir/service/notifications/push_notification_service.dart';
 import 'package:mudabbir/service/security/auth_token_secure_store.dart';
 import 'package:mudabbir/utils/dev_log.dart';
 import 'package:mudabbir/utils/local_db_user_id.dart';
@@ -115,6 +116,7 @@ class AuthNotifier extends ChangeNotifier {
   }
 
   Future<void> didLogout() async {
+    await PushNotificationService.instance.unregisterFromBackend();
     await _hiveService.deleteValue(HiveConstants.savedUserInfo);
     await _hiveService.deleteValue(HiveConstants.savedToken);
     await _secureStore.clearToken();

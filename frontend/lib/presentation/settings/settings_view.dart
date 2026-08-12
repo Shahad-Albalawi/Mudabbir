@@ -14,6 +14,8 @@ import 'package:mudabbir/presentation/widgets/app_confirm_dialog.dart';
 import 'package:mudabbir/presentation/widgets/app_grouped_scaffold.dart';
 import 'package:mudabbir/core/errors/app_error_presenter.dart';
 import 'package:mudabbir/core/providers/app_providers.dart';
+import 'package:mudabbir/service/security/biometric_lock_provider.dart';
+import 'package:mudabbir/service/security/biometric_lock_service.dart';
 import 'package:mudabbir/service/haptic_service.dart';
 import 'package:mudabbir/service/notifications/notification_preferences.dart';
 import 'package:mudabbir/service/reporting/financial_report_exporter.dart';
@@ -312,6 +314,50 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                   HapticService.light();
                   _showLanguagePicker();
                 },
+              ),
+              const SettingsDivider(),
+              SettingsTile(
+                icon: Icons.fingerprint_rounded,
+                iconColor: AppColors.navy1,
+                iconBackground: colors.primarySurface,
+                label: AppStrings.biometricSettingsLabel,
+                trailing: Consumer(
+                  builder: (context, ref, _) {
+                    final lockState = ref.watch(biometricLockProvider);
+                    if (!lockState.loaded) {
+                      return const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      );
+                    }
+                    return Switch.adaptive(
+                      value: lockState.enabled,
+                      activeTrackColor: colors.primary.withValues(alpha: 0.45),
+                      activeThumbColor: colors.primary,
+                      onChanged: (value) async {
+                        HapticService.light();
+                        final ok = await ref
+                            .read(biometricLockProvider.notifier)
+                            .setEnabled(value);
+                        if (!mounted) return;
+                        if (ok) {
+                          AppErrorPresenter.showSuccess(
+                            value
+                                ? AppStrings.biometricEnabledSuccess
+                                : AppStrings.biometricDisabledSuccess,
+                          );
+                        } else {
+                          AppErrorPresenter.showErrorMessage(
+                            BiometricLockService.messageForAvailability(
+                              lockState.availability,
+                            ),
+                          );
+                        }
+                      },
+                    );
+                  },
+                ),
               ),
               const SettingsDivider(),
               SettingsTile(

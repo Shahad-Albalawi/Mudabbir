@@ -14,6 +14,7 @@ import 'package:mudabbir/presentation/resources/app_fonts.dart';
 import 'package:mudabbir/presentation/resources/font_manager.dart';
 import 'package:mudabbir/presentation/resources/saudi_riyal_font.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
+import 'package:mudabbir/presentation/security/app_lock_overlay.dart';
 import 'package:mudabbir/service/backend_warmup_service.dart';
 import 'package:mudabbir/service/debug/dev_api_bootstrap.dart';
 import 'package:mudabbir/service/debug/instant_browse_bootstrap.dart';
@@ -105,7 +106,7 @@ class MudabbirApp extends ConsumerWidget {
               fontFamily: FontConstants.fontFamily,
               fontFamilyFallback: FontConstants.fontFamilyFallback,
             ),
-            child: scaledChild,
+            child: AppLockOverlay(child: scaledChild),
           ),
         );
       },

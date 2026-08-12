@@ -37,4 +37,32 @@ class NotificationApiService {
       throw ApiException.fromDioError(e);
     }
   }
+
+  Future<void> registerDeviceToken({
+    required String token,
+    String? platform,
+  }) async {
+    try {
+      await _dioClient.dio.post(
+        '/device-tokens',
+        data: {
+          'fcm_token': token,
+          if (platform != null) 'platform': platform,
+        },
+      );
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<void> unregisterDeviceToken(String token) async {
+    try {
+      await _dioClient.dio.delete(
+        '/device-tokens',
+        data: {'fcm_token': token},
+      );
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
 }
