@@ -1,4 +1,4 @@
-# Render environment (paste in Dashboard -> Environment)
+# Render environment — Neon PostgreSQL (production)
 
 APP_NAME=Mudabbir
 APP_ENV=production
@@ -9,20 +9,28 @@ APP_KEY=REPLACE-WITH-key:generate-output
 LOG_CHANNEL=stderr
 LOG_LEVEL=warning
 
-DB_CONNECTION=sqlite
+# Neon: use POOLED connection string (-pooler host) — paste full URI here.
+DB_CONNECTION=pgsql
+DATABASE_URL=postgresql://USER:PASSWORD@ep-xxxx-pooler.region.aws.neon.tech/neondb?sslmode=require
+DB_SSLMODE=require
+HEALTH_DB_TIMEOUT_SECONDS=5
 
 CACHE_DRIVER=file
 SESSION_DRIVER=file
 QUEUE_CONNECTION=sync
 
-# AI coach (optional — chatbot works with local fallback if empty)
 AI_PROVIDER=openai
 OPENAI_API_KEY=
 GEMINI_API_KEY=
-
-# Budget push alerts (optional)
 FCM_SERVER_KEY=
 
-# On Render: add a Cron Job running `php artisan schedule:run` daily for budget alerts.
-
 TRUSTED_PROXIES=*
+
+# Sentry (https://sentry.io — free tier ~5000 events/month)
+SENTRY_LARAVEL_DSN=
+SENTRY_TRACES_SAMPLE_RATE=0.0
+
+MUDABBIR_DUAL_WRITE_JSON=true
+MUDABBIR_DUAL_WRITE_JSON_UNTIL=2026-08-14
+
+# See docs/neon-env.example for branching, cold start, and backup secrets.
