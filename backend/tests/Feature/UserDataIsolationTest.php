@@ -77,7 +77,7 @@ class UserDataIsolationTest extends TestCase
 
         $this->withApiAuth($userA)->postJson('/api/expenses', [
             'amount' => 50,
-            'date' => '2025-05-01',
+            'date' => now()->format('Y-m-d'),
             'type' => 'expense',
             'account_id' => 1,
             'category_id' => 1,
