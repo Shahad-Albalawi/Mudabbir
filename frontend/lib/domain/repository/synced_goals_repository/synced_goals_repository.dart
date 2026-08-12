@@ -10,7 +10,6 @@ import 'package:mudabbir/domain/services/sync_flush_lock.dart';
 import 'package:mudabbir/domain/services/repository_guard.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/data/network/api_exception.dart';
-import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/utils/api_session.dart';
 
 /// Offline-first sync between Laravel goals API, Hive cache, and SQLite.
@@ -20,12 +19,12 @@ class SyncedGoalsRepository {
   final GoalHiveCache _cache;
 
   SyncedGoalsRepository({
-    GoalsRepository? local,
-    GoalApiService? remote,
-    GoalHiveCache? cache,
-  })  : _local = local ?? getIt<GoalsRepository>(),
-        _remote = remote ?? getIt<GoalApiService>(),
-        _cache = cache ?? getIt<GoalHiveCache>();
+    required GoalsRepository local,
+    required GoalApiService remote,
+    required GoalHiveCache cache,
+  })  : _local = local,
+        _remote = remote,
+        _cache = cache;
 
   Future<GoalListSyncResult> getGoals() {
     return guardSyncedOperation(() async {

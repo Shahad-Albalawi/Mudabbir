@@ -1,8 +1,8 @@
-import 'package:mudabbir/service/getit_init.dart';
-import 'package:mudabbir/service/security/auth_token_secure_store.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
+import 'package:mudabbir/core/providers/provider_reader.dart';
 
 /// True when the app has a stored API bearer token (secure storage only).
 Future<bool> hasApiSession() async {
-  final secure = await getIt<AuthTokenSecureStore>().readToken();
+  final secure = await readApp(authTokenSecureStoreProvider).readToken();
   return secure != null && secure.isNotEmpty;
 }

@@ -2,12 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
-import 'package:mudabbir/data/network/dio_client.dart';
-import 'package:mudabbir/service/getit_init.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
+import 'package:mudabbir/core/providers/provider_reader.dart';
 
 /// SSE client for `POST /api/ai/chat` (OpenAI streaming).
 class ChatSseService {
-  ChatSseService({Dio? dio}) : _dio = dio ?? getIt<DioClient>().dio;
+  ChatSseService({Dio? dio})
+      : _dio = dio ?? readApp(dioClientProvider).dio;
 
   final Dio _dio;
 

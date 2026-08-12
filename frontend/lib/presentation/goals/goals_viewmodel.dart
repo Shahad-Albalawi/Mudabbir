@@ -3,9 +3,9 @@ import 'package:mudabbir/data/network/failure.dart';
 import 'package:mudabbir/domain/models/savings_goal.dart';
 import 'package:mudabbir/domain/repository/goals_repository/goals_repository.dart';
 import 'package:mudabbir/domain/repository/synced_goals_repository/synced_goals_repository.dart';
-import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/data/network/api_exception.dart';
-import 'package:mudabbir/service/getit_init.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
+import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/utils/dev_log.dart';
 
 const _unsetGoalError = Object();
@@ -61,9 +61,11 @@ class GoalState {
 }
 
 class GoalViewmodel extends StateNotifier<GoalState> {
-  final SyncedGoalsRepository _repository = getIt<SyncedGoalsRepository>();
+  GoalViewmodel({required SyncedGoalsRepository repository})
+      : _repository = repository,
+        super(GoalState());
 
-  GoalViewmodel() : super(GoalState());
+  final SyncedGoalsRepository _repository;
 
   Future<void> getAllGoals() async {
     state = state.copyWith(isLoading: true, error: null, clearContribution: true);
@@ -223,5 +225,7 @@ class GoalViewmodel extends StateNotifier<GoalState> {
 
 final goalViewmodelProvider =
     StateNotifierProvider.autoDispose<GoalViewmodel, GoalState>((ref) {
-  return GoalViewmodel()..getAllGoals();
+  return GoalViewmodel(
+    repository: ref.watch(syncedGoalsRepositoryProvider),
+  )..getAllGoals();
 });

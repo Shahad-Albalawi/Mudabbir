@@ -5,7 +5,6 @@ import 'package:mudabbir/presentation/server_challenges/challenge_copy_helpers.d
 import 'package:mudabbir/presentation/server_challenges/models/challenge_model.dart';
 import 'package:mudabbir/data/network/api_exception.dart';
 import 'package:mudabbir/presentation/server_challenges/services/challenge_service.dart';
-import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/utils/current_server_user_id.dart';
 
 /// Offline-first sync between Laravel challenges API and Hive cache.
@@ -14,10 +13,10 @@ class ServerChallengeRepository {
   final ChallengeHiveCache _cache;
 
   ServerChallengeRepository({
-    ChallengeService? remote,
-    ChallengeHiveCache? cache,
-  })  : _remote = remote ?? getIt<ChallengeService>(),
-        _cache = cache ?? getIt<ChallengeHiveCache>();
+    required ChallengeService remote,
+    required ChallengeHiveCache cache,
+  })  : _remote = remote,
+        _cache = cache;
 
   Future<ChallengeListSyncResult> getChallenges() {
     return guardSyncedOperation(() async {

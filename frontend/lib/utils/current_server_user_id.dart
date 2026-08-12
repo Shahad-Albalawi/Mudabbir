@@ -1,10 +1,10 @@
 import 'package:mudabbir/constants/hive_constants.dart';
-import 'package:mudabbir/service/getit_init.dart';
-import 'package:mudabbir/service/hive_service.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
+import 'package:mudabbir/core/providers/provider_reader.dart';
 
 /// Reads the authenticated Laravel user id persisted after login/register.
 int? tryCurrentServerUserId() {
-  final raw = getIt<HiveService>().getValue(HiveConstants.savedUserInfo);
+  final raw = readApp(hiveServiceProvider).getValue(HiveConstants.savedUserInfo);
   if (raw is! Map) return null;
   final id = raw['id'];
   if (id is int) return id;
@@ -13,7 +13,7 @@ int? tryCurrentServerUserId() {
 }
 
 String? tryCurrentServerUserEmail() {
-  final raw = getIt<HiveService>().getValue(HiveConstants.savedUserInfo);
+  final raw = readApp(hiveServiceProvider).getValue(HiveConstants.savedUserInfo);
   if (raw is! Map) return null;
   final email = raw['email'];
   return email is String ? email : null;

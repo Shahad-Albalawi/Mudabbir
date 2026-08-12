@@ -17,7 +17,8 @@ import 'package:mudabbir/presentation/widgets/riyal_amount.dart';
 import 'package:mudabbir/presentation/widgets/score_ring_widget.dart';
 import 'package:mudabbir/presentation/widgets/section_title_text.dart';
 import 'package:mudabbir/presentation/statistics/statistics_screen_provider.dart';
-import 'package:mudabbir/service/getit_init.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
+import 'package:mudabbir/core/providers/provider_reader.dart';
 import 'package:mudabbir/service/haptic_service.dart';
 import 'package:mudabbir/service/routing_service/app_routes.dart';
 
@@ -310,7 +311,7 @@ class _FinancialHealthLinkCard extends ConsumerWidget {
 Future<_PeriodIncomeSnapshot> _loadIncomeSnapshot(
   StatisticsScreenData data,
 ) async {
-  final db = getIt<DbHelper>();
+  final db = readApp(dbHelperProvider);
   final current = _dateRangeForPeriod(data.period, DateTime.now());
   final previous = _previousRangeForPeriod(current, data.period.dayCount);
 

@@ -7,9 +7,9 @@ import 'package:mudabbir/presentation/server_challenges/challenge_copy_helpers.d
 import 'package:mudabbir/presentation/widgets/app_card.dart';
 import 'package:mudabbir/presentation/widgets/app_animated_list_item.dart';
 import 'package:mudabbir/presentation/widgets/app_loading_button.dart';
-import 'package:mudabbir/service/getit_init.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
+import 'package:mudabbir/core/providers/provider_reader.dart';
 import 'package:mudabbir/service/haptic_service.dart';
-import 'package:mudabbir/service/hive_service.dart';
 import 'package:share_plus/share_plus.dart';
 
 class InviteView extends StatefulWidget {
@@ -23,7 +23,7 @@ class _InviteViewState extends State<InviteView> {
   bool _sharing = false;
 
   String _inviteLink() {
-    final raw = getIt<HiveService>().getValue(HiveConstants.savedUserInfo);
+    final raw = readApp(hiveServiceProvider).getValue(HiveConstants.savedUserInfo);
     final refCode = raw is Map ? raw['id']?.toString() : null;
     if (refCode == null || refCode.isEmpty) {
       return 'https://mudabbir.app/invite';

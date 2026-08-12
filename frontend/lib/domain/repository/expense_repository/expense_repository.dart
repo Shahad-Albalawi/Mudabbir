@@ -5,13 +5,16 @@ import 'package:mudabbir/domain/models/expense_transaction.dart';
 import 'package:mudabbir/domain/services/financial_aggregator.dart';
 import 'package:mudabbir/domain/services/sync_policies.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
-import 'package:mudabbir/service/getit_init.dart';
 import 'package:sqflite/sqflite.dart';
 
 /// CRUD and filters for local transactions with budget linkage.
 class ExpenseRepository {
-  final DbHelper _db = getIt<DbHelper>();
-  final FinancialAggregator _aggregator = FinancialAggregator();
+  ExpenseRepository({required DbHelper db})
+      : _db = db,
+        _aggregator = FinancialAggregator(db: db);
+
+  final DbHelper _db;
+  final FinancialAggregator _aggregator;
 
   /// Lists transactions with optional month/category/type/recurring filters.
   Future<Either<Failure, List<ExpenseTransaction>>> getTransactions({

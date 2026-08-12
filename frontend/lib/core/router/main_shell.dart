@@ -13,8 +13,7 @@ import 'package:mudabbir/presentation/server_challenges/challenge_copy_helpers.d
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/presentation/transactions/add_transaction_sheet.dart';
 import 'package:mudabbir/presentation/widgets/shell_app_bar.dart';
-import 'package:mudabbir/service/getit_init.dart';
-import 'package:mudabbir/service/hive_service.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
 import 'package:mudabbir/service/routing_service/app_routes.dart';
 import 'package:mudabbir/utils/user_display_name.dart';
 
@@ -57,7 +56,7 @@ class MainShell extends ConsumerWidget {
     final tabIndex = _indexForLocation(location);
     final isHomeTab = tabIndex == 0;
 
-    final hive = getIt<HiveService>();
+    final hive = ref.read(hiveServiceProvider);
     final screenState = ref.watch(homeScreenProvider);
     final userName = screenState.userName.isNotEmpty
         ? screenState.userName

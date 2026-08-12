@@ -8,6 +8,7 @@ import 'package:mudabbir/service/chatbot/chat_context_summary.dart';
 import 'package:mudabbir/service/chatbot/chat_sse_service.dart';
 import 'package:mudabbir/presentation/chatbot/chatbot_copy_helpers.dart';
 import 'package:mudabbir/service/chatbot/chatbot_models.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
 
 class ChatScreenState {
   const ChatScreenState({
@@ -52,7 +53,10 @@ class ChatScreenState {
 
 final chatNotifierProvider =
     StateNotifierProvider.autoDispose<ChatNotifier, ChatScreenState>((ref) {
-  final notifier = ChatNotifier();
+  final notifier = ChatNotifier(
+    store: ChatMessageStore(db: ref.watch(dbHelperProvider)),
+    sse: ChatSseService(dio: ref.watch(dioClientProvider).dio),
+  );
   ref.onDispose(() {
     notifier.messageController.dispose();
     notifier.scrollController.dispose();
@@ -62,11 +66,11 @@ final chatNotifierProvider =
 
 class ChatNotifier extends StateNotifier<ChatScreenState> {
   ChatNotifier({
-    ChatMessageStore? store,
-    ChatSseService? sse,
+    required ChatMessageStore store,
+    required ChatSseService sse,
     ChatContextSummary? contextSummary,
-  })  : _store = store ?? ChatMessageStore(),
-        _sse = sse ?? ChatSseService(),
+  })  : _store = store,
+        _sse = sse,
         _contextSummary = contextSummary ?? ChatContextSummary(),
         super(ChatScreenState.initial()) {
     _loadHistory();

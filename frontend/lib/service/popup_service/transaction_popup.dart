@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:get_it/get_it.dart';
 import 'package:dartz/dartz.dart';
 import 'package:mudabbir/constants/hive_constants.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
 import 'package:mudabbir/data/local/local_database.dart';
 import 'package:mudabbir/data/network/failure.dart';
 import 'package:mudabbir/domain/models/expense_sync_result.dart';
@@ -25,7 +25,14 @@ import 'package:mudabbir/utils/local_db_user_id.dart';
 import 'popup_widgets.dart';
 
 class TransactionPopup {
-  final _expenseRepository = GetIt.I<ExpenseRepository>();
+  TransactionPopup({
+    required ExpenseRepository expenseRepository,
+    required HiveService hiveService,
+  })  : _expenseRepository = expenseRepository,
+        _hiveService = hiveService;
+
+  final ExpenseRepository _expenseRepository;
+  final HiveService _hiveService;
 
   Future<void> show(BuildContext context, {required String type}) async {
     await showDialog(
@@ -44,7 +51,7 @@ class TransactionPopup {
   }
 
   Future<void> _ensureDatabaseReady() async {
-    final user = GetIt.I<HiveService>().getValue(HiveConstants.savedUserInfo);
+    final user = _hiveService.getValue(HiveConstants.savedUserInfo);
     await LocalDatabase.instance.initForUser(resolveLocalDbUserId(user));
   }
 
@@ -103,8 +110,8 @@ class _TransactionDialogBodyState extends ConsumerState<_TransactionDialogBody> 
   int? _categoryId;
   bool _saving = false;
 
-  TransactionPopup get _popup => GetIt.I<TransactionPopup>();
-  SyncedExpenseRepository get _synced => GetIt.I<SyncedExpenseRepository>();
+  TransactionPopup get _popup => ref.read(transactionPopupProvider);
+  SyncedExpenseRepository get _synced => ref.read(syncedExpenseRepositoryProvider);
 
   @override
   void initState() {

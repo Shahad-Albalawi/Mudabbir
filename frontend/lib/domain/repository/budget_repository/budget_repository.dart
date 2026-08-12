@@ -3,11 +3,12 @@ import 'package:mudabbir/data/local/database_helper.dart';
 import 'package:mudabbir/data/local/empty.dart';
 import 'package:mudabbir/domain/models/budget_record.dart';
 import 'package:mudabbir/domain/services/sync_policies.dart';
-import 'package:mudabbir/service/getit_init.dart';
 import 'package:sqflite/sqflite.dart';
 
 class BudgetRepository {
-  DbHelper get _db => getIt<DbHelper>();
+  BudgetRepository({required DbHelper db}) : _db = db;
+
+  final DbHelper _db;
 
   Future<Either<Empty, List<Map<String, dynamic>>>> getBudgets() async {
     return _db.queryAllRows('budgets');

@@ -1,25 +1,22 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mudabbir/core/providers/app_bootstrap.dart';
 import 'package:mudabbir/core/router/app_router.dart';
-import 'package:mudabbir/service/getit_init.dart';
-import 'package:mudabbir/service/navigation_service.dart';
 import 'package:mudabbir/service/routing_service/app_routes.dart';
 
 void main() {
-  setUp(() async {
-    await getIt.reset();
-    getIt.registerSingleton<NavigationService>(NavigationService());
+  late ProviderContainer container;
+
+  setUp(() {
+    container = createTestContainer();
   });
 
-  tearDown(() async {
-    await getIt.reset();
+  tearDown(() {
+    container.dispose();
   });
 
   group('GoRouter matches AppRoutes', () {
     test('router resolves every primary AppRoutes path', () {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-
       final router = container.read(routerProvider);
 
       final paths = <String>[

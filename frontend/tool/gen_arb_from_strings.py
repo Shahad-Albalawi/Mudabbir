@@ -117,8 +117,8 @@ getter_lines = "\n".join(f"  static String get {k} => _t.{k};" for k in keys)
 
 facade = f'''import 'package:flutter/material.dart';
 import 'package:mudabbir/l10n/app_localizations.dart';
-import 'package:mudabbir/service/getit_init.dart';
-import 'package:mudabbir/service/language/app_language_controller.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
+import 'package:mudabbir/core/providers/provider_reader.dart';
 
 /// Backward-compatible facade over generated [AppLocalizations].
 /// Prefer `context.l10n` / [AppLocalizations.of] in new UI code.
@@ -132,7 +132,7 @@ class AppStrings {{
     final cached = _bound;
     if (cached != null) return cached;
     try {{
-      return lookupAppLocalizations(getIt<AppLanguageController>().locale);
+      return lookupAppLocalizations(readApp(appLanguageControllerProvider).locale);
     }} catch (_) {{
       return lookupAppLocalizations(const Locale('ar'));
     }}

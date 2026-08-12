@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:get_it/get_it.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
 import 'package:mudabbir/constants/app_theme.dart';
 import 'package:mudabbir/data/network/failure.dart';
 import 'package:mudabbir/domain/models/expense_sync_result.dart';
@@ -66,8 +66,8 @@ class _AddTransactionSheetBodyState
   Map<String, int> _categoryIdsByDbName = {};
   String? _loadError;
 
-  SyncedExpenseRepository get _synced => GetIt.I<SyncedExpenseRepository>();
-  TransactionPopup get _popup => GetIt.I<TransactionPopup>();
+  SyncedExpenseRepository get _synced => ref.read(syncedExpenseRepositoryProvider);
+  TransactionPopup get _popup => ref.read(transactionPopupProvider);
 
   @override
   void initState() {

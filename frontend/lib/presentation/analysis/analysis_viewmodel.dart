@@ -16,9 +16,7 @@ import 'package:mudabbir/presentation/resources/strings_manager.dart';
 
 import 'package:mudabbir/presentation/statistics/statistics_viewmodel.dart';
 
-import 'package:mudabbir/service/getit_init.dart';
-
-
+import 'package:mudabbir/core/providers/app_providers.dart';
 
 class AnalysisState {
 
@@ -200,7 +198,10 @@ final analysisProvider =
 
     ref.keepAlive();
 
-    return AnalysisNotifier(ref);
+    return AnalysisNotifier(
+      ref,
+      behavioralRepo: ref.watch(behavioralAnalysisRepositoryProvider),
+    );
 
   },
 
@@ -210,7 +211,9 @@ final analysisProvider =
 
 class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
-  AnalysisNotifier(this._ref) : super(const AnalysisState(isLoading: true)) {
+  AnalysisNotifier(this._ref, {required BehavioralAnalysisRepository behavioralRepo})
+      : _behavioralRepo = behavioralRepo,
+        super(const AnalysisState(isLoading: true)) {
 
     _ref.listen<StatisticsState>(statisticsProvider, (_, stats) {
 
@@ -226,9 +229,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
   final Ref _ref;
 
-  final BehavioralAnalysisRepository _behavioralRepo =
-
-      getIt<BehavioralAnalysisRepository>();
+  final BehavioralAnalysisRepository _behavioralRepo;
 
   int? _lastStatsFingerprint;
 

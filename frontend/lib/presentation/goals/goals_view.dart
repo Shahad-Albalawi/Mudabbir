@@ -19,11 +19,10 @@ import 'package:mudabbir/presentation/widgets/app_snackbar.dart';
 import 'package:mudabbir/service/financial_refresh.dart';
 import 'package:mudabbir/service/gamification/celebration_service.dart';
 import 'package:mudabbir/service/gamification/confetti_widget.dart';
-import 'package:mudabbir/service/getit_init.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
 import 'package:mudabbir/service/haptic_service.dart';
 import 'package:mudabbir/service/notifications/financial_alert_service.dart';
 import 'package:mudabbir/service/popup_service/goal_popup.dart';
-import 'package:mudabbir/service/popup_service/popup_service.dart';
 import 'package:mudabbir/service/popup_service/popup_widgets.dart';
 import 'package:mudabbir/service/routing_service/app_routes.dart';
 
@@ -332,7 +331,7 @@ class _GoalViewState extends ConsumerState<GoalView> {
                     label: AppStrings.addNewGoal,
                     onPressed: () {
                       HapticService.medium();
-                      getIt<PopupService>().showAddGoalPopup(context, ref);
+                      ref.read(popupServiceProvider).showAddGoalPopup(context, ref);
                     },
                   ),
                 ),

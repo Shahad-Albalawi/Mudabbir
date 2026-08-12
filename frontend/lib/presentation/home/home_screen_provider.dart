@@ -9,9 +9,9 @@ import 'package:mudabbir/domain/models/savings_goal.dart';
 import 'package:mudabbir/domain/repository/synced_expense_repository/synced_expense_repository.dart';
 import 'package:mudabbir/domain/repository/synced_goals_repository/synced_goals_repository.dart';
 import 'package:mudabbir/domain/services/financial_date_utils.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
 import 'package:mudabbir/presentation/home/home_viewmodel.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
-import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/hive_service.dart';
 import 'package:mudabbir/utils/local_db_user_id.dart';
 import 'package:mudabbir/utils/user_display_name.dart';
@@ -174,21 +174,31 @@ final homeScreenProvider =
 
 class HomeScreenNotifier extends StateNotifier<HomeScreenState> {
   HomeScreenNotifier(this._ref) : super(const HomeScreenState()) {
+    _db = _ref.read(dbHelperProvider);
+    _homeRepository = _ref.read(homeRepositoryProvider);
+    _expenseRepository = _ref.read(syncedExpenseRepositoryProvider);
+    _goalsRepository = _ref.read(syncedGoalsRepositoryProvider);
+    _hiveService = _ref.read(hiveServiceProvider);
     load();
   }
 
   /// Seeds dashboard state without triggering [load] — for widget tests only.
   @visibleForTesting
   HomeScreenNotifier.preview(this._ref, HomeScreenState initial)
-      : super(initial);
+      : super(initial) {
+    _db = _ref.read(dbHelperProvider);
+    _homeRepository = _ref.read(homeRepositoryProvider);
+    _expenseRepository = _ref.read(syncedExpenseRepositoryProvider);
+    _goalsRepository = _ref.read(syncedGoalsRepositoryProvider);
+    _hiveService = _ref.read(hiveServiceProvider);
+  }
 
   final Ref _ref;
-  final DbHelper _db = getIt<DbHelper>();
-  final HomeRepository _homeRepository = getIt<HomeRepository>();
-  final SyncedExpenseRepository _expenseRepository =
-      getIt<SyncedExpenseRepository>();
-  final SyncedGoalsRepository _goalsRepository =
-      getIt<SyncedGoalsRepository>();
+  late final DbHelper _db;
+  late final HomeRepository _homeRepository;
+  late final SyncedExpenseRepository _expenseRepository;
+  late final SyncedGoalsRepository _goalsRepository;
+  late final HiveService _hiveService;
 
   Future<void> load({bool force = false}) async {
     if (!force && !state.isLoading && state.errorMessage == null) {
@@ -198,7 +208,7 @@ class HomeScreenNotifier extends StateNotifier<HomeScreenState> {
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
-      final user = await getIt<HiveService>().getValue(
+      final user = await _hiveService.getValue(
         HiveConstants.savedUserInfo,
       );
       final userName = UserDisplayName.fromSavedUserInfo(user);

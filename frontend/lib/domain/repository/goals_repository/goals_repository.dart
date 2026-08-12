@@ -7,7 +7,6 @@ import 'package:mudabbir/data/network/failure.dart';
 import 'package:mudabbir/domain/models/savings_goal.dart';
 import 'package:mudabbir/domain/services/sync_policies.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
-import 'package:mudabbir/service/getit_init.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
@@ -24,7 +23,9 @@ class GoalWriteResult {
 
 /// CRUD, contributions, and image persistence for savings goals.
 class GoalsRepository {
-  final DbHelper _db = getIt<DbHelper>();
+  GoalsRepository({required DbHelper db}) : _db = db;
+
+  final DbHelper _db;
 
   Future<Either<Failure, List<SavingsGoal>>> getGoals() async {
     try {

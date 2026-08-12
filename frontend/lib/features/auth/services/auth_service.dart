@@ -6,7 +6,6 @@ import 'package:mudabbir/data/network/failure.dart';
 import 'package:mudabbir/domain/models/user/user_model.dart';
 import 'package:mudabbir/domain/repository/user_repository/user_repository.dart';
 import 'package:mudabbir/features/auth/models/auth_exception.dart';
-import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/hive_service.dart';
 import 'package:mudabbir/service/routing_service/auth_notifier.dart';
 import 'package:mudabbir/service/security/auth_token_secure_store.dart';
@@ -14,14 +13,14 @@ import 'package:mudabbir/service/security/auth_token_secure_store.dart';
 /// Login, register, and logout — token persisted in [AuthTokenSecureStore].
 class AuthService {
   AuthService({
-    UserRepository? userRepository,
-    AuthTokenSecureStore? secureStore,
-    AuthNotifier? authNotifier,
-    HiveService? hiveService,
-  })  : _userRepository = userRepository ?? getIt<UserRepository>(),
-        _secureStore = secureStore ?? getIt<AuthTokenSecureStore>(),
-        _authNotifier = authNotifier ?? getIt<AuthNotifier>(),
-        _hiveService = hiveService ?? getIt<HiveService>();
+    required UserRepository userRepository,
+    required AuthTokenSecureStore secureStore,
+    required AuthNotifier authNotifier,
+    required HiveService hiveService,
+  })  : _userRepository = userRepository,
+        _secureStore = secureStore,
+        _authNotifier = authNotifier,
+        _hiveService = hiveService;
 
   final UserRepository _userRepository;
   final AuthTokenSecureStore _secureStore;

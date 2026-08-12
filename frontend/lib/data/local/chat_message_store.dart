@@ -1,10 +1,9 @@
 import 'package:mudabbir/data/local/database_helper.dart';
 import 'package:mudabbir/service/chatbot/chatbot_models.dart';
-import 'package:mudabbir/service/getit_init.dart';
 
 /// Persists the last 50 chat messages in SQLite.
 class ChatMessageStore {
-  ChatMessageStore({DbHelper? db}) : _db = db ?? getIt<DbHelper>();
+  ChatMessageStore({required DbHelper db}) : _db = db;
 
   final DbHelper _db;
   static const _maxMessages = 50;

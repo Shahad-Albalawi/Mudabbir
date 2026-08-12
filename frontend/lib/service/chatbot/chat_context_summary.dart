@@ -4,9 +4,9 @@ import 'package:mudabbir/domain/services/financial_date_utils.dart';
 import 'package:mudabbir/domain/services/health_score_calculator.dart';
 import 'package:mudabbir/features/ai_assistant/data/ai_system_prompt.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
+import 'package:mudabbir/core/providers/provider_reader.dart';
 import 'package:mudabbir/service/chatbot/chatbot_context_loader.dart';
-import 'package:mudabbir/service/getit_init.dart';
-import 'package:mudabbir/service/hive_service.dart';
 import 'package:mudabbir/utils/user_display_name.dart';
 
 /// Builds the AI system prompt with live financial data for `/api/ai/chat`.
@@ -15,7 +15,8 @@ class ChatContextSummary {
     ChatbotContextLoader? loader,
     FinancialAggregator? aggregator,
   })  : _loader = loader ?? ChatbotContextLoader(),
-        _aggregator = aggregator ?? FinancialAggregator();
+        _aggregator = aggregator ??
+            FinancialAggregator(db: readApp(dbHelperProvider));
 
   final ChatbotContextLoader _loader;
   final FinancialAggregator _aggregator;
@@ -146,7 +147,7 @@ class ChatContextSummary {
 
   Future<String> _userName() async {
     try {
-      final user = await getIt<HiveService>().getValue(HiveConstants.savedUserInfo);
+      final user = readApp(hiveServiceProvider).getValue(HiveConstants.savedUserInfo);
       return UserDisplayName.fromSavedUserInfo(user);
     } catch (_) {
       return '';

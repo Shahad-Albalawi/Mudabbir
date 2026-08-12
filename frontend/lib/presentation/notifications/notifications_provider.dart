@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mudabbir/data/network/api_exception.dart';
 import 'package:mudabbir/domain/models/app_notification.dart';
 import 'package:mudabbir/presentation/resources/network_messages.dart';
-import 'package:mudabbir/service/getit_init.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
 import 'package:mudabbir/data/remote/notification_api_service.dart';
 
 class NotificationsState {
@@ -33,11 +33,15 @@ class NotificationsState {
 }
 
 class NotificationsNotifier extends StateNotifier<NotificationsState> {
-  NotificationsNotifier({bool loadOnInit = true}) : super(const NotificationsState()) {
+  NotificationsNotifier({
+    required NotificationApiService api,
+    bool loadOnInit = true,
+  })  : _api = api,
+        super(const NotificationsState()) {
     if (loadOnInit) load();
   }
 
-  final _api = getIt<NotificationApiService>();
+  final NotificationApiService _api;
 
   Future<void> load() async {
     state = state.copyWith(isLoading: true, clearError: true);
@@ -80,7 +84,7 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
 
 final notificationsProvider =
     StateNotifierProvider<NotificationsNotifier, NotificationsState>(
-  (_) => NotificationsNotifier(),
+  (ref) => NotificationsNotifier(api: ref.watch(notificationApiServiceProvider)),
 );
 
 final unreadNotificationsCountProvider = Provider<int>((ref) {

@@ -21,7 +21,7 @@ import 'package:mudabbir/presentation/widgets/app_grouped_scaffold.dart';
 import 'package:mudabbir/presentation/widgets/app_skeleton.dart';
 import 'package:mudabbir/presentation/widgets/ios_dialog_style.dart';
 import 'package:mudabbir/presentation/widgets/ios_empty_state.dart';
-import 'package:mudabbir/service/getit_init.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
 import 'package:mudabbir/service/routing_service/app_routes.dart';
 import 'package:mudabbir/utils/challenge_current_user.dart';
 
@@ -37,7 +37,7 @@ class ChallengeDetailScreen extends ConsumerStatefulWidget {
 
 class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
   ServerChallengeRepository get _repository =>
-      getIt<ServerChallengeRepository>();
+      ref.read(serverChallengeRepositoryProvider);
 
   @override
   void initState() {

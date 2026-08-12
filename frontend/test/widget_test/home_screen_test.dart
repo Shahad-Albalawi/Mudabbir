@@ -73,7 +73,10 @@ void main() {
               (ref) => HomeScreenNotifier.preview(ref, seedState),
             ),
             notificationsProvider.overrideWith(
-              (ref) => NotificationsNotifier(loadOnInit: false),
+              (ref) => NotificationsNotifier(
+                api: FakeNotificationApiService(),
+                loadOnInit: false,
+              ),
             ),
           ],
         ),

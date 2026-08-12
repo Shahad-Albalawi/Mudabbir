@@ -5,9 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mudabbir/core/theme/app_theme.dart';
 import 'package:mudabbir/presentation/resources/assets_manager.dart';
-import 'package:mudabbir/service/getit_init.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
 import 'package:mudabbir/service/routing_service/app_routes.dart';
-import 'package:mudabbir/service/routing_service/auth_notifier.dart';
 
 /// شاشة افتتاح مدبّر — شعار متحرك ثم توجيه حسب جلسة المستخدم.
 class SplashScreen extends ConsumerStatefulWidget {
@@ -70,7 +69,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     await Future<void>.delayed(const Duration(milliseconds: 800));
     if (!mounted || _navigated) return;
 
-    final auth = getIt<AuthNotifier>();
+    final auth = ref.read(authNotifierProvider);
     _navigated = true;
 
     if (auth.isLoggedIn) {
@@ -81,7 +80,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   }
 
   Future<void> _waitUntilAuthReady() async {
-    final auth = getIt<AuthNotifier>();
+    final auth = ref.read(authNotifierProvider);
     if (auth.isInitialized) return;
 
     final completer = Completer<void>();

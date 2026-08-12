@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:get_it/get_it.dart';
 import 'package:mudabbir/service/popup_service/budget_popup.dart';
 import 'package:mudabbir/service/popup_service/goal_popup.dart';
 import 'package:mudabbir/service/popup_service/transaction_popup.dart';
 
 /// Central entry for add/edit popups (expense, income, budget, goal).
 class PopupService {
-  final _transactionPopup = GetIt.I<TransactionPopup>();
-  final _budgetPopup = GetIt.I<BudgetPopup>();
-  final _goalPopup = GetIt.I<GoalPopup>();
+  PopupService({
+    required TransactionPopup transactionPopup,
+    required BudgetPopup budgetPopup,
+    required GoalPopup goalPopup,
+  })  : _transactionPopup = transactionPopup,
+        _budgetPopup = budgetPopup,
+        _goalPopup = goalPopup;
+
+  final TransactionPopup _transactionPopup;
+  final BudgetPopup _budgetPopup;
+  final GoalPopup _goalPopup;
 
   Future<void> showAddIncomePopup(BuildContext context) async {
     await _transactionPopup.show(context, type: 'income');

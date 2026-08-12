@@ -1,12 +1,15 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mudabbir/constants/test_support.dart';
+import 'package:mudabbir/core/providers/app_bootstrap.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
+import 'package:mudabbir/core/providers/provider_reader.dart';
 import 'package:mudabbir/data/local/budget_hive_cache.dart';
 import 'package:mudabbir/data/local/challenge_hive_cache.dart';
 import 'package:mudabbir/data/local/expense_hive_cache.dart';
 import 'package:mudabbir/data/local/goal_hive_cache.dart';
 import 'package:mudabbir/domain/repository/user_repository/user_repository.dart';
 import 'package:mudabbir/features/auth/services/auth_service.dart';
-import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/hive_service.dart';
 import 'package:mudabbir/service/routing_service/auth_notifier.dart';
 import 'package:mudabbir/service/security/auth_token_secure_store.dart';
@@ -63,6 +66,17 @@ class FakeHiveService extends Fake implements HiveService {
   }
 }
 
+ProviderContainer? _authTestContainer;
+FakeHiveService? _fakeHive;
+
+ProviderContainer get authTestContainer {
+  final container = _authTestContainer;
+  if (container == null) {
+    throw StateError('Call bootstrapAuthIntegrationTests() first');
+  }
+  return container;
+}
+
 Future<void> bootstrapAuthIntegrationTests() async {
   TestWidgetsFlutterBinding.ensureInitialized();
   TestSupport.skipDatabaseSideEffects = true;
@@ -70,33 +84,56 @@ Future<void> bootstrapAuthIntegrationTests() async {
 }
 
 Future<void> resetAuthTestLocator() async {
-  await getIt.reset();
+  _authTestContainer?.dispose();
+  _fakeHive = FakeHiveService();
 
-  getIt.registerLazySingleton<HiveService>(() => FakeHiveService());
-  getIt.registerLazySingleton<AuthTokenSecureStore>(
-    () => AuthTokenSecureStore(),
+  _authTestContainer = createTestContainer(
+    overrides: [
+      hiveServiceProvider.overrideWithValue(_fakeHive!),
+      authTokenSecureStoreProvider.overrideWithValue(AuthTokenSecureStore()),
+      expenseHiveCacheProvider.overrideWithValue(FakeExpenseHiveCache()),
+      goalHiveCacheProvider.overrideWithValue(FakeGoalHiveCache()),
+      budgetHiveCacheProvider.overrideWithValue(FakeBudgetHiveCache()),
+      challengeHiveCacheProvider.overrideWithValue(FakeChallengeHiveCache()),
+    ],
   );
-  getIt.registerLazySingleton<AuthNotifier>(() => AuthNotifier());
-  getIt.registerLazySingleton<ExpenseHiveCache>(() => FakeExpenseHiveCache());
-  getIt.registerLazySingleton<GoalHiveCache>(() => FakeGoalHiveCache());
-  getIt.registerLazySingleton<BudgetHiveCache>(() => FakeBudgetHiveCache());
-  getIt.registerLazySingleton<ChallengeHiveCache>(() => FakeChallengeHiveCache());
 }
 
 void registerMockUserRepository(UserRepository mock) {
-  if (getIt.isRegistered<AuthService>()) {
-    getIt.unregister<AuthService>();
-  }
-  if (getIt.isRegistered<UserRepository>()) {
-    getIt.unregister<UserRepository>();
-  }
-  getIt.registerLazySingleton<UserRepository>(() => mock);
-  getIt.registerLazySingleton<AuthService>(() => AuthService());
+  final container = authTestContainer;
+  container.dispose();
+  _authTestContainer = createTestContainer(
+    overrides: [
+      hiveServiceProvider.overrideWithValue(_fakeHive!),
+      authTokenSecureStoreProvider.overrideWithValue(AuthTokenSecureStore()),
+      expenseHiveCacheProvider.overrideWithValue(FakeExpenseHiveCache()),
+      goalHiveCacheProvider.overrideWithValue(FakeGoalHiveCache()),
+      budgetHiveCacheProvider.overrideWithValue(FakeBudgetHiveCache()),
+      challengeHiveCacheProvider.overrideWithValue(FakeChallengeHiveCache()),
+      userRepositoryProvider.overrideWithValue(mock),
+    ],
+  );
 }
+
+AuthNotifier readAuthNotifier() => authTestContainer.read(authNotifierProvider);
+
+AuthService readAuthService() => authTestContainer.read(authServiceProvider);
+
+HiveService readTestHiveService() => _fakeHive!;
+
+AuthTokenSecureStore readTestSecureStore() =>
+    authTestContainer.read(authTokenSecureStoreProvider);
 
 Future<void> waitForAuthNotifierInit(AuthNotifier auth) async {
   for (var i = 0; i < 100 && !auth.isInitialized; i++) {
     await Future<void>.delayed(const Duration(milliseconds: 20));
   }
   expect(auth.isInitialized, isTrue);
+}
+
+Future<void> disposeAuthTestLocator() async {
+  _authTestContainer?.dispose();
+  _authTestContainer = null;
+  _fakeHive = null;
+  resetProviderContainerBinding();
 }

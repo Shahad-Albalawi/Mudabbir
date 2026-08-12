@@ -1,9 +1,13 @@
+import 'package:mudabbir/data/local/database_helper.dart';
 import 'package:mudabbir/domain/services/financial_aggregator.dart';
 import 'package:mudabbir/domain/services/repository_guard.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 
 class HomeRepository {
-  final FinancialAggregator _aggregator = FinancialAggregator();
+  HomeRepository({required DbHelper db})
+      : _aggregator = FinancialAggregator(db: db);
+
+  final FinancialAggregator _aggregator;
 
   Future<double> getTotalIncome({String? startDate, String? endDate}) async {
     final result = await guardRepository(

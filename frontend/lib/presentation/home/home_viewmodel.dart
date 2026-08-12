@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mudabbir/constants/hive_constants.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
 import 'package:mudabbir/data/local/local_database.dart';
 import 'package:mudabbir/domain/repository/home_repository/home_repository.dart';
 import 'package:mudabbir/domain/services/financial_date_utils.dart';
@@ -11,7 +12,6 @@ import 'package:mudabbir/domain/services/insight_thresholds.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/presentation/screens/statistics_screen.dart';
 import 'package:mudabbir/presentation/server_challenges/screens/challenges_list_screen.dart';
-import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/hive_service.dart';
 import 'package:mudabbir/utils/local_db_user_id.dart';
 
@@ -78,11 +78,18 @@ class HomeState {
 }
 
 final homeProvider = StateNotifierProvider<HomeViewModel, HomeState>(
-  (_) => HomeViewModel(),
+  (ref) => HomeViewModel(
+    homeRepository: ref.watch(homeRepositoryProvider),
+    hiveService: ref.watch(hiveServiceProvider),
+  ),
 );
 
 class HomeViewModel extends StateNotifier<HomeState> {
-  HomeViewModel() : super(HomeState()) {
+  HomeViewModel({
+    required this.homeRepository,
+    required HiveService hiveService,
+  })  : _hiveService = hiveService,
+        super(HomeState()) {
     loadFinancialSummary();
   }
 
@@ -93,7 +100,8 @@ class HomeViewModel extends StateNotifier<HomeState> {
     ChallengesListScreen(embedded: true),
   ];
 
-  final HomeRepository homeRepository = getIt<HomeRepository>();
+  final HomeRepository homeRepository;
+  final HiveService _hiveService;
 
   /// Memoized monthly expense totals within a single summary load.
   final Map<String, double> _monthlyExpenseCache = {};
@@ -102,7 +110,7 @@ class HomeViewModel extends StateNotifier<HomeState> {
     state = state.copyWith(isLoading: true, clearError: true);
     _monthlyExpenseCache.clear();
     try {
-      final user = await getIt<HiveService>().getValue(
+      final user = await _hiveService.getValue(
         HiveConstants.savedUserInfo,
       );
       final userName = resolveLocalDbUserId(user);

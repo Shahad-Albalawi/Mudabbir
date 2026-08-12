@@ -1,9 +1,10 @@
+import 'package:mudabbir/core/providers/app_providers.dart';
+import 'package:mudabbir/core/providers/provider_reader.dart';
 import 'package:mudabbir/data/local/challenge_hive_cache.dart';
 import 'package:mudabbir/data/local/database_helper.dart';
 import 'package:mudabbir/data/local/expense_hive_cache.dart';
 import 'package:mudabbir/data/local/goal_hive_cache.dart';
 import 'package:mudabbir/domain/services/financial_aggregator.dart';
-import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/utils/dev_log.dart';
 
 /// Loads chatbot financial context from SQLite, with Hive cache fallback.
@@ -55,7 +56,7 @@ class ChatbotContextLoader {
   }
 
   Future<Map<String, dynamic>> _loadFromDatabase() async {
-    final dbHelper = _dbHelper ?? getIt<DbHelper>();
+    final DbHelper dbHelper = _dbHelper ?? readApp(dbHelperProvider);
     final aggregator = _aggregator ?? FinancialAggregator(db: dbHelper);
     final context = <String, dynamic>{};
 
@@ -107,9 +108,12 @@ class ChatbotContextLoader {
   }
 
   Map<String, dynamic> _loadFromHive() {
-    final expenseCache = _expenseCache ?? getIt<ExpenseHiveCache>();
-    final goalCache = _goalCache ?? getIt<GoalHiveCache>();
-    final challengeCache = _challengeCache ?? getIt<ChallengeHiveCache>();
+    final ExpenseHiveCache expenseCache =
+        _expenseCache ?? readApp(expenseHiveCacheProvider);
+    final GoalHiveCache goalCache =
+        _goalCache ?? readApp(goalHiveCacheProvider);
+    final ChallengeHiveCache challengeCache =
+        _challengeCache ?? readApp(challengeHiveCacheProvider);
 
     final transactions =
         List<Map<String, dynamic>>.from(expenseCache.getExpensesList() ?? []);

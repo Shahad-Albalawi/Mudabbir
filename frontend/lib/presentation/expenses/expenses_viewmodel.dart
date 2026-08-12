@@ -3,8 +3,8 @@ import 'package:mudabbir/data/network/api_exception.dart';
 import 'package:mudabbir/data/network/failure.dart';
 import 'package:mudabbir/domain/models/expense_transaction.dart';
 import 'package:mudabbir/domain/repository/synced_expense_repository/synced_expense_repository.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
-import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/notifications/financial_alert_service.dart';
 
 const _unsetExpenseError = Object();
@@ -76,9 +76,11 @@ class ExpensesState {
 }
 
 class ExpensesNotifier extends StateNotifier<ExpensesState> {
-  final SyncedExpenseRepository _repository = getIt<SyncedExpenseRepository>();
+  ExpensesNotifier({required SyncedExpenseRepository repository})
+      : _repository = repository,
+        super(ExpensesState());
 
-  ExpensesNotifier() : super(ExpensesState());
+  final SyncedExpenseRepository _repository;
 
   static String currentMonthKey() {
     final now = DateTime.now();
@@ -295,5 +297,7 @@ class ExpensesNotifier extends StateNotifier<ExpensesState> {
 
 final expensesProvider =
     StateNotifierProvider.autoDispose<ExpensesNotifier, ExpensesState>((ref) {
-  return ExpensesNotifier()..initialize();
+  return ExpensesNotifier(
+    repository: ref.watch(syncedExpenseRepositoryProvider),
+  )..initialize();
 });

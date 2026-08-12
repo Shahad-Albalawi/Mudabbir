@@ -5,8 +5,8 @@ import 'package:mudabbir/domain/repository/budget_repository/budget_repository.d
 import 'package:mudabbir/domain/repository/synced_budget_repository/synced_budget_repository.dart';
 import 'package:mudabbir/data/network/api_exception.dart';
 import 'package:mudabbir/data/network/failure.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
-import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/utils/dev_log.dart';
 
 const _unsetBudgetError = Object();
@@ -61,10 +61,18 @@ class BudgetState {
 }
 
 class BudgetViewmodel extends StateNotifier<BudgetState> {
-  final SyncedBudgetRepository _synced = getIt<SyncedBudgetRepository>();
-  final BudgetRepository _local = getIt<BudgetRepository>();
+  BudgetViewmodel({
+    required SyncedBudgetRepository synced,
+    required BudgetRepository local,
+    required DbHelper db,
+  })  : _synced = synced,
+        _local = local,
+        _db = db,
+        super(BudgetState());
 
-  BudgetViewmodel() : super(BudgetState());
+  final SyncedBudgetRepository _synced;
+  final BudgetRepository _local;
+  final DbHelper _db;
 
   Future<void> getAllBudgets() async {
     state = state.copyWith(isLoading: true, error: null);
@@ -131,7 +139,7 @@ class BudgetViewmodel extends StateNotifier<BudgetState> {
   }
 
   Future<dynamic> getAccounts() async {
-    return await getIt<DbHelper>().queryAllRows('accounts');
+    return await _db.queryAllRows('accounts');
   }
 
   Future<void> deleteBudget(int id) async {
@@ -160,5 +168,9 @@ class BudgetViewmodel extends StateNotifier<BudgetState> {
 
 final budgetViewmodelProvider =
     StateNotifierProvider.autoDispose<BudgetViewmodel, BudgetState>((ref) {
-      return BudgetViewmodel()..getAllBudgets();
+      return BudgetViewmodel(
+        synced: ref.watch(syncedBudgetRepositoryProvider),
+        local: ref.watch(budgetRepositoryProvider),
+        db: ref.watch(dbHelperProvider),
+      )..getAllBudgets();
     });

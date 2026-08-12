@@ -5,22 +5,8 @@ import 'package:mudabbir/presentation/server_challenges/challenge_copy_helpers.d
 import 'package:mudabbir/presentation/server_challenges/models/challenge_model.dart';
 import 'package:mudabbir/presentation/server_challenges/providers/challenge_state.dart';
 import 'package:mudabbir/data/network/api_exception.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
 import 'package:mudabbir/presentation/server_challenges/services/challenge_service.dart';
-import 'package:mudabbir/data/network/dio_client.dart';
-import 'package:mudabbir/service/getit_init.dart';
-
-// Dio Client Provider (kept for Riverpod consumers that still reference it)
-final dioClientProvider = Provider<DioClient>((ref) {
-  return getIt<DioClient>();
-});
-
-final challengeServiceProvider = Provider<ChallengeService>((ref) {
-  return getIt<ChallengeService>();
-});
-
-final serverChallengeRepositoryProvider = Provider<ServerChallengeRepository>(
-  (ref) => getIt<ServerChallengeRepository>(),
-);
 
 final challengesProvider =
     StateNotifierProvider<ChallengesNotifier, ChallengeState>((ref) {
@@ -133,16 +119,25 @@ final challengeOperationProvider =
     ) {
       final repository = ref.watch(serverChallengeRepositoryProvider);
       final challengesNotifier = ref.watch(challengesProvider.notifier);
-      return ChallengeOperationNotifier(repository, challengesNotifier);
+      final challengeService = ref.watch(challengeServiceProvider);
+      return ChallengeOperationNotifier(
+        repository,
+        challengesNotifier,
+        challengeService,
+      );
     });
 
 class ChallengeOperationNotifier
     extends StateNotifier<ChallengeOperationState> {
   final ServerChallengeRepository _repository;
   final ChallengesNotifier _challengesNotifier;
+  final ChallengeService _challengeService;
 
-  ChallengeOperationNotifier(this._repository, this._challengesNotifier)
-    : super(const ChallengeOperationInitial());
+  ChallengeOperationNotifier(
+    this._repository,
+    this._challengesNotifier,
+    this._challengeService,
+  ) : super(const ChallengeOperationInitial());
 
   String _networkOrValidation(ApiException e, {required String offlineMessage}) =>
       e.isNetworkError ? offlineMessage : e.getValidationMessage();
@@ -189,7 +184,7 @@ class ChallengeOperationNotifier
   }) async {
     state = const ChallengeOperationLoading();
     try {
-      final challenge = await getIt<ChallengeService>().updateChallenge(
+      final challenge = await _challengeService.updateChallenge(
         id: id,
         name: name,
         amount: amount,

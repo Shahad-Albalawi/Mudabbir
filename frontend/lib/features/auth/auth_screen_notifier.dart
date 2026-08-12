@@ -3,7 +3,7 @@ import 'package:mudabbir/data/network/failure.dart';
 import 'package:mudabbir/domain/models/user/user_model.dart';
 import 'package:mudabbir/features/auth/models/auth_exception.dart';
 import 'package:mudabbir/features/auth/services/auth_service.dart';
-import 'package:mudabbir/service/getit_init.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
 
 enum AuthScreenOutcome { none, success }
 
@@ -45,12 +45,12 @@ class AuthScreenState {
 
 final authScreenProvider =
     StateNotifierProvider<AuthScreenNotifier, AuthScreenState>(
-  (ref) => AuthScreenNotifier(),
+  (ref) => AuthScreenNotifier(authService: ref.watch(authServiceProvider)),
 );
 
 class AuthScreenNotifier extends StateNotifier<AuthScreenState> {
-  AuthScreenNotifier({AuthService? authService})
-      : _authService = authService ?? getIt<AuthService>(),
+  AuthScreenNotifier({required AuthService authService})
+      : _authService = authService,
         super(const AuthScreenState());
 
   final AuthService _authService;

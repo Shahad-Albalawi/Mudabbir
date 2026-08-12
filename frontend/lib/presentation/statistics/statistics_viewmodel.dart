@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mudabbir/data/local/database_helper.dart';
 import 'package:mudabbir/domain/services/financial_aggregator.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
-import 'package:mudabbir/service/getit_init.dart';
 
 class StatisticsState {
   final double totalIncome;
@@ -80,16 +80,20 @@ class StatisticsState {
 final statisticsProvider =
     StateNotifierProvider<StatisticsViewModel, StatisticsState>((ref) {
   ref.keepAlive();
-  return StatisticsViewModel();
+  final db = ref.watch(dbHelperProvider);
+  return StatisticsViewModel(db: db);
 });
 
 class StatisticsViewModel extends StateNotifier<StatisticsState> {
-  final DbHelper _dbHelper = getIt<DbHelper>();
-  final FinancialAggregator _aggregator = FinancialAggregator();
-
-  StatisticsViewModel() : super(const StatisticsState()) {
+  StatisticsViewModel({required DbHelper db})
+      : _dbHelper = db,
+        _aggregator = FinancialAggregator(db: db),
+        super(const StatisticsState()) {
     loadStatistics();
   }
+
+  final DbHelper _dbHelper;
+  final FinancialAggregator _aggregator;
 
   int? _cachedFingerprint;
   StatisticsState? _cachedSnapshot;

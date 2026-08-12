@@ -15,7 +15,6 @@ import 'package:mudabbir/domain/services/financial_aggregator.dart';
 import 'package:mudabbir/domain/services/financial_date_utils.dart';
 import 'package:mudabbir/presentation/resources/currency_formatter.dart';
 import 'package:mudabbir/presentation/resources/saudi_riyal_font.dart';
-import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/hive_service.dart';
 import 'package:mudabbir/utils/user_display_name.dart';
 import 'package:pdf/pdf.dart';
@@ -101,10 +100,12 @@ class MonthlyReportData {
 /// Premium monthly PDF report for مدبّر — A4 RTL Arabic layout with charts.
 class ReportService {
   ReportService({
-    DbHelper? db,
+    required DbHelper db,
+    required HiveService hiveService,
     FinancialAggregator? aggregator,
-  })  : _db = db ?? getIt<DbHelper>(),
-        _aggregator = aggregator ?? FinancialAggregator();
+  })  : _db = db,
+        _hiveService = hiveService,
+        _aggregator = aggregator ?? FinancialAggregator(db: db);
 
   static const _navy = '#112E81';
   static const _navySoft = '#E8EDF8';
@@ -113,6 +114,7 @@ class ReportService {
   static const _muted = '#64748B';
 
   final DbHelper _db;
+  final HiveService _hiveService;
   final FinancialAggregator _aggregator;
 
   pw.Font? _regular;
@@ -151,7 +153,7 @@ class ReportService {
 
     final resolvedName = userName ??
         UserDisplayName.fromSavedUserInfo(
-          getIt<HiveService>().getValue(HiveConstants.savedUserInfo),
+          _hiveService.getValue(HiveConstants.savedUserInfo),
         );
 
     return MonthlyReportData(

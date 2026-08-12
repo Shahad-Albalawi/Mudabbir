@@ -3,9 +3,9 @@ import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/presentation/widgets/app_snackbar.dart';
 import 'package:mudabbir/presentation/widgets/ios_dialog_style.dart';
-import 'package:mudabbir/service/getit_init.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
+import 'package:mudabbir/core/providers/provider_reader.dart';
 import 'package:mudabbir/service/haptic_service.dart';
-import 'package:mudabbir/service/navigation_service.dart';
 
 /// Service to handle all celebration animations and effects
 class CelebrationService {
@@ -45,7 +45,7 @@ class CelebrationService {
     MilestoneType milestone,
     String goalName,
   ) {
-    final context = getIt<NavigationService>().navigatorKey.currentContext;
+    final context = readApp(navigationServiceProvider).navigatorKey.currentContext;
     if (context == null) return;
 
     final info = getMilestoneInfo(milestone, Theme.of(context).colorScheme);

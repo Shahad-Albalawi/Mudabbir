@@ -10,7 +10,6 @@ import 'package:mudabbir/domain/services/sync_flush_lock.dart';
 import 'package:mudabbir/domain/services/repository_guard.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/data/network/api_exception.dart';
-import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/utils/api_session.dart';
 
 /// Offline-first sync between Laravel expenses API, Hive cache, and SQLite.
@@ -20,12 +19,12 @@ class SyncedExpenseRepository {
   final ExpenseHiveCache _cache;
 
   SyncedExpenseRepository({
-    ExpenseRepository? local,
-    ExpenseApiService? remote,
-    ExpenseHiveCache? cache,
-  })  : _local = local ?? getIt<ExpenseRepository>(),
-        _remote = remote ?? getIt<ExpenseApiService>(),
-        _cache = cache ?? getIt<ExpenseHiveCache>();
+    required ExpenseRepository local,
+    required ExpenseApiService remote,
+    required ExpenseHiveCache cache,
+  })  : _local = local,
+        _remote = remote,
+        _cache = cache;
 
   Future<Either<Failure, List<Map<String, dynamic>>>> getExpenseCategories() =>
       _local.getExpenseCategories();

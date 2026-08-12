@@ -1,7 +1,7 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:mudabbir/constants/hive_constants.dart';
-import 'package:mudabbir/service/getit_init.dart';
-import 'package:mudabbir/service/hive_service.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
+import 'package:mudabbir/core/providers/provider_reader.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Onboarding completion — [onboardedKey] in SharedPreferences (+ Hive sync).
@@ -32,7 +32,7 @@ abstract final class OnboardingPrefs {
       return true;
     }
 
-    if (getIt<HiveService>().getValue(HiveConstants.savedFirstTime) == true) {
+    if (readApp(hiveServiceProvider).getValue(HiveConstants.savedFirstTime) == true) {
       await _syncAll(true);
       return true;
     }
@@ -48,6 +48,6 @@ abstract final class OnboardingPrefs {
     if (Hive.isBoxOpen(HiveConstants.prefsBox)) {
       await Hive.box(HiveConstants.prefsBox).put(_legacyHiveKey, value);
     }
-    await getIt<HiveService>().setValue(HiveConstants.savedFirstTime, value);
+    await readApp(hiveServiceProvider).setValue(HiveConstants.savedFirstTime, value);
   }
 }

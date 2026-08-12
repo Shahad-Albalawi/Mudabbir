@@ -7,11 +7,7 @@ import 'package:mudabbir/constants/hive_constants.dart';
 import 'package:mudabbir/domain/models/user/user_model.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/presentation/auth/login_screen.dart';
-import 'package:mudabbir/service/getit_init.dart';
-import 'package:mudabbir/service/hive_service.dart';
 import 'package:mudabbir/service/routing_service/app_routes.dart';
-import 'package:mudabbir/service/routing_service/auth_notifier.dart';
-import 'package:mudabbir/service/security/auth_token_secure_store.dart';
 
 import '../test/helpers/test_mocks.dart';
 import 'test_helpers/auth_test_helpers.dart';
@@ -22,7 +18,12 @@ Future<void> _pumpAuthApp(WidgetTester tester, Widget app) async {
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
 
-  await tester.pumpWidget(app);
+  await tester.pumpWidget(
+    UncontrolledProviderScope(
+      container: authTestContainer,
+      child: app,
+    ),
+  );
   await tester.pumpAndSettle();
 }
 
@@ -33,6 +34,10 @@ void main() {
 
   setUpAll(() async {
     await bootstrapAuthIntegrationTests();
+  });
+
+  tearDownAll(() async {
+    await disposeAuthTestLocator();
   });
 
   setUp(() async {
@@ -55,7 +60,7 @@ void main() {
         expect(email, 'new@example.com');
         expect(password, 'password123');
         expect(passwordConfirmation, 'password123');
-        await getIt<AuthTokenSecureStore>().writeToken('integration-token');
+        await readTestSecureStore().writeToken('integration-token');
         return Right(
           UserModel(
             id: 10,
@@ -65,7 +70,7 @@ void main() {
         );
       };
 
-      final auth = getIt<AuthNotifier>();
+      final auth = readAuthNotifier();
       await waitForAuthNotifierInit(auth);
 
       final router = GoRouter(
@@ -86,9 +91,7 @@ void main() {
 
       await _pumpAuthApp(
         tester,
-        ProviderScope(
-          child: MaterialApp.router(routerConfig: router),
-        ),
+        MaterialApp.router(routerConfig: router),
       );
 
       final fields = find.byType(TextField);
@@ -114,7 +117,7 @@ void main() {
       fakeUserRepository.loginHandler = (email, password) async {
         expect(email, 'user@example.com');
         expect(password, 'password123');
-        await getIt<AuthTokenSecureStore>().writeToken('integration-token');
+        await readTestSecureStore().writeToken('integration-token');
         return Right(
           UserModel(
             id: 1,
@@ -124,7 +127,7 @@ void main() {
         );
       };
 
-      final auth = getIt<AuthNotifier>();
+      final auth = readAuthNotifier();
       await waitForAuthNotifierInit(auth);
 
       final router = GoRouter(
@@ -145,9 +148,7 @@ void main() {
 
       await _pumpAuthApp(
         tester,
-        ProviderScope(
-          child: MaterialApp.router(routerConfig: router),
-        ),
+        MaterialApp.router(routerConfig: router),
       );
 
       final fields = find.byType(TextField);
@@ -161,13 +162,13 @@ void main() {
       expect(find.byKey(homeMarker), findsOneWidget);
       expect(auth.isLoggedIn, isTrue);
       expect(
-        getIt<HiveService>().getValue(HiveConstants.savedUserInfo),
+        readTestHiveService().getValue(HiveConstants.savedUserInfo),
         isNotNull,
       );
     });
 
     testWidgets('logout flow clears session and auth state', (tester) async {
-      final auth = getIt<AuthNotifier>();
+      final auth = readAuthNotifier();
       await waitForAuthNotifierInit(auth);
 
       await auth.didLogin(
@@ -176,15 +177,15 @@ void main() {
       );
       expect(auth.isLoggedIn, isTrue);
       expect(
-        getIt<HiveService>().getValue(HiveConstants.savedUserInfo),
+        readTestHiveService().getValue(HiveConstants.savedUserInfo),
         isNotNull,
       );
 
       await auth.didLogout();
 
       expect(auth.isLoggedIn, isFalse);
-      expect(getIt<HiveService>().getValue(HiveConstants.savedUserInfo), isNull);
-      expect(await getIt<AuthTokenSecureStore>().readToken(), isNull);
+      expect(readTestHiveService().getValue(HiveConstants.savedUserInfo), isNull);
+      expect(await readTestSecureStore().readToken(), isNull);
     });
   });
 }

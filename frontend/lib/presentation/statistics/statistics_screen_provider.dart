@@ -2,8 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mudabbir/data/local/database_helper.dart';
 import 'package:mudabbir/domain/services/financial_date_utils.dart';
 import 'package:mudabbir/presentation/resources/entity_localizations.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
-import 'package:mudabbir/service/getit_init.dart';
 
 enum StatisticsPeriod { week, month, quarter, year }
 
@@ -129,15 +129,15 @@ class StatisticsScreenData {
 
 final statisticsScreenProvider =
     StateNotifierProvider<StatisticsScreenNotifier, StatisticsScreenData>(
-  (ref) => StatisticsScreenNotifier(),
+  (ref) => StatisticsScreenNotifier(ref.watch(dbHelperProvider)),
 );
 
 class StatisticsScreenNotifier extends StateNotifier<StatisticsScreenData> {
-  StatisticsScreenNotifier() : super(const StatisticsScreenData()) {
+  StatisticsScreenNotifier(this._db) : super(const StatisticsScreenData()) {
     load();
   }
 
-  final DbHelper _db = getIt<DbHelper>();
+  final DbHelper _db;
 
   Future<void> setPeriod(StatisticsPeriod period) async {
     if (period == state.period && !state.isLoading) {

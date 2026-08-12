@@ -1,10 +1,8 @@
 import 'package:mudabbir/data/local/database_helper.dart';
 import 'package:mudabbir/domain/services/financial_date_utils.dart';
-import 'package:mudabbir/service/getit_init.dart';
-
 /// Shared transaction aggregations for home, statistics, and reports.
 class FinancialAggregator {
-  FinancialAggregator({DbHelper? db}) : _db = db ?? getIt<DbHelper>();
+  FinancialAggregator({required DbHelper db}) : _db = db;
 
   final DbHelper _db;
 

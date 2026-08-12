@@ -15,8 +15,7 @@ import 'package:mudabbir/presentation/server_challenges/screens/pending_invitati
 import 'package:mudabbir/presentation/settings/privacy_policy_view.dart';
 import 'package:mudabbir/presentation/settings/terms_of_service_view.dart';
 import 'package:mudabbir/presentation/web/landing_page.dart';
-import 'package:mudabbir/service/getit_init.dart';
-import 'package:mudabbir/service/navigation_service.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
 import 'package:mudabbir/service/routing_service/app_routes.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -25,7 +24,7 @@ part 'app_router.g.dart';
 @Riverpod(keepAlive: true)
 GoRouter router(RouterRef ref) {
   return GoRouter(
-    navigatorKey: getIt<NavigationService>().navigatorKey,
+    navigatorKey: ref.watch(navigationServiceProvider).navigatorKey,
     initialLocation: AppRoutes.splash,
     routes: [
       GoRoute(

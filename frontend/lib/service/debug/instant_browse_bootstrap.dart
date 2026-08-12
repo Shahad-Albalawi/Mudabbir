@@ -4,9 +4,8 @@ import 'package:mudabbir/constants/app_flags.dart';
 import 'package:mudabbir/constants/hive_constants.dart';
 import 'package:mudabbir/data/local/local_database.dart';
 import 'package:mudabbir/service/debug/demo_seed_service.dart';
-import 'package:mudabbir/service/getit_init.dart';
-import 'package:mudabbir/service/hive_service.dart';
-import 'package:mudabbir/service/security/auth_token_secure_store.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
+import 'package:mudabbir/core/providers/provider_reader.dart';
 import 'package:mudabbir/utils/api_session.dart';
 import 'package:mudabbir/utils/dev_log.dart';
 
@@ -39,7 +38,7 @@ class InstantBrowseBootstrap {
       return;
     }
 
-    final hive = getIt<HiveService>();
+    final hive = readApp(hiveServiceProvider);
     final onboardingDone = hive.getValue(HiveConstants.savedFirstTime) == true;
     if (onboardingDone) {
       devLog('[InstantBrowse] skipped — guest onboarding already applied');
@@ -49,7 +48,7 @@ class InstantBrowseBootstrap {
     await hive.setValue(HiveConstants.savedFirstTime, true);
 
     await hive.deleteValue(HiveConstants.savedToken);
-    await getIt<AuthTokenSecureStore>().clearToken();
+    await readApp(authTokenSecureStoreProvider).clearToken();
     await hive.deleteValue(HiveConstants.savedUserInfo);
 
     // Guest SQLite + neutral demo labels (no real person / PII).

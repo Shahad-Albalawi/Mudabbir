@@ -13,7 +13,7 @@ import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/presentation/transactions/add_transaction_sheet.dart';
 import 'package:mudabbir/presentation/widgets/shell_app_bar.dart';
 import 'package:mudabbir/constants/hive_constants.dart';
-import 'package:mudabbir/service/getit_init.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
 import 'package:mudabbir/service/hive_service.dart';
 import 'package:mudabbir/utils/user_display_name.dart';
 
@@ -48,7 +48,7 @@ class HomePage extends ConsumerWidget {
     final homeViewModel = ref.read(homeProvider.notifier);
     final homeState = ref.watch(homeProvider);
     final screenState = ref.watch(homeScreenProvider);
-    final hive = getIt<HiveService>();
+    final hive = ref.read(hiveServiceProvider);
     final userName = screenState.userName.isNotEmpty
         ? screenState.userName
         : _getUserDisplayName(hive);

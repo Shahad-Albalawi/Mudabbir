@@ -15,10 +15,8 @@ import 'package:mudabbir/presentation/widgets/app_skeleton.dart';
 import 'package:mudabbir/presentation/widgets/ios_empty_state.dart';
 import 'package:mudabbir/presentation/widgets/app_snackbar.dart';
 import 'package:mudabbir/service/financial_refresh.dart';
-import 'package:mudabbir/service/getit_init.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
 import 'package:mudabbir/service/haptic_service.dart';
-import 'package:mudabbir/service/hive_service.dart';
-import 'package:mudabbir/service/popup_service/popup_service.dart';
 import 'package:mudabbir/utils/user_display_name.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -67,7 +65,7 @@ class BudgetView extends ConsumerWidget {
     });
 
     final userName = UserDisplayName.fromSavedUserInfo(
-      getIt<HiveService>().getValue(HiveConstants.savedUserInfo),
+      ref.read(hiveServiceProvider).getValue(HiveConstants.savedUserInfo),
     );
     final title = userName.isEmpty
         ? AppStrings.title
@@ -103,7 +101,7 @@ class BudgetView extends ConsumerWidget {
                 buttonLabel: AppStrings.addNewBudget,
                 onPressed: () {
                   HapticService.medium();
-                  getIt<PopupService>().showAddBudgetPopup(context, ref);
+                  ref.read(popupServiceProvider).showAddBudgetPopup(context, ref);
                 },
               ),
             );
@@ -128,7 +126,7 @@ class BudgetView extends ConsumerWidget {
                   label: AppStrings.addBudgetButton,
                   onPressed: () {
                     HapticService.medium();
-                    getIt<PopupService>().showAddBudgetPopup(context, ref);
+                    ref.read(popupServiceProvider).showAddBudgetPopup(context, ref);
                   },
                 ),
               ),

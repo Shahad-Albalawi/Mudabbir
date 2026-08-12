@@ -10,7 +10,6 @@ import 'package:mudabbir/domain/services/sync_flush_lock.dart';
 import 'package:mudabbir/domain/services/repository_guard.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/data/network/api_exception.dart';
-import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/utils/api_session.dart';
 
 /// Offline-first sync between Laravel budgets API, Hive cache, and SQLite.
@@ -20,12 +19,12 @@ class SyncedBudgetRepository {
   final BudgetHiveCache _cache;
 
   SyncedBudgetRepository({
-    BudgetRepository? local,
-    BudgetApiService? remote,
-    BudgetHiveCache? cache,
-  })  : _local = local ?? getIt<BudgetRepository>(),
-        _remote = remote ?? getIt<BudgetApiService>(),
-        _cache = cache ?? getIt<BudgetHiveCache>();
+    required BudgetRepository local,
+    required BudgetApiService remote,
+    required BudgetHiveCache cache,
+  })  : _local = local,
+        _remote = remote,
+        _cache = cache;
 
   Future<BudgetListSyncResult> getBudgets() {
     return guardSyncedOperation(() async {

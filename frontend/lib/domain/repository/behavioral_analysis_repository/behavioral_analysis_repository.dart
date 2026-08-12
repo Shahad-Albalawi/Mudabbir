@@ -6,11 +6,12 @@ import 'package:mudabbir/domain/services/behavioral_analysis_engine.dart';
 import 'package:mudabbir/domain/services/repository_guard.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/presentation/statistics/statistics_viewmodel.dart';
-import 'package:mudabbir/service/getit_init.dart';
 
 /// Loads monthly aggregates from SQLite and builds behavioral insights.
 class BehavioralAnalysisRepository {
-  final DbHelper _db = getIt<DbHelper>();
+  BehavioralAnalysisRepository({required DbHelper db}) : _db = db;
+
+  final DbHelper _db;
 
   Future<Either<Failure, BehavioralSnapshot>> buildSnapshot(
     StatisticsState statistics,

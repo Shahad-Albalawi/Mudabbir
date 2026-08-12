@@ -13,11 +13,8 @@ import 'package:mudabbir/presentation/settings/widgets/settings_tile.dart';
 import 'package:mudabbir/presentation/widgets/app_confirm_dialog.dart';
 import 'package:mudabbir/presentation/widgets/app_grouped_scaffold.dart';
 import 'package:mudabbir/presentation/widgets/app_snackbar.dart';
-import 'package:mudabbir/features/auth/services/auth_service.dart';
-import 'package:mudabbir/service/getit_init.dart';
+import 'package:mudabbir/core/providers/app_providers.dart';
 import 'package:mudabbir/service/haptic_service.dart';
-import 'package:mudabbir/service/hive_service.dart';
-import 'package:mudabbir/service/language/app_language_controller.dart';
 import 'package:mudabbir/service/notifications/notification_preferences.dart';
 import 'package:mudabbir/service/reporting/financial_report_exporter.dart';
 import 'package:mudabbir/service/routing_service/app_routes.dart';
@@ -51,7 +48,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
   }
 
   Map<String, dynamic>? get _userInfo {
-    final raw = getIt<HiveService>().getValue(HiveConstants.savedUserInfo);
+    final raw = ref.read(hiveServiceProvider).getValue(HiveConstants.savedUserInfo);
     return raw is Map ? Map<String, dynamic>.from(raw) : null;
   }
 
@@ -93,7 +90,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
       cancelLabel: AppStrings.txCancel,
     );
     if (confirmed == true && mounted) {
-      await getIt<AuthService>().logout();
+      await ref.read(authServiceProvider).logout();
     }
   }
 
@@ -128,7 +125,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
     final name = controller.text.trim();
     final info = Map<String, dynamic>.from(_userInfo ?? {});
     info['name'] = name;
-    await getIt<HiveService>().setValue(HiveConstants.savedUserInfo, info);
+    await ref.read(hiveServiceProvider).setValue(HiveConstants.savedUserInfo, info);
     if (!mounted) return;
     setState(() {});
     AppSnackbar.success(AppStrings.settingsProfileSaved);
@@ -188,7 +185,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
   }
 
   Future<void> _showLanguagePicker() async {
-    final controller = getIt<AppLanguageController>();
+    final controller = ref.read(appLanguageControllerProvider);
     final current = controller.locale.languageCode;
 
     await showModalBottomSheet<void>(
@@ -234,7 +231,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
     Navigator.pop(sheetContext);
     HapticService.light();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      getIt<AppLanguageController>().setLocale(code);
+      ref.read(appLanguageControllerProvider).setLocale(code);
     });
   }
 
