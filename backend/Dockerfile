@@ -1,6 +1,7 @@
 FROM php:8.2-cli-bookworm
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
     git \
     unzip \
     libsqlite3-dev \

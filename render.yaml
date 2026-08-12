@@ -45,3 +45,7 @@ services:
         sync: false
       - key: MAIL_FROM_ADDRESS
         sync: false
+      - key: MUDABBIR_LEGACY_JSON_BACKUP_URL
+        value: https://raw.githubusercontent.com/Shahad-Albalawi/Mudabbir/backup/json-2026-08-12/mudabbir-json-2026-08-12-140250Z.tar.gz
+      - key: MUDABBIR_SKIP_LEGACY_IMPORT
+        value: "0"
