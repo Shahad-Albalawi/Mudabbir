@@ -5,12 +5,11 @@ import 'package:mudabbir/constants/api_constants.dart';
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:mudabbir/data/network/failure.dart';
-import 'package:mudabbir/data/network/dio_client.dart';
-import 'package:mudabbir/service/getit_init.dart';
 
 enum HttpMethod { GET, POST }
 
 Future<Either<Failure, T>> requestData<T>({
+  required Dio dio,
   required String url,
   required T Function(dynamic json) parser,
   HttpMethod method = HttpMethod.GET,
@@ -18,8 +17,6 @@ Future<Either<Failure, T>> requestData<T>({
   Map<String, dynamic>? body,
   Duration timeout = ApiConstants.defaultTimeout,
 }) async {
-  final dio = getIt<DioClient>().dio;
-
   try {
     final Response<dynamic> response;
     final options = Options(

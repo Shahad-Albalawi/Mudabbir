@@ -5,7 +5,6 @@ import 'package:mudabbir/data/local/expense_hive_cache.dart';
 import 'package:mudabbir/data/local/goal_hive_cache.dart';
 import 'package:mudabbir/data/local/local_database.dart';
 import 'package:mudabbir/service/debug/demo_seed_service.dart';
-import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/hive_service.dart';
 import 'package:mudabbir/service/security/auth_token_secure_store.dart';
 import 'package:mudabbir/utils/dev_log.dart';
@@ -15,19 +14,37 @@ import 'package:mudabbir/constants/app_flags.dart';
 import 'package:mudabbir/constants/test_support.dart';
 
 class AuthNotifier extends ChangeNotifier {
-  final HiveService _hiveService = getIt<HiveService>();
+  AuthNotifier({
+    required HiveService hiveService,
+    required AuthTokenSecureStore secureStore,
+    required ExpenseHiveCache expenseCache,
+    required GoalHiveCache goalCache,
+    required BudgetHiveCache budgetCache,
+    required ChallengeHiveCache challengeCache,
+  })  : _hiveService = hiveService,
+        _secureStore = secureStore,
+        _expenseCache = expenseCache,
+        _goalCache = goalCache,
+        _budgetCache = budgetCache,
+        _challengeCache = challengeCache {
+    _checkLoginStatusAtStartup();
+  }
+
+  final HiveService _hiveService;
+  final AuthTokenSecureStore _secureStore;
+  final ExpenseHiveCache _expenseCache;
+  final GoalHiveCache _goalCache;
+  final BudgetHiveCache _budgetCache;
+  final ChallengeHiveCache _challengeCache;
+
   bool _isLoggedIn = false;
   bool _isInitialized = false;
 
   bool get isLoggedIn => _isLoggedIn;
   bool get isInitialized => _isInitialized;
 
-  AuthNotifier() {
-    _checkLoginStatusAtStartup();
-  }
-
   Future<void> _checkLoginStatusAtStartup() async {
-    final tokenStr = await getIt<AuthTokenSecureStore>().readToken();
+    final tokenStr = await _secureStore.readToken();
 
     if (tokenStr != null && tokenStr.isNotEmpty) {
       final user = _hiveService.getValue(HiveConstants.savedUserInfo);
@@ -41,7 +58,7 @@ class AuthNotifier extends ChangeNotifier {
         }
         devLog('Database initialized for existing user: ${user['name']}');
       } else {
-        await getIt<AuthTokenSecureStore>().clearToken();
+        await _secureStore.clearToken();
         await _hiveService.deleteValue(HiveConstants.savedToken);
         _isLoggedIn = false;
       }
@@ -71,7 +88,7 @@ class AuthNotifier extends ChangeNotifier {
 
   Future<void> didLogin(Map<String, dynamic> user, String token) async {
     try {
-      await getIt<AuthTokenSecureStore>().writeToken(token);
+      await _secureStore.writeToken(token);
       await _hiveService.setValue(HiveConstants.savedUserInfo, user);
       await _hiveService.deleteValue(HiveConstants.savedToken);
 
@@ -90,7 +107,7 @@ class AuthNotifier extends ChangeNotifier {
     } catch (e) {
       devLog('Error during login: $e');
       await _hiveService.deleteValue(HiveConstants.savedUserInfo);
-      await getIt<AuthTokenSecureStore>().clearToken();
+      await _secureStore.clearToken();
       _isLoggedIn = false;
       notifyListeners();
       rethrow;
@@ -100,12 +117,12 @@ class AuthNotifier extends ChangeNotifier {
   Future<void> didLogout() async {
     await _hiveService.deleteValue(HiveConstants.savedUserInfo);
     await _hiveService.deleteValue(HiveConstants.savedToken);
-    await getIt<AuthTokenSecureStore>().clearToken();
+    await _secureStore.clearToken();
 
-    await getIt<ExpenseHiveCache>().clearAll();
-    await getIt<GoalHiveCache>().clearAll();
-    await getIt<BudgetHiveCache>().clearAll();
-    await getIt<ChallengeHiveCache>().clearAll();
+    await _expenseCache.clearAll();
+    await _goalCache.clearAll();
+    await _budgetCache.clearAll();
+    await _challengeCache.clearAll();
 
     if (AppFlags.allowGuestHome) {
       if (!TestSupport.skipDatabaseSideEffects) {

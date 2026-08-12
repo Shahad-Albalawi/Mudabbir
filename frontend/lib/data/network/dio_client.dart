@@ -3,20 +3,18 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mudabbir/constants/api_constants.dart';
-import 'package:mudabbir/utils/dev_log.dart';
-import 'package:mudabbir/service/getit_init.dart';
-import 'package:mudabbir/service/routing_service/auth_notifier.dart';
 import 'package:mudabbir/service/security/auth_token_secure_store.dart';
+import 'package:mudabbir/utils/dev_log.dart';
 
+typedef UnauthorizedCallback = Future<void> Function();
+
+/// Single shared HTTP client for all Laravel API calls.
 class DioClient {
-  static String get baseUrl => ApiConstants.apiV1Base;
-
-  static const Duration connectTimeout = ApiConstants.defaultTimeout;
-  static const Duration receiveTimeout = ApiConstants.defaultTimeout;
-
-  late final Dio _dio;
-
-  DioClient() {
+  DioClient({
+    required AuthTokenSecureStore secureStore,
+    UnauthorizedCallback? onUnauthorized,
+  })  : _secureStore = secureStore,
+        _onUnauthorized = onUnauthorized {
     _dio = Dio(
       BaseOptions(
         baseUrl: baseUrl,
@@ -30,22 +28,44 @@ class DioClient {
       ),
     );
 
-    _dio.interceptors.add(_AuthInterceptor());
+    _dio.interceptors.add(
+      _AuthInterceptor(
+        secureStore: _secureStore,
+        onUnauthorized: _onUnauthorized,
+      ),
+    );
     if (kDebugMode) {
       _dio.interceptors.add(_LoggingInterceptor());
     }
   }
 
+  static String get baseUrl => ApiConstants.apiV1Base;
+
+  static const Duration connectTimeout = ApiConstants.defaultTimeout;
+  static const Duration receiveTimeout = ApiConstants.defaultTimeout;
+
+  late final Dio _dio;
+  final AuthTokenSecureStore _secureStore;
+  final UnauthorizedCallback? _onUnauthorized;
+
   Dio get dio => _dio;
 }
 
 class _AuthInterceptor extends Interceptor {
+  _AuthInterceptor({
+    required this.secureStore,
+    this.onUnauthorized,
+  });
+
+  final AuthTokenSecureStore secureStore;
+  final UnauthorizedCallback? onUnauthorized;
+
   @override
   void onRequest(
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    String? token = await getIt<AuthTokenSecureStore>().readToken();
+    final token = await secureStore.readToken();
     if (token != null && token.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $token';
     }
@@ -58,8 +78,8 @@ class _AuthInterceptor extends Interceptor {
     if (err.response?.statusCode == 401) {
       final authHeader = err.requestOptions.headers['Authorization'];
       final hadSession = authHeader is String && authHeader.isNotEmpty;
-      if (hadSession) {
-        unawaited(getIt<AuthNotifier>().didLogout());
+      if (hadSession && onUnauthorized != null) {
+        unawaited(onUnauthorized!());
       }
     }
 

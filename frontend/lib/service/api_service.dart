@@ -1,10 +1,10 @@
 import 'package:dartz/dartz.dart';
+import 'package:dio/dio.dart';
 import 'package:mudabbir/constants/api_constants.dart';
 import 'package:mudabbir/constants/hive_constants.dart';
 import 'package:mudabbir/data/network/failure.dart';
 import 'package:mudabbir/data/network/request_helper.dart';
 import 'package:mudabbir/domain/models/user/user_model.dart';
-import 'package:mudabbir/service/getit_init.dart';
 import 'package:mudabbir/service/hive_service.dart';
 import 'package:mudabbir/service/security/auth_token_secure_store.dart';
 
@@ -26,6 +26,16 @@ String _plainTokenFromAuthJson(dynamic tokenField) {
 }
 
 class ApiService {
+  ApiService({
+    required this.dio,
+    required this.hiveService,
+    required this.secureStore,
+  });
+
+  final Dio dio;
+  final HiveService hiveService;
+  final AuthTokenSecureStore secureStore;
+
   Future<Either<Failure, UserModel>> login(
     String email,
     String password,
@@ -58,6 +68,7 @@ class ApiService {
     required Map<String, dynamic> body,
   }) async {
     final result = await requestData<Map<String, dynamic>>(
+      dio: dio,
       method: HttpMethod.POST,
       body: body,
       url: url,
@@ -83,11 +94,10 @@ class ApiService {
   }
 
   Future<void> storeTokenAndUser(UserModel user, String token) async {
-    final hive = getIt<HiveService>();
-    await getIt<AuthTokenSecureStore>().writeToken(token);
-    await hive.deleteValue(HiveConstants.savedToken);
+    await secureStore.writeToken(token);
+    await hiveService.deleteValue(HiveConstants.savedToken);
 
-    await hive.setValue(HiveConstants.savedUserInfo, {
+    await hiveService.setValue(HiveConstants.savedUserInfo, {
       'id': user.id,
       'email': user.email,
       'name': user.name,
