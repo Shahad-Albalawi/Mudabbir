@@ -12,7 +12,7 @@ import 'package:mudabbir/presentation/widgets/app_card.dart';
 import 'package:mudabbir/presentation/widgets/app_grouped_scaffold.dart';
 import 'package:mudabbir/presentation/widgets/app_skeleton.dart';
 import 'package:mudabbir/presentation/widgets/ios_empty_state.dart';
-import 'package:mudabbir/presentation/widgets/app_snackbar.dart';
+import 'package:mudabbir/core/errors/app_error_presenter.dart';
 import 'package:mudabbir/service/haptic_service.dart';
 import 'package:mudabbir/service/routing_service/app_routes.dart';
 
@@ -45,14 +45,14 @@ class _PendingInvitationsScreenState
       next,
     ) {
       if (next is ChallengeOperationSuccess) {
-        AppSnackbar.success(next.message);
+        AppErrorPresenter.showSuccess(next.message);
         if (next.challenge != null) {
           ref
               .read(pendingInvitationsProvider.notifier)
               .removeInvitation(next.challenge!.id);
         }
       } else if (next is ChallengeOperationError) {
-        AppSnackbar.error(next.message);
+        AppErrorPresenter.showErrorMessage(next.message);
       }
     });
 

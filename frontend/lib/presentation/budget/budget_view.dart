@@ -13,7 +13,7 @@ import 'package:mudabbir/presentation/widgets/app_loading_button.dart';
 import 'package:mudabbir/presentation/widgets/app_offline_banner.dart';
 import 'package:mudabbir/presentation/widgets/app_skeleton.dart';
 import 'package:mudabbir/presentation/widgets/ios_empty_state.dart';
-import 'package:mudabbir/presentation/widgets/app_snackbar.dart';
+import 'package:mudabbir/core/errors/app_error_presenter.dart';
 import 'package:mudabbir/service/financial_refresh.dart';
 import 'package:mudabbir/core/providers/app_providers.dart';
 import 'package:mudabbir/service/haptic_service.dart';
@@ -50,17 +50,17 @@ class BudgetView extends ConsumerWidget {
       if (newState.isDelete) {
         await budgetViewmodel.getAllBudgets();
         await FinancialRefresh.refreshAll(ref);
-        AppSnackbar.success(AppStrings.budgetDeleted);
+        AppErrorPresenter.showSuccess(AppStrings.budgetDeleted);
       }
       if (newState.isAdd == true) {
         await budgetViewmodel.getAllBudgets();
         await FinancialRefresh.refreshAll(ref);
-        AppSnackbar.success(AppStrings.budgetCreateSuccess);
+        AppErrorPresenter.showSuccess(AppStrings.budgetCreateSuccess);
       }
       if (newState.error != null &&
           (previousState?.error != newState.error) &&
           !newState.isLoading) {
-        AppSnackbar.error(newState.error!);
+        AppErrorPresenter.showErrorMessage(newState.error!);
       }
     });
 

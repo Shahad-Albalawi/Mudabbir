@@ -13,7 +13,7 @@ import 'package:mudabbir/presentation/server_challenges/utils/challenge_check_in
 import 'package:mudabbir/presentation/server_challenges/widgets/challenge_badge_chip.dart';
 import 'package:mudabbir/presentation/server_challenges/widgets/challenge_leaderboard_card.dart';
 import 'package:mudabbir/presentation/server_challenges/widgets/participant_item.dart';
-import 'package:mudabbir/presentation/widgets/app_snackbar.dart';
+import 'package:mudabbir/core/errors/app_error_presenter.dart';
 import 'package:mudabbir/presentation/widgets/app_confirm_dialog.dart';
 import 'package:mudabbir/presentation/widgets/app_loading_button.dart';
 import 'package:mudabbir/presentation/widgets/app_offline_banner.dart';
@@ -84,7 +84,7 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
       next,
     ) {
       if (next is ChallengeOperationSuccess) {
-        AppSnackbar.success(next.message);
+        AppErrorPresenter.showSuccess(next.message);
 
         if (next.challenge != null) {
           ref
@@ -93,7 +93,7 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
           ref.invalidate(challengeLeaderboardProvider(widget.challengeId));
         }
       } else if (next is ChallengeOperationError) {
-        AppSnackbar.error(next.message);
+        AppErrorPresenter.showErrorMessage(next.message);
       }
     });
 
@@ -648,7 +648,7 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
                                   amountController.text.trim(),
                                 );
                                 if (amountToAdd == null || amountToAdd <= 0) {
-                                  AppSnackbar.warning(
+                                  AppErrorPresenter.showWarning(
                                     ServerChallengeStrings.invalidAmountSnack,
                                   );
                                   return;
@@ -774,7 +774,7 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen> {
                                   r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
                                 ).hasMatch(email);
                                 if (!isValidEmail) {
-                                  AppSnackbar.warning(
+                                  AppErrorPresenter.showWarning(
                                     ServerChallengeStrings.inviteInvalidEmail,
                                   );
                                   return;

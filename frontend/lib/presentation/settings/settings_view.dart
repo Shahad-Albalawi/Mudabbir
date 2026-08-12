@@ -12,7 +12,7 @@ import 'package:mudabbir/presentation/settings/widgets/settings_profile_card.dar
 import 'package:mudabbir/presentation/settings/widgets/settings_tile.dart';
 import 'package:mudabbir/presentation/widgets/app_confirm_dialog.dart';
 import 'package:mudabbir/presentation/widgets/app_grouped_scaffold.dart';
-import 'package:mudabbir/presentation/widgets/app_snackbar.dart';
+import 'package:mudabbir/core/errors/app_error_presenter.dart';
 import 'package:mudabbir/core/providers/app_providers.dart';
 import 'package:mudabbir/service/haptic_service.dart';
 import 'package:mudabbir/service/notifications/notification_preferences.dart';
@@ -72,10 +72,10 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
     try {
       await FinancialReportExporter().shareMonthlyReport();
       if (!mounted) return;
-      AppSnackbar.success(AppStrings.settingsExportPdfSuccess);
+      AppErrorPresenter.showSuccess(AppStrings.settingsExportPdfSuccess);
     } catch (_) {
       if (!mounted) return;
-      AppSnackbar.error(AppStrings.settingsExportPdfFail);
+      AppErrorPresenter.showErrorMessage(AppStrings.settingsExportPdfFail);
     } finally {
       if (mounted) setState(() => _exporting = false);
     }
@@ -128,7 +128,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
     await ref.read(hiveServiceProvider).setValue(HiveConstants.savedUserInfo, info);
     if (!mounted) return;
     setState(() {});
-    AppSnackbar.success(AppStrings.settingsProfileSaved);
+    AppErrorPresenter.showSuccess(AppStrings.settingsProfileSaved);
   }
 
   Future<void> _showAppearancePicker() async {

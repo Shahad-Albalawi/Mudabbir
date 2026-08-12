@@ -13,7 +13,7 @@ import 'package:mudabbir/presentation/widgets/app_animated_list_item.dart';
 import 'package:mudabbir/presentation/widgets/app_offline_banner.dart';
 import 'package:mudabbir/presentation/widgets/app_skeleton.dart';
 import 'package:mudabbir/presentation/widgets/ios_empty_state.dart';
-import 'package:mudabbir/presentation/widgets/app_snackbar.dart';
+import 'package:mudabbir/core/errors/app_error_presenter.dart';
 import 'package:mudabbir/service/haptic_service.dart';
 import 'package:mudabbir/service/routing_service/app_routes.dart';
 import 'package:mudabbir/presentation/widgets/app_grouped_scaffold.dart';
@@ -68,7 +68,7 @@ class _ChallengesListScreenState extends ConsumerState<ChallengesListScreen>
       next,
     ) {
       if (next is ChallengeOperationSuccess) {
-        AppSnackbar.success(next.message);
+        AppErrorPresenter.showSuccess(next.message);
         ref.read(challengeOperationProvider.notifier).reset();
       }
     });

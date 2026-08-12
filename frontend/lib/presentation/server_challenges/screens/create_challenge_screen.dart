@@ -6,7 +6,7 @@ import 'package:mudabbir/presentation/server_challenges/challenge_copy_helpers.d
 import 'package:mudabbir/presentation/server_challenges/providers/challenge_provider.dart';
 import 'package:mudabbir/presentation/server_challenges/providers/challenge_state.dart';
 import 'package:intl/intl.dart';
-import 'package:mudabbir/presentation/widgets/app_snackbar.dart';
+import 'package:mudabbir/core/errors/app_error_presenter.dart';
 import 'package:mudabbir/presentation/widgets/app_grouped_scaffold.dart';
 import 'package:mudabbir/presentation/widgets/app_loading_button.dart';
 import 'package:mudabbir/service/routing_service/app_routes.dart';
@@ -40,10 +40,10 @@ class _CreateChallengeScreenState extends ConsumerState<CreateChallengeScreen> {
       next,
     ) {
       if (next is ChallengeOperationSuccess) {
-        AppSnackbar.success(next.message);
+        AppErrorPresenter.showSuccess(next.message);
         context.pop();
       } else if (next is ChallengeOperationError) {
-        AppSnackbar.error(next.message);
+        AppErrorPresenter.showErrorMessage(next.message);
       }
     });
 
@@ -248,12 +248,12 @@ class _CreateChallengeScreenState extends ConsumerState<CreateChallengeScreen> {
     }
 
     if (_startDate == null) {
-      AppSnackbar.error(ServerChallengeStrings.pickStartDate);
+      AppErrorPresenter.showErrorMessage(ServerChallengeStrings.pickStartDate);
       return;
     }
 
     if (_endDate == null) {
-      AppSnackbar.error(ServerChallengeStrings.pickEndDate);
+      AppErrorPresenter.showErrorMessage(ServerChallengeStrings.pickEndDate);
       return;
     }
 

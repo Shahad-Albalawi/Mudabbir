@@ -15,7 +15,7 @@ import 'package:mudabbir/presentation/widgets/app_skeleton.dart';
 import 'package:mudabbir/presentation/widgets/ios_empty_state.dart';
 import 'package:mudabbir/presentation/widgets/app_loading_button.dart';
 import 'package:mudabbir/presentation/widgets/ios_dialog_style.dart';
-import 'package:mudabbir/presentation/widgets/app_snackbar.dart';
+import 'package:mudabbir/core/errors/app_error_presenter.dart';
 import 'package:mudabbir/service/financial_refresh.dart';
 import 'package:mudabbir/service/gamification/celebration_service.dart';
 import 'package:mudabbir/service/gamification/confetti_widget.dart';
@@ -165,7 +165,7 @@ class _GoalViewState extends ConsumerState<GoalView> {
                                     result.goal.target,
                                   );
                                   if (milestone == null) {
-                                    AppSnackbar.success(
+                                    AppErrorPresenter.showSuccess(
                                       AppStrings.goalContributionSuccessBody(
                                         amount,
                                       ),
@@ -246,27 +246,27 @@ class _GoalViewState extends ConsumerState<GoalView> {
         await goalViewmodel.getAllGoals();
         await FinancialRefresh.refreshAll(ref);
         if (!context.mounted) return;
-        AppSnackbar.success(AppStrings.goalsDeletedSuccess);
+        AppErrorPresenter.showSuccess(AppStrings.goalsDeletedSuccess);
       }
       if (next.isAdd) {
         await goalViewmodel.getAllGoals();
         await FinancialRefresh.refreshAll(ref);
         if (!context.mounted) return;
-        AppSnackbar.success(AppStrings.goalCreateSuccess);
+        AppErrorPresenter.showSuccess(AppStrings.goalCreateSuccess);
       }
       if (next.isEdit) {
         await goalViewmodel.getAllGoals();
         await FinancialRefresh.refreshAll(ref);
         if (!context.mounted) return;
-        AppSnackbar.success(AppStrings.goalUpdatedSuccess);
+        AppErrorPresenter.showSuccess(AppStrings.goalUpdatedSuccess);
       }
       if (next.error != null &&
           previous?.error != next.error &&
           !next.isLoading) {
         if (next.error == AppStrings.offlineSavedPendingSync) {
-          AppSnackbar.success(AppStrings.offlineSavedPendingSync);
+          AppErrorPresenter.showSuccess(AppStrings.offlineSavedPendingSync);
         } else {
-          AppSnackbar.error(next.error!);
+          AppErrorPresenter.showErrorMessage(next.error!);
         }
       }
     });

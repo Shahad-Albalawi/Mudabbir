@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
-import 'package:mudabbir/presentation/widgets/app_snackbar.dart';
+import 'package:mudabbir/core/errors/app_error_presenter.dart';
 import 'package:mudabbir/presentation/widgets/ios_dialog_style.dart';
 import 'package:mudabbir/core/providers/app_providers.dart';
 import 'package:mudabbir/core/providers/provider_reader.dart';
@@ -50,7 +50,7 @@ class CelebrationService {
 
     final info = getMilestoneInfo(milestone, Theme.of(context).colorScheme);
     HapticService.success();
-    AppSnackbar.success(
+    AppErrorPresenter.showSuccess(
       goalName.isEmpty ? info.message : '$goalName — ${info.message}',
       title: '${info.emoji} ${info.title}',
     );

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mudabbir/presentation/resources/app_layout.dart';
-import 'package:mudabbir/presentation/widgets/app_snackbar.dart';
+import 'package:mudabbir/core/errors/app_error_presenter.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
 
 class PopupWidgets {
@@ -139,8 +139,8 @@ class PopupWidgets {
   }
 
   static void showSuccessSnackBar(BuildContext ctx, String msg) =>
-      AppSnackbar.success(msg);
+      AppErrorPresenter.showSuccess(msg);
 
   static void showErrorSnackBar(BuildContext ctx, String msg) =>
-      AppSnackbar.error(msg);
+      AppErrorPresenter.showErrorMessage(msg);
 }
