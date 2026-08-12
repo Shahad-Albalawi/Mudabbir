@@ -51,10 +51,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _openForgotPassword() {
-    AuthUi.showErrorSnackBar(
-      context,
-      AppStrings.authForgotPasswordSoon,
-    );
+    context.go(AppRoutes.forgotPassword);
   }
 
   void _handleAuthState(AuthScreenState next) {

@@ -3,15 +3,21 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\ForgotPasswordRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Services\AuthService;
+use App\Services\PasswordResetService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
-    public function __construct(private AuthService $authService) {}
+    public function __construct(
+        private AuthService $authService,
+        private PasswordResetService $passwordResetService,
+    ) {}
 
     public function register(RegisterRequest $request): JsonResponse
     {
@@ -32,5 +38,27 @@ class AuthController extends Controller
         $this->authService->logout($request->user());
 
         return $this->success(null, 'Logged out');
+    }
+
+    public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
+    {
+        $this->passwordResetService->sendResetCode($request->validated('email'));
+
+        return $this->success(
+            null,
+            __('passwords.sent_code'),
+        );
+    }
+
+    public function resetPassword(ResetPasswordRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+        $result = $this->passwordResetService->resetPassword(
+            $validated['email'],
+            $validated['code'],
+            $validated['password'],
+        );
+
+        return $this->success($result, __('passwords.reset'));
     }
 }

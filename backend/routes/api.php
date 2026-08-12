@@ -6,10 +6,12 @@ use App\Http\Controllers\Api\BudgetController;
 use App\Http\Controllers\Api\ChallengeController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ExpenseController;
+use App\Http\Controllers\Api\DeviceTokenController;
 use App\Http\Controllers\Api\GenerateContentController;
 use App\Http\Controllers\Api\GoalController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\PushTestController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\StatisticsController;
 use Illuminate\Support\Facades\Route;
@@ -22,6 +24,11 @@ Route::middleware('throttle:auth-register')->group(function (): void {
 
 Route::middleware('throttle:auth-login')->group(function (): void {
     Route::post('/login', [AuthController::class, 'login']);
+});
+
+Route::prefix('auth')->middleware('throttle:auth-password-reset')->group(function (): void {
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 });
 
 Route::middleware(['auth:sanctum', 'throttle:api'])->group(function (): void {
@@ -37,6 +44,9 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function (): void {
 
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::patch('/notifications/{id}/read', [NotificationController::class, 'markRead']);
+    Route::post('/notifications/test-push', PushTestController::class);
+    Route::post('/device-tokens', [DeviceTokenController::class, 'store']);
+    Route::delete('/device-tokens', [DeviceTokenController::class, 'destroy']);
 
     Route::get('/challenges/templates', [ChallengeController::class, 'templates']);
     Route::get('/challenges/invitations/pending', [ChallengeController::class, 'pendingInvitations']);

@@ -5,6 +5,8 @@ abstract final class AppRoutes {
   static const login = '/login';
   static const signup = '/signup';
   static const register = signup;
+  static const forgotPassword = '/forgot-password';
+  static const resetPassword = '/reset-password';
   static const onboarding = '/onboarding';
   static const landing = '/landing';
 

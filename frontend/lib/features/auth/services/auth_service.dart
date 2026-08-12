@@ -7,6 +7,7 @@ import 'package:mudabbir/domain/models/user/user_model.dart';
 import 'package:mudabbir/domain/repository/user_repository/user_repository.dart';
 import 'package:mudabbir/features/auth/models/auth_exception.dart';
 import 'package:mudabbir/service/hive_service.dart';
+import 'package:mudabbir/service/notifications/push_notification_service.dart';
 import 'package:mudabbir/service/routing_service/auth_notifier.dart';
 import 'package:mudabbir/service/security/auth_token_secure_store.dart';
 
@@ -47,6 +48,29 @@ class AuthService {
     return _unwrap(result);
   }
 
+  Future<void> forgotPassword(String email) async {
+    final result = await _userRepository.forgotPassword(email.trim());
+    return result.fold(
+      (failure) => throw AuthException(failure),
+      (_) async {},
+    );
+  }
+
+  Future<UserModel> resetPassword({
+    required String email,
+    required String code,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    final result = await _userRepository.resetPassword(
+      email: email,
+      code: code,
+      password: password,
+      passwordConfirmation: passwordConfirmation,
+    );
+    return _unwrap(result);
+  }
+
   Future<void> logout() => _authNotifier.didLogout();
 
   Future<UserModel> _unwrap(Either<Failure, UserModel> result) async {
@@ -74,6 +98,8 @@ class AuthService {
         if (!TestSupport.skipDatabaseSideEffects && userName.isNotEmpty) {
           await LocalDatabase.instance.initForUser(userName);
         }
+
+        await PushNotificationService.instance.syncTokenWithBackend();
 
         return user;
       },

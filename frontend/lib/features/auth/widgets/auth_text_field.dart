@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mudabbir/core/theme/app_colors.dart';
 import 'package:mudabbir/core/theme/app_theme.dart';
 
@@ -16,6 +17,7 @@ class AuthTextField extends StatelessWidget {
     this.onFieldSubmitted,
     this.validator,
     this.trailing,
+    this.inputFormatters,
   });
 
   static const double fieldHeight = 50;
@@ -31,6 +33,7 @@ class AuthTextField extends StatelessWidget {
   final ValueChanged<String>? onFieldSubmitted;
   final String? Function(String?)? validator;
   final Widget? trailing;
+  final List<TextInputFormatter>? inputFormatters;
 
   InputBorder _border(Color color, {double width = 1}) => OutlineInputBorder(
         borderRadius: BorderRadius.circular(fieldRadius),
@@ -52,6 +55,7 @@ class AuthTextField extends StatelessWidget {
       textDirection: TextDirection.rtl,
       textAlign: TextAlign.right,
       validator: validator,
+      inputFormatters: inputFormatters,
       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: colors.textPrimary,
           ),

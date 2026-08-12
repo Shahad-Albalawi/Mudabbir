@@ -1736,7 +1736,72 @@ class AppLocalizationsAr extends AppLocalizations {
   String get authForgotPassword => 'نسيت كلمة المرور؟';
 
   @override
-  String get authForgotPasswordSoon => 'استعادة كلمة المرور ستتوفر قريباً';
+  String get authForgotPasswordTitle => 'استعادة كلمة المرور';
+
+  @override
+  String get authForgotPasswordBody =>
+      'أدخل بريد حسابك وسنرسل لك رمزاً مكوّناً من 6 أرقام.';
+
+  @override
+  String get authForgotPasswordSubmit => 'إرسال رمز الاستعادة';
+
+  @override
+  String get authForgotPasswordSent =>
+      'إذا وُجد حساب لهذا البريد، أرسلنا رمز الاستعادة.';
+
+  @override
+  String get authResetPasswordTitle => 'كلمة مرور جديدة';
+
+  @override
+  String get authResetPasswordBody =>
+      'أدخل الرمز من بريدك واختر كلمة مرور جديدة.';
+
+  @override
+  String get authResetCodeLabel => 'رمز الاستعادة';
+
+  @override
+  String get authResetCodeRequired => 'أدخل الرمز المكوّن من 6 أرقام';
+
+  @override
+  String get authResetCodeInvalid => 'أدخل رمزاً صالحاً من 6 أرقام';
+
+  @override
+  String get authBackToLogin => 'العودة لتسجيل الدخول';
+
+  @override
+  String get biometricLockTitle => 'التطبيق مقفل';
+
+  @override
+  String get biometricLockSubtitle =>
+      'استخدم البصمة أو الوجه للمتابعة إلى مدبّر';
+
+  @override
+  String get biometricUnlockButton => 'فتح بالبصمة';
+
+  @override
+  String get biometricUnlockReason => 'افتح مدبّر لعرض بياناتك المالية';
+
+  @override
+  String get biometricSettingsLabel => 'قفل بالبصمة';
+
+  @override
+  String get biometricAvailable => 'البصمة متاحة على هذا الجهاز.';
+
+  @override
+  String get biometricNotEnrolled =>
+      'فعّل البصمة أو Face ID من إعدادات الجهاز أولاً.';
+
+  @override
+  String get biometricNotSupported => 'هذا الجهاز لا يدعم المصادقة بالبصمة.';
+
+  @override
+  String get biometricUnavailable => 'البصمة غير متاحة مؤقتاً. حاول لاحقاً.';
+
+  @override
+  String get biometricEnabledSuccess => 'تم تفعيل قفل البصمة';
+
+  @override
+  String get biometricDisabledSuccess => 'تم إيقاف قفل البصمة';
 
   @override
   String get authLoginTitle => 'مرحباً بك';

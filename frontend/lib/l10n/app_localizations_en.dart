@@ -1744,7 +1744,74 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authForgotPassword => 'Forgot password?';
 
   @override
-  String get authForgotPasswordSoon => 'Password recovery is coming soon';
+  String get authForgotPasswordTitle => 'Reset password';
+
+  @override
+  String get authForgotPasswordBody =>
+      'Enter your account email and we will send you a 6-digit reset code.';
+
+  @override
+  String get authForgotPasswordSubmit => 'Send reset code';
+
+  @override
+  String get authForgotPasswordSent =>
+      'If an account exists for that email, we sent a reset code.';
+
+  @override
+  String get authResetPasswordTitle => 'Set new password';
+
+  @override
+  String get authResetPasswordBody =>
+      'Enter the code from your email and choose a new password.';
+
+  @override
+  String get authResetCodeLabel => 'Reset code';
+
+  @override
+  String get authResetCodeRequired => 'Enter the 6-digit code';
+
+  @override
+  String get authResetCodeInvalid => 'Enter a valid 6-digit code';
+
+  @override
+  String get authBackToLogin => 'Back to sign in';
+
+  @override
+  String get biometricLockTitle => 'App locked';
+
+  @override
+  String get biometricLockSubtitle => 'Use biometrics to continue to Mudabbir';
+
+  @override
+  String get biometricUnlockButton => 'Unlock with biometrics';
+
+  @override
+  String get biometricUnlockReason =>
+      'Unlock Mudabbir to view your financial data';
+
+  @override
+  String get biometricSettingsLabel => 'Biometric lock';
+
+  @override
+  String get biometricAvailable => 'Biometrics are available on this device.';
+
+  @override
+  String get biometricNotEnrolled =>
+      'Set up fingerprint or Face ID in your device settings first.';
+
+  @override
+  String get biometricNotSupported =>
+      'This device does not support biometric authentication.';
+
+  @override
+  String get biometricUnavailable =>
+      'Biometrics are temporarily unavailable. Try again later.';
+
+  @override
+  String get biometricEnabledSuccess => 'Biometric lock enabled';
+
+  @override
+  String get biometricDisabledSuccess => 'Biometric lock disabled';
 
   @override
   String get authLoginTitle => 'Welcome';

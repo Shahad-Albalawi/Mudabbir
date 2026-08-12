@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mudabbir/core/router/app_screens.dart';
 import 'package:mudabbir/core/router/main_shell.dart';
+import 'package:mudabbir/features/auth/forgot_password_screen.dart';
 import 'package:mudabbir/features/auth/login_screen.dart';
+import 'package:mudabbir/features/auth/reset_password_screen.dart';
 import 'package:mudabbir/features/onboarding/onboarding_screen.dart';
 import 'package:mudabbir/features/splash/splash_screen.dart';
 import 'package:mudabbir/presentation/goals/goal_detail_screen.dart';
@@ -38,6 +40,20 @@ GoRouter router(RouterRef ref) {
       GoRoute(
         path: AppRoutes.login,
         builder: (_, __) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.forgotPassword,
+        builder: (_, __) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.resetPassword,
+        builder: (context, state) {
+          final email = state.extra is String ? state.extra as String : '';
+          if (email.isEmpty) {
+            return const ForgotPasswordScreen();
+          }
+          return ResetPasswordScreen(email: email);
+        },
       ),
       GoRoute(
         path: AppRoutes.signup,

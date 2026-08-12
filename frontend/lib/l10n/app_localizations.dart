@@ -3224,11 +3224,131 @@ abstract class AppLocalizations {
   /// **'Forgot password?'**
   String get authForgotPassword;
 
-  /// No description provided for @authForgotPasswordSoon.
+  /// No description provided for @authForgotPasswordTitle.
   ///
   /// In en, this message translates to:
-  /// **'Password recovery is coming soon'**
-  String get authForgotPasswordSoon;
+  /// **'Reset password'**
+  String get authForgotPasswordTitle;
+
+  /// No description provided for @authForgotPasswordBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your account email and we will send you a 6-digit reset code.'**
+  String get authForgotPasswordBody;
+
+  /// No description provided for @authForgotPasswordSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Send reset code'**
+  String get authForgotPasswordSubmit;
+
+  /// No description provided for @authForgotPasswordSent.
+  ///
+  /// In en, this message translates to:
+  /// **'If an account exists for that email, we sent a reset code.'**
+  String get authForgotPasswordSent;
+
+  /// No description provided for @authResetPasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set new password'**
+  String get authResetPasswordTitle;
+
+  /// No description provided for @authResetPasswordBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the code from your email and choose a new password.'**
+  String get authResetPasswordBody;
+
+  /// No description provided for @authResetCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset code'**
+  String get authResetCodeLabel;
+
+  /// No description provided for @authResetCodeRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the 6-digit code'**
+  String get authResetCodeRequired;
+
+  /// No description provided for @authResetCodeInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid 6-digit code'**
+  String get authResetCodeInvalid;
+
+  /// No description provided for @authBackToLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to sign in'**
+  String get authBackToLogin;
+
+  /// No description provided for @biometricLockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'App locked'**
+  String get biometricLockTitle;
+
+  /// No description provided for @biometricLockSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use biometrics to continue to Mudabbir'**
+  String get biometricLockSubtitle;
+
+  /// No description provided for @biometricUnlockButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock with biometrics'**
+  String get biometricUnlockButton;
+
+  /// No description provided for @biometricUnlockReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock Mudabbir to view your financial data'**
+  String get biometricUnlockReason;
+
+  /// No description provided for @biometricSettingsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometric lock'**
+  String get biometricSettingsLabel;
+
+  /// No description provided for @biometricAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometrics are available on this device.'**
+  String get biometricAvailable;
+
+  /// No description provided for @biometricNotEnrolled.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up fingerprint or Face ID in your device settings first.'**
+  String get biometricNotEnrolled;
+
+  /// No description provided for @biometricNotSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This device does not support biometric authentication.'**
+  String get biometricNotSupported;
+
+  /// No description provided for @biometricUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometrics are temporarily unavailable. Try again later.'**
+  String get biometricUnavailable;
+
+  /// No description provided for @biometricEnabledSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometric lock enabled'**
+  String get biometricEnabledSuccess;
+
+  /// No description provided for @biometricDisabledSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometric lock disabled'**
+  String get biometricDisabledSuccess;
 
   /// No description provided for @authLoginTitle.
   ///

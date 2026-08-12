@@ -63,6 +63,38 @@ class ApiService {
     );
   }
 
+  Future<Either<Failure, void>> forgotPassword(String email) async {
+    final result = await requestData<Map<String, dynamic>>(
+      dio: dio,
+      method: HttpMethod.POST,
+      body: {'email': email.trim()},
+      url: '${ApiConstants.baseUrl}/api/auth/forgot-password',
+      parser: (json) => Map<String, dynamic>.from(json as Map),
+    );
+
+    return result.fold(
+      (failure) => Left(failure),
+      (_) => const Right(null),
+    );
+  }
+
+  Future<Either<Failure, UserModel>> resetPassword({
+    required String email,
+    required String code,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    return _authRequest(
+      url: '${ApiConstants.baseUrl}/api/auth/reset-password',
+      body: {
+        'email': email.trim(),
+        'code': code.trim(),
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+      },
+    );
+  }
+
   Future<Either<Failure, UserModel>> _authRequest({
     required String url,
     required Map<String, dynamic> body,

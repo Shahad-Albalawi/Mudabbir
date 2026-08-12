@@ -27,4 +27,22 @@ class UserRepository {
       passwordConfirmation,
     );
   }
+
+  Future<Either<Failure, void>> forgotPassword(String email) {
+    return apiService.forgotPassword(email);
+  }
+
+  Future<Either<Failure, UserModel>> resetPassword({
+    required String email,
+    required String code,
+    required String password,
+    required String passwordConfirmation,
+  }) {
+    return apiService.resetPassword(
+      email: email,
+      code: code,
+      password: password,
+      passwordConfirmation: passwordConfirmation,
+    );
+  }
 }

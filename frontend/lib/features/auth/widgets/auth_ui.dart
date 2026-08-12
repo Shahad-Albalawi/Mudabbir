@@ -23,6 +23,22 @@ abstract final class AuthUi {
       );
   }
 
+  static void showSuccessSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message, textAlign: TextAlign.right),
+          backgroundColor: AppColors.green,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+          margin: const EdgeInsets.all(Spacing.lg),
+        ),
+      );
+  }
+
   static String messageForFailure(Failure failure) {
     if (failure is NetworkFailure || failure is TimeoutFailure) {
       return AppStrings.authNetworkError;
