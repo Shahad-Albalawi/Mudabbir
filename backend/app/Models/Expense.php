@@ -89,4 +89,29 @@ class Expense extends Model
             default => $query->orderByDesc('date')->orderByDesc('id'),
         };
     }
+
+    /**
+     * Legacy array shape used by services and ExpenseResource::fromStoreArray().
+     *
+     * @return array<string, mixed>
+     */
+    public function toStoreArray(): array
+    {
+        return [
+            'id' => (int) $this->id,
+            'user_id' => (int) $this->user_id,
+            'amount' => (float) $this->amount,
+            'date' => $this->date?->format('Y-m-d') ?? (string) $this->date,
+            'type' => (string) $this->type,
+            'notes' => $this->notes,
+            'account_id' => (int) $this->account_id,
+            'category_id' => (int) $this->category_id,
+            'account_name' => (string) $this->account_name,
+            'category_name' => (string) $this->category_name,
+            'is_recurring' => (bool) $this->is_recurring,
+            'recurrence_interval' => $this->recurrence_interval,
+            'created_at' => $this->created_at?->toISOString(),
+            'updated_at' => $this->updated_at?->toISOString(),
+        ];
+    }
 }

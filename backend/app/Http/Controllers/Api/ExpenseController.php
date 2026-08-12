@@ -7,22 +7,17 @@ use App\Http\Requests\Expense\StoreExpenseRequest;
 use App\Http\Requests\Expense\UpdateExpenseRequest;
 use App\Http\Resources\ExpenseResource;
 use App\Models\Expense;
-use App\Services\ExpenseDatabaseSync;
 use App\Services\ExpenseStore;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ExpenseController extends Controller
 {
-    public function __construct(
-        private ExpenseStore $store,
-        private ExpenseDatabaseSync $sync,
-    ) {}
+    public function __construct(private ExpenseStore $store) {}
 
     public function index(Request $request): JsonResponse
     {
         $userId = (int) $request->user()->id;
-        $this->sync->syncUser($userId);
 
         $perPage = min(max((int) $request->query('per_page', 15), 1), 100);
         $sort = (string) $request->query('sort', 'date');

@@ -2,141 +2,116 @@
 
 namespace App\Services;
 
-use App\Services\Concerns\ManagesJsonFileStore;
+use App\Models\Expense;
 use App\Services\Concerns\ResolvesSyncConflicts;
-use App\Services\Concerns\UsesJsonStorePath;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class ExpenseStore
 {
-    use ManagesJsonFileStore;
     use ResolvesSyncConflicts;
-    use UsesJsonStorePath;
 
-    /** @var string */
-    private $path;
-
-    public function __construct()
-    {
-        $this->path = $this->jsonStorePath('expenses.json');
-    }
-
-    protected function emptyDocument(): array
-    {
-        return [
-            'next_expense_id' => 1,
-            'expenses' => [],
-        ];
-    }
-
-    protected function collectionKey(): string
-    {
-        return 'expenses';
-    }
-
+    /**
+     * @return list<array<string, mixed>>
+     */
     public function all(int $userId): array
     {
-        $data = $this->mutateStore(fn (array $data): array => $data);
-
-        $owned = array_values(array_filter(
-            $data['expenses'],
-            fn (array $expense): bool => (int) ($expense['user_id'] ?? 0) === $userId
-        ));
-
-        return array_values(array_map(
-            fn (array $expense): array => $this->normalizeExpense($expense),
-            $owned
-        ));
+        return Expense::query()
+            ->forUser($userId)
+            ->orderByDesc('date')
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn (Expense $expense): array => $expense->toStoreArray())
+            ->all();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function find(int $id, int $userId): ?array
     {
-        return $this->mutateStore(function (array $data) use ($id, $userId): ?array {
-            foreach ($data['expenses'] as $expense) {
-                if ((int) $expense['id'] === $id && (int) ($expense['user_id'] ?? 0) === $userId) {
-                    return $this->normalizeExpense($expense);
-                }
-            }
+        $expense = Expense::query()
+            ->forUser($userId)
+            ->whereKey($id)
+            ->first();
 
-            return null;
-        });
+        return $expense?->toStoreArray();
     }
 
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
     public function create(array $payload, int $userId): array
     {
-        $expense = $this->mutateStore(function (array &$data) use ($payload, $userId): array {
-            $id = (int) $data['next_expense_id'];
-            $data['next_expense_id'] = $id + 1;
-            $expense = $this->buildExpense($id, $payload, $userId);
-            $data['expenses'][] = $expense;
+        $expense = DB::transaction(function () use ($payload, $userId): Expense {
+            $id = $this->nextExpenseId();
 
-            app(ExpenseDatabaseSync::class)->upsertFromArray($expense);
-
-            return $expense;
+            return Expense::query()->create([
+                'id' => $id,
+                'user_id' => $userId,
+                'amount' => (float) $payload['amount'],
+                'date' => (string) $payload['date'],
+                'type' => (string) ($payload['type'] ?? 'expense'),
+                'notes' => $payload['notes'] ?? null,
+                'account_id' => (int) $payload['account_id'],
+                'category_id' => (int) $payload['category_id'],
+                'account_name' => (string) ($payload['account_name'] ?? ''),
+                'category_name' => (string) ($payload['category_name'] ?? ''),
+                'is_recurring' => (bool) ($payload['is_recurring'] ?? false),
+                'recurrence_interval' => $payload['recurrence_interval'] ?? null,
+                'synced_at' => now(),
+            ]);
         });
 
         DashboardCache::forgetForUser($userId);
 
-        return $expense;
+        return $expense->toStoreArray();
     }
 
     /**
+     * @param  array<string, mixed>  $updates
      * @return array{conflict: bool, data: array}|null
      */
     public function update(int $id, array $updates, int $userId, ?string $clientUpdatedAt = null): ?array
     {
-        $result = $this->mutateStore(function (array &$data) use ($id, $updates, $userId, $clientUpdatedAt): ?array {
-            foreach ($data['expenses'] as $idx => $expense) {
-                if ((int) $expense['id'] !== $id || (int) ($expense['user_id'] ?? 0) !== $userId) {
-                    continue;
-                }
+        $expense = Expense::query()
+            ->forUser($userId)
+            ->whereKey($id)
+            ->first();
 
-                $conflict = $this->resolveUpdateConflict(
-                    $expense,
-                    $clientUpdatedAt,
-                    fn (array $row): array => $this->normalizeExpense($row)
-                );
-                if ($conflict !== null) {
-                    return $conflict;
-                }
-
-                $merged = array_merge($expense, $this->filterUpdatable($updates));
-                $merged['updated_at'] = Carbon::now()->toISOString();
-                $data['expenses'][$idx] = $this->normalizeExpense($merged);
-
-                app(ExpenseDatabaseSync::class)->upsertFromArray($data['expenses'][$idx]);
-
-                return [
-                    'conflict' => false,
-                    'data' => $data['expenses'][$idx],
-                ];
-            }
-
+        if ($expense === null) {
             return null;
-        });
-
-        if ($result !== null) {
-            DashboardCache::forgetForUser($userId);
         }
 
-        return $result;
+        $existing = $expense->toStoreArray();
+        $conflict = $this->resolveUpdateConflict(
+            $existing,
+            $clientUpdatedAt,
+            fn (array $row): array => $row
+        );
+
+        if ($conflict !== null) {
+            return $conflict;
+        }
+
+        $expense->fill($this->filterUpdatable($updates));
+        $expense->synced_at = now();
+        $expense->save();
+
+        DashboardCache::forgetForUser($userId);
+
+        return [
+            'conflict' => false,
+            'data' => $expense->fresh()->toStoreArray(),
+        ];
     }
 
     public function delete(int $id, int $userId): bool
     {
-        $deleted = $this->mutateStore(function (array &$data) use ($id, $userId): bool {
-            $before = count($data['expenses']);
-            $data['expenses'] = array_values(array_filter(
-                $data['expenses'],
-                fn (array $expense): bool => ! ((int) $expense['id'] === $id && (int) ($expense['user_id'] ?? 0) === $userId)
-            ));
-
-            if (count($data['expenses']) < $before) {
-                app(ExpenseDatabaseSync::class)->deleteById($id);
-            }
-
-            return count($data['expenses']) < $before;
-        });
+        $deleted = Expense::query()
+            ->forUser($userId)
+            ->whereKey($id)
+            ->delete() > 0;
 
         if ($deleted) {
             DashboardCache::forgetForUser($userId);
@@ -145,28 +120,15 @@ class ExpenseStore
         return $deleted;
     }
 
-    private function buildExpense(int $id, array $payload, int $userId): array
+    private function nextExpenseId(): int
     {
-        $now = Carbon::now()->toISOString();
-
-        return $this->normalizeExpense([
-            'id' => $id,
-            'user_id' => $userId,
-            'amount' => (float) $payload['amount'],
-            'date' => (string) $payload['date'],
-            'type' => (string) ($payload['type'] ?? 'expense'),
-            'notes' => $payload['notes'] ?? null,
-            'account_id' => (int) $payload['account_id'],
-            'category_id' => (int) $payload['category_id'],
-            'account_name' => (string) ($payload['account_name'] ?? ''),
-            'category_name' => (string) ($payload['category_name'] ?? ''),
-            'is_recurring' => (bool) ($payload['is_recurring'] ?? false),
-            'recurrence_interval' => $payload['recurrence_interval'] ?? null,
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
+        return ((int) Expense::query()->max('id')) + 1;
     }
 
+    /**
+     * @param  array<string, mixed>  $updates
+     * @return array<string, mixed>
+     */
     private function filterUpdatable(array $updates): array
     {
         $allowed = [
@@ -181,25 +143,5 @@ class ExpenseStore
         }
 
         return $filtered;
-    }
-
-    private function normalizeExpense(array $expense): array
-    {
-        return [
-            'id' => (int) $expense['id'],
-            'user_id' => (int) ($expense['user_id'] ?? 0),
-            'amount' => (float) $expense['amount'],
-            'date' => (string) $expense['date'],
-            'type' => (string) ($expense['type'] ?? 'expense'),
-            'notes' => $expense['notes'] ?? null,
-            'account_id' => (int) $expense['account_id'],
-            'category_id' => (int) $expense['category_id'],
-            'account_name' => (string) ($expense['account_name'] ?? ''),
-            'category_name' => (string) ($expense['category_name'] ?? ''),
-            'is_recurring' => (bool) ($expense['is_recurring'] ?? false),
-            'recurrence_interval' => $expense['recurrence_interval'] ?? null,
-            'created_at' => $expense['created_at'] ?? null,
-            'updated_at' => $expense['updated_at'] ?? null,
-        ];
     }
 }
