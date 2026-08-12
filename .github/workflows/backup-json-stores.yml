@@ -1,0 +1,37 @@
+# Manual JSON store backup — uploads artifact (off-repo copy #3).
+# Run from GitHub: Actions → "Backup JSON stores" → Run workflow.
+name: Backup JSON stores
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: Why this backup (e.g. pre-migrate-expenses)
+        required: false
+        default: manual
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create JSON backup archive
+        run: |
+          chmod +x scripts/backup-json.sh
+          export MUDABBIR_BACKUP_DIR="${RUNNER_TEMP}/mudabbir-json-backup"
+          mkdir -p "${MUDABBIR_BACKUP_DIR}"
+          ./scripts/backup-json.sh
+          ls -la "${MUDABBIR_BACKUP_DIR}"
+
+      - name: Upload backup artifact (90-day retention)
+        uses: actions/upload-artifact@v4
+        with:
+          name: mudabbir-json-backup-${{ github.run_id }}
+          path: ${{ runner.temp }}/mudabbir-json-backup/
+          retention-days: 90
+          if-no-files-found: error
