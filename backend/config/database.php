@@ -2,6 +2,67 @@
 
 use Illuminate\Support\Str;
 
+/**
+ * Build PostgreSQL connection config without Laravel's DATABASE_URL driver parsing.
+ * Render/Neon may use neon:// or DB_CONNECTION=Neon — Laravel only accepts pgsql.
+ *
+ * @return array<string, mixed>
+ */
+function mudabbir_pgsql_connection(): array
+{
+    $base = [
+        'driver' => 'pgsql',
+        'charset' => env('DB_CHARSET', 'utf8'),
+        'prefix' => '',
+        'prefix_indexes' => true,
+        'search_path' => env('DB_SCHEMA', 'public'),
+        'sslmode' => env('DB_SSLMODE', 'require'),
+        'options' => extension_loaded('pdo_pgsql') ? array_filter([
+            PDO::ATTR_TIMEOUT => (int) env('DB_CONNECT_TIMEOUT', 5),
+        ]) : [],
+    ];
+
+    $url = env('DATABASE_URL');
+    if (! is_string($url) || trim($url) === '') {
+        return array_merge($base, [
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '5432'),
+            'database' => env('DB_DATABASE', 'forge'),
+            'username' => env('DB_USERNAME', 'forge'),
+            'password' => env('DB_PASSWORD', ''),
+        ]);
+    }
+
+    $url = (string) preg_replace('/^neon:/i', 'postgresql:', trim($url));
+    $parsed = parse_url($url);
+
+    if ($parsed === false || empty($parsed['host'])) {
+        return array_merge($base, [
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '5432'),
+            'database' => env('DB_DATABASE', 'forge'),
+            'username' => env('DB_USERNAME', 'forge'),
+            'password' => env('DB_PASSWORD', ''),
+        ]);
+    }
+
+    $query = [];
+    if (! empty($parsed['query'])) {
+        parse_str($parsed['query'], $query);
+    }
+
+    $database = ltrim((string) ($parsed['path'] ?? ''), '/');
+
+    return array_merge($base, [
+        'host' => $parsed['host'],
+        'port' => $parsed['port'] ?? 5432,
+        'database' => $database !== '' ? $database : 'neondb',
+        'username' => $parsed['user'] ?? env('DB_USERNAME', 'forge'),
+        'password' => $parsed['pass'] ?? env('DB_PASSWORD', ''),
+        'sslmode' => $query['sslmode'] ?? env('DB_SSLMODE', 'require'),
+    ]);
+}
+
 $dbDefault = env('DB_CONNECTION', 'sqlite');
 if (env('DATABASE_URL')) {
     $dbDefault = 'pgsql';
@@ -44,7 +105,7 @@ return [
 
         'sqlite' => [
             'driver' => 'sqlite',
-            'url' => env('DATABASE_URL'),
+            'url' => null,
             'database' => env('DB_DATABASE', database_path('database.sqlite')),
             'prefix' => '',
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
@@ -70,23 +131,7 @@ return [
             ]) : [],
         ],
 
-        'pgsql' => [
-            'driver' => 'pgsql',
-            'url' => env('DATABASE_URL'),
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '5432'),
-            'database' => env('DB_DATABASE', 'forge'),
-            'username' => env('DB_USERNAME', 'forge'),
-            'password' => env('DB_PASSWORD', ''),
-            'charset' => env('DB_CHARSET', 'utf8'),
-            'prefix' => '',
-            'prefix_indexes' => true,
-            'search_path' => env('DB_SCHEMA', 'public'),
-            'sslmode' => env('DB_SSLMODE', 'require'),
-            'options' => extension_loaded('pdo_pgsql') ? array_filter([
-                PDO::ATTR_TIMEOUT => (int) env('DB_CONNECT_TIMEOUT', 5),
-            ]) : [],
-        ],
+        'pgsql' => mudabbir_pgsql_connection(),
 
         'sqlsrv' => [
             'driver' => 'sqlsrv',
