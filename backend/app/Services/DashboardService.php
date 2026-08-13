@@ -2,13 +2,14 @@
 
 namespace App\Services;
 
+use App\Repositories\GoalRepository;
 use Carbon\Carbon;
 
 class DashboardService
 {
     public function __construct(
         private StatisticsService $statisticsService,
-        private GoalStore $goalStore,
+        private GoalRepository $goalStore,
     ) {}
 
     /**

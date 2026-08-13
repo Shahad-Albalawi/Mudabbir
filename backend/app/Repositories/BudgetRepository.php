@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Services;
+namespace App\Repositories;
 
 use App\Models\Budget;
 use App\Services\Concerns\ResolvesSyncConflicts;
 use Illuminate\Support\Facades\DB;
 
-class BudgetStore
+class BudgetRepository
 {
     use ResolvesSyncConflicts;
 

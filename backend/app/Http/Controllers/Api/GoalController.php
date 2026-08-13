@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Concerns\AuthorizesResourceAccess;
 use App\Http\Controllers\Concerns\DualWritesLegacyJson;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Goal\AddGoalContributionRequest;
@@ -10,15 +11,16 @@ use App\Http\Requests\Goal\StoreGoalRequest;
 use App\Http\Requests\Goal\UpdateGoalRequest;
 use App\Http\Resources\GoalResource;
 use App\Models\Goal;
-use App\Services\GoalStore;
+use App\Repositories\GoalRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class GoalController extends Controller
 {
+    use AuthorizesResourceAccess;
     use DualWritesLegacyJson;
 
-    public function __construct(private GoalStore $store) {}
+    public function __construct(private GoalRepository $store) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -36,14 +38,12 @@ class GoalController extends Controller
 
     public function show(Request $request, int $id): JsonResponse
     {
-        $userId = (int) $request->user()->id;
         $goal = Goal::query()
-            ->forUser($userId)
             ->with(['contributions', 'milestones'])
             ->whereKey($id)
             ->first();
 
-        if (! $goal) {
+        if ($goal === null || ! $this->canAccess($request, 'view', $goal)) {
             return $this->notFound('Goal not found');
         }
 
@@ -64,6 +64,11 @@ class GoalController extends Controller
         int $id,
     ): JsonResponse {
         $userId = (int) $request->user()->id;
+        $goal = Goal::query()->whereKey($id)->first();
+        if ($goal === null || ! $this->canAccess($request, 'addMilestone', $goal)) {
+            return $this->notFound('Goal not found');
+        }
+
         $goal = $this->store->addMilestone($id, $request->validated(), $userId);
         if (! $goal) {
             return $this->notFound('Goal not found');
@@ -77,6 +82,11 @@ class GoalController extends Controller
     public function addContribution(AddGoalContributionRequest $request, int $id): JsonResponse
     {
         $userId = (int) $request->user()->id;
+        $goal = Goal::query()->whereKey($id)->first();
+        if ($goal === null || ! $this->canAccess($request, 'contribute', $goal)) {
+            return $this->notFound('Goal not found or already completed');
+        }
+
         $goal = $this->store->addContribution($id, $request->validated(), $userId);
         if (! $goal) {
             return $this->notFound('Goal not found or already completed');
@@ -90,6 +100,11 @@ class GoalController extends Controller
     public function destroy(Request $request, int $id): JsonResponse
     {
         $userId = (int) $request->user()->id;
+        $goal = Goal::query()->whereKey($id)->first();
+        if ($goal === null || ! $this->canAccess($request, 'delete', $goal)) {
+            return $this->notFound('Goal not found');
+        }
+
         if (! $this->store->delete($id, $userId)) {
             return $this->notFound('Goal not found');
         }
@@ -102,6 +117,11 @@ class GoalController extends Controller
     public function update(UpdateGoalRequest $request, int $id): JsonResponse
     {
         $userId = (int) $request->user()->id;
+        $goal = Goal::query()->whereKey($id)->first();
+        if ($goal === null || ! $this->canAccess($request, 'update', $goal)) {
+            return $this->notFound('Goal not found');
+        }
+
         $result = $this->store->update(
             $id,
             $request->validated(),

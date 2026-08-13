@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Repositories;
 
 use App\Models\Goal;
 use App\Models\GoalContribution;
@@ -9,7 +9,7 @@ use App\Services\Concerns\ResolvesSyncConflicts;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
-class GoalStore
+class GoalRepository
 {
     use ResolvesSyncConflicts;
 

@@ -11,6 +11,9 @@
 - [x] `scripts/backup-json.sh` (JSON off-site backup)
 - [x] Telescope (local) + Sentry package + CI tests
 - [x] `/notifications/test-push` disabled outside `local`
+- [x] Laravel Policies (Expense, Goal, Budget, Challenge)
+- [x] Eloquent Repositories (replaced `*Store` write layer)
+- [x] SQLite → Neon script + `mudabbir:migrate-sqlite-to-pgsql`
 
 ## Render (done)
 
@@ -49,6 +52,19 @@ bash scripts/backup-json.sh
 ### After 1–2 stable days (from dual-write start)
 
 Render → `MUDABBIR_DUAL_WRITE_JSON=false`
+
+Then redeploy — legacy JSON mirror stops; Postgres is the only write target.
+
+### Old Render SQLite data (if import returned 0 rows)
+
+If production had real users/expenses on SQLite before Neon:
+
+```powershell
+# Export database.sqlite from old Render disk, then:
+powershell -ExecutionPolicy Bypass -File scripts/migrate-to-neon.ps1 `
+  -DatabaseUrl "postgresql://...pooler.../neondb?sslmode=require" `
+  -SqliteSource "C:\path\to\database.sqlite"
+```
 
 ## Verify production
 

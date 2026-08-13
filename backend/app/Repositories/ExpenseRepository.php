@@ -1,12 +1,13 @@
 <?php
 
-namespace App\Services;
+namespace App\Repositories;
 
 use App\Models\Expense;
 use App\Services\Concerns\ResolvesSyncConflicts;
+use App\Services\DashboardCache;
 use Illuminate\Support\Facades\DB;
 
-class ExpenseStore
+class ExpenseRepository
 {
     use ResolvesSyncConflicts;
 

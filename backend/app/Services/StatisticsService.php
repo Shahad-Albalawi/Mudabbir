@@ -2,14 +2,17 @@
 
 namespace App\Services;
 
+use App\Repositories\BudgetRepository;
+use App\Repositories\ExpenseRepository;
+use App\Repositories\GoalRepository;
 use Carbon\Carbon;
 
 class StatisticsService
 {
     public function __construct(
-        private ExpenseStore $expenseStore,
-        private GoalStore $goalStore,
-        private BudgetStore $budgetStore,
+        private ExpenseRepository $expenseStore,
+        private GoalRepository $goalStore,
+        private BudgetRepository $budgetStore,
     ) {}
 
     /**

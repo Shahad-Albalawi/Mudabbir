@@ -53,6 +53,33 @@ class Challenge extends Model
         });
     }
 
+    public function isCreator(int $userId): bool
+    {
+        return (int) $this->creator_id === $userId;
+    }
+
+    public function isAccessibleBy(int $userId): bool
+    {
+        if ($this->isCreator($userId)) {
+            return true;
+        }
+
+        $this->loadMissing('participants');
+
+        return $this->participants
+            ->contains(fn (ChallengeParticipant $participant): bool => (int) $participant->participant_id === $userId
+                && $participant->status === 'accepted');
+    }
+
+    public function hasAcceptedParticipant(int $userId): bool
+    {
+        $this->loadMissing('participants');
+
+        return $this->participants
+            ->contains(fn (ChallengeParticipant $participant): bool => (int) $participant->participant_id === $userId
+                && $participant->status === 'accepted');
+    }
+
     /**
      * @return array<string, mixed>
      */

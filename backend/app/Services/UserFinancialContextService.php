@@ -2,13 +2,15 @@
 
 namespace App\Services;
 
+use App\Repositories\ExpenseRepository;
+use App\Repositories\GoalRepository;
 use Carbon\Carbon;
 
 class UserFinancialContextService
 {
     public function __construct(
-        private ExpenseStore $expenseStore,
-        private GoalStore $goalStore,
+        private ExpenseRepository $expenseStore,
+        private GoalRepository $goalStore,
     ) {}
 
     /**

@@ -2,21 +2,23 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Concerns\AuthorizesResourceAccess;
 use App\Http\Controllers\Concerns\DualWritesLegacyJson;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Expense\StoreExpenseRequest;
 use App\Http\Requests\Expense\UpdateExpenseRequest;
 use App\Http\Resources\ExpenseResource;
 use App\Models\Expense;
-use App\Services\ExpenseStore;
+use App\Repositories\ExpenseRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ExpenseController extends Controller
 {
+    use AuthorizesResourceAccess;
     use DualWritesLegacyJson;
 
-    public function __construct(private ExpenseStore $store) {}
+    public function __construct(private ExpenseRepository $store) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -48,13 +50,9 @@ class ExpenseController extends Controller
 
     public function show(Request $request, int $id): JsonResponse
     {
-        $userId = (int) $request->user()->id;
-        $expense = Expense::query()
-            ->forUser($userId)
-            ->whereKey($id)
-            ->first();
+        $expense = Expense::query()->whereKey($id)->first();
 
-        if (! $expense) {
+        if ($expense === null || ! $this->canAccess($request, 'view', $expense)) {
             return $this->notFound('Expense not found');
         }
 
@@ -73,6 +71,11 @@ class ExpenseController extends Controller
     public function update(UpdateExpenseRequest $request, int $id): JsonResponse
     {
         $userId = (int) $request->user()->id;
+        $expense = Expense::query()->whereKey($id)->first();
+        if ($expense === null || ! $this->canAccess($request, 'update', $expense)) {
+            return $this->notFound('Expense not found');
+        }
+
         $result = $this->store->update(
             $id,
             $request->validated(),
@@ -98,6 +101,11 @@ class ExpenseController extends Controller
     public function destroy(Request $request, int $id): JsonResponse
     {
         $userId = (int) $request->user()->id;
+        $expense = Expense::query()->whereKey($id)->first();
+        if ($expense === null || ! $this->canAccess($request, 'delete', $expense)) {
+            return $this->notFound('Expense not found');
+        }
+
         if (! $this->store->delete($id, $userId)) {
             return $this->notFound('Expense not found');
         }

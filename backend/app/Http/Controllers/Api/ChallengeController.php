@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Concerns\AuthorizesResourceAccess;
 use App\Http\Controllers\Concerns\DualWritesLegacyJson;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Challenge\CreateChallengeFromTemplateRequest;
@@ -11,15 +12,16 @@ use App\Http\Requests\Challenge\RespondChallengeRequest;
 use App\Http\Requests\Challenge\StoreChallengeRequest;
 use App\Http\Requests\Challenge\UpdateChallengeRequest;
 use App\Models\Challenge;
-use App\Services\ChallengeStore;
+use App\Repositories\ChallengeRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ChallengeController extends Controller
 {
+    use AuthorizesResourceAccess;
     use DualWritesLegacyJson;
 
-    public function __construct(private ChallengeStore $store) {}
+    public function __construct(private ChallengeRepository $store) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -38,14 +40,12 @@ class ChallengeController extends Controller
 
     public function show(Request $request, int $id): JsonResponse
     {
-        $userId = (int) $request->user()->id;
         $challenge = Challenge::query()
             ->with('participants')
-            ->accessibleBy($userId)
             ->whereKey($id)
             ->first();
 
-        if (! $challenge) {
+        if ($challenge === null || ! $this->canAccess($request, 'view', $challenge)) {
             return $this->notFound('Challenge not found');
         }
 
@@ -66,6 +66,11 @@ class ChallengeController extends Controller
     public function update(UpdateChallengeRequest $request, int $id): JsonResponse
     {
         $userId = (int) $request->user()->id;
+        $challenge = Challenge::query()->with('participants')->whereKey($id)->first();
+        if ($challenge === null || ! $this->canAccess($request, 'update', $challenge)) {
+            return $this->notFound('Challenge not found');
+        }
+
         $challenge = $this->store->update($id, $request->validated(), $userId);
         if (! $challenge) {
             return $this->notFound('Challenge not found');
@@ -79,6 +84,11 @@ class ChallengeController extends Controller
     public function destroy(Request $request, int $id): JsonResponse
     {
         $userId = (int) $request->user()->id;
+        $challenge = Challenge::query()->whereKey($id)->first();
+        if ($challenge === null || ! $this->canAccess($request, 'delete', $challenge)) {
+            return $this->notFound('Challenge not found');
+        }
+
         if (! $this->store->delete($id, $userId)) {
             return $this->notFound('Challenge not found');
         }
@@ -91,6 +101,11 @@ class ChallengeController extends Controller
     public function invite(InviteChallengeRequest $request, int $id): JsonResponse
     {
         $userId = (int) $request->user()->id;
+        $challenge = Challenge::query()->whereKey($id)->first();
+        if ($challenge === null || ! $this->canAccess($request, 'invite', $challenge)) {
+            return $this->notFound('Challenge not found');
+        }
+
         $challenge = $this->store->invite($id, (string) $request->validated()['email'], $userId);
         if (! $challenge) {
             return $this->notFound('Challenge not found');
@@ -104,6 +119,11 @@ class ChallengeController extends Controller
     public function removeParticipant(Request $request, int $id, int $userId): JsonResponse
     {
         $actingUserId = (int) $request->user()->id;
+        $challenge = Challenge::query()->with('participants')->whereKey($id)->first();
+        if ($challenge === null || ! $request->user()?->can('removeParticipant', [$challenge, $userId])) {
+            return $this->notFound('Challenge not found');
+        }
+
         $challenge = $this->store->removeParticipant($id, $userId, $actingUserId);
         if (! $challenge) {
             return $this->notFound('Challenge not found');
@@ -117,6 +137,11 @@ class ChallengeController extends Controller
     public function toggleStatus(Request $request, int $id): JsonResponse
     {
         $userId = (int) $request->user()->id;
+        $challenge = Challenge::query()->whereKey($id)->first();
+        if ($challenge === null || ! $this->canAccess($request, 'toggleStatus', $challenge)) {
+            return $this->notFound('Challenge not found');
+        }
+
         $challenge = $this->store->toggleStatus($id, $userId);
         if (! $challenge) {
             return $this->notFound('Challenge not found');
@@ -177,6 +202,11 @@ class ChallengeController extends Controller
     public function checkIn(Request $request, int $id): JsonResponse
     {
         $userId = (int) $request->user()->id;
+        $challenge = Challenge::query()->with('participants')->whereKey($id)->first();
+        if ($challenge === null || ! $this->canAccess($request, 'participate', $challenge)) {
+            return $this->notFound('Challenge or participant not found');
+        }
+
         $result = $this->store->checkIn($id, $userId);
         if (! $result) {
             return $this->notFound('Challenge or participant not found');
@@ -192,6 +222,11 @@ class ChallengeController extends Controller
     public function recordProgress(RecordChallengeProgressRequest $request, int $id): JsonResponse
     {
         $userId = (int) $request->user()->id;
+        $challenge = Challenge::query()->with('participants')->whereKey($id)->first();
+        if ($challenge === null || ! $this->canAccess($request, 'participate', $challenge)) {
+            return $this->notFound('Challenge or participant not found');
+        }
+
         $challenge = $this->store->recordProgress(
             $id,
             $userId,
@@ -209,6 +244,11 @@ class ChallengeController extends Controller
     public function leaderboard(Request $request, int $id): JsonResponse
     {
         $userId = (int) $request->user()->id;
+        $challenge = Challenge::query()->whereKey($id)->first();
+        if ($challenge === null || ! $this->canAccess($request, 'view', $challenge)) {
+            return $this->notFound('Challenge not found');
+        }
+
         $board = $this->store->leaderboard($id, $userId);
         if (! $board) {
             return $this->notFound('Challenge not found');

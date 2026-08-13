@@ -2,20 +2,22 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Concerns\AuthorizesResourceAccess;
 use App\Http\Controllers\Concerns\DualWritesLegacyJson;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Budget\StoreBudgetRequest;
 use App\Http\Requests\Budget\UpdateBudgetRequest;
 use App\Models\Budget;
-use App\Services\BudgetStore;
+use App\Repositories\BudgetRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class BudgetController extends Controller
 {
+    use AuthorizesResourceAccess;
     use DualWritesLegacyJson;
 
-    public function __construct(private BudgetStore $store) {}
+    public function __construct(private BudgetRepository $store) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -32,13 +34,9 @@ class BudgetController extends Controller
 
     public function show(Request $request, int $id): JsonResponse
     {
-        $userId = (int) $request->user()->id;
-        $budget = Budget::query()
-            ->forUser($userId)
-            ->whereKey($id)
-            ->first();
+        $budget = Budget::query()->whereKey($id)->first();
 
-        if (! $budget) {
+        if ($budget === null || ! $this->canAccess($request, 'view', $budget)) {
             return $this->notFound('Budget not found');
         }
 
@@ -57,6 +55,11 @@ class BudgetController extends Controller
     public function update(UpdateBudgetRequest $request, int $id): JsonResponse
     {
         $userId = (int) $request->user()->id;
+        $budget = Budget::query()->whereKey($id)->first();
+        if ($budget === null || ! $this->canAccess($request, 'update', $budget)) {
+            return $this->notFound('Budget not found');
+        }
+
         $result = $this->store->update(
             $id,
             $request->validated(),
@@ -82,6 +85,11 @@ class BudgetController extends Controller
     public function destroy(Request $request, int $id): JsonResponse
     {
         $userId = (int) $request->user()->id;
+        $budget = Budget::query()->whereKey($id)->first();
+        if ($budget === null || ! $this->canAccess($request, 'delete', $budget)) {
+            return $this->notFound('Budget not found');
+        }
+
         if (! $this->store->delete($id, $userId)) {
             return $this->notFound('Budget not found');
         }

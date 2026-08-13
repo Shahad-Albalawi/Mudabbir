@@ -2,8 +2,8 @@
 
 namespace App\Jobs;
 
-use App\Services\BudgetStore;
-use App\Services\ExpenseStore;
+use App\Repositories\BudgetRepository;
+use App\Repositories\ExpenseRepository;
 use App\Services\FcmService;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
@@ -18,8 +18,8 @@ class CheckBudgetLimitsJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public function handle(
-        BudgetStore $budgetStore,
-        ExpenseStore $expenseStore,
+        BudgetRepository $budgetStore,
+        ExpenseRepository $expenseStore,
         FcmService $fcmService,
     ): void {
         $today = Carbon::today()->toDateString();
@@ -74,7 +74,7 @@ class CheckBudgetLimitsJob implements ShouldQueue
     }
 
     private function spentInRange(
-        ExpenseStore $expenseStore,
+        ExpenseRepository $expenseStore,
         int $userId,
         string $start,
         string $end,

@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Services;
+namespace App\Repositories;
 
 use App\Models\Challenge;
 use App\Models\ChallengeParticipant;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
-class ChallengeStore
+class ChallengeRepository
 {
     /**
      * @return list<array<string, mixed>>

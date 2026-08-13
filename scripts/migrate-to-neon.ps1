@@ -46,7 +46,10 @@ try {
     Write-Host "=== 3/4 legacy JSON import (optional) ===" -ForegroundColor Cyan
     try { php artisan mudabbir:import-legacy-json } catch { Write-Warning $_ }
 
-    Write-Host "=== 4/4 done ===" -ForegroundColor Green
+    Write-Host "=== 4/4 verify migration ===" -ForegroundColor Cyan
+    try { php artisan mudabbir:verify-legacy-migration --all } catch { Write-Warning $_ }
+
+    Write-Host "=== done ===" -ForegroundColor Green
     Write-Host "Set Render DATABASE_URL + redeploy, then run check-production-api.ps1"
 } finally {
     Pop-Location

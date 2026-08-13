@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Expense;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
@@ -42,7 +43,7 @@ class ImportExpensesFromJson extends Command
             $id = (int) ($row['id'] ?? 0);
             $userId = (int) ($row['user_id'] ?? 0);
 
-            if ($id <= 0 || $userId <= 0) {
+            if ($id <= 0 || $userId <= 0 || ! User::query()->whereKey($userId)->exists()) {
                 $skipped++;
 
                 continue;

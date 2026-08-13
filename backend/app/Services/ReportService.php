@@ -2,14 +2,16 @@
 
 namespace App\Services;
 
+use App\Repositories\ExpenseRepository;
+use App\Repositories\GoalRepository;
 use Carbon\Carbon;
 
 class ReportService
 {
     public function __construct(
         private StatisticsService $statisticsService,
-        private ExpenseStore $expenseStore,
-        private GoalStore $goalStore,
+        private ExpenseRepository $expenseStore,
+        private GoalRepository $goalStore,
     ) {}
 
     /**
