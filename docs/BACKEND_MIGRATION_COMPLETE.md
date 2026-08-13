@@ -35,6 +35,15 @@
 2. GitHub repo → Settings → Secrets → `NEON_DATABASE_URL_DIRECT`
 3. Workflow runs daily: `.github/workflows/neon-db-backup.yml`
 
+### GitHub — budget alerts scheduler (free; replaces paid Render Cron)
+
+1. GitHub → Settings → Secrets → Actions:
+   - `MUDABBIR_DATABASE_URL` — same pooled `DATABASE_URL` as Render
+   - `MUDABBIR_APP_KEY` — same `APP_KEY` as Render
+   - `MUDABBIR_FCM_SERVER_KEY` — optional, for push notifications
+2. Workflow runs daily 08:00 UTC: `.github/workflows/laravel-scheduler.yml`
+3. Manual test: Actions → **Laravel Scheduler** → Run workflow
+
 ### Verify legacy data (if JSON files exist)
 
 ```powershell

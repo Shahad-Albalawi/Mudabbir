@@ -1,0 +1,51 @@
+# Free alternative to Render Cron (paid): run Laravel scheduler daily.
+#
+# Required GitHub repository secrets (copy from Render mudabbir-backend-api):
+#   MUDABBIR_DATABASE_URL — Neon POOLED DATABASE_URL
+#   MUDABBIR_APP_KEY      — same APP_KEY as Render
+# Optional:
+#   MUDABBIR_FCM_SERVER_KEY — for budget push notifications
+
+name: Laravel Scheduler
+
+on:
+  schedule:
+    # 08:00 UTC daily (= 11:00 Riyadh) — matches CheckBudgetLimitsJob in Console/Kernel.php
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+jobs:
+  schedule-run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo_pgsql, pgsql
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress --no-dev
+
+      - name: Run Laravel scheduler
+        env:
+          APP_ENV: production
+          APP_DEBUG: 'false'
+          APP_KEY: ${{ secrets.MUDABBIR_APP_KEY }}
+          APP_URL: https://mudabbir-backend-api.onrender.com
+          DB_CONNECTION: pgsql
+          DATABASE_URL: ${{ secrets.MUDABBIR_DATABASE_URL }}
+          DB_SSLMODE: require
+          LOG_CHANNEL: stderr
+          FCM_SERVER_KEY: ${{ secrets.MUDABBIR_FCM_SERVER_KEY }}
+        run: php artisan schedule:run -v
