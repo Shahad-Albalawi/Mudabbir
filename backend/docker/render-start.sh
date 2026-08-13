@@ -182,7 +182,8 @@ if [ "${MUDABBIR_SKIP_LEGACY_IMPORT:-}" != "1" ] && [ ! -f storage/app/.legacy-i
     if php artisan mudabbir:import-legacy-json; then
       touch storage/app/.legacy-import-done
     else
-      echo "WARN: legacy JSON import failed."
+      echo "WARN: legacy JSON import failed — marking done to avoid deploy loop."
+      touch storage/app/.legacy-import-done
     fi
   fi
 fi

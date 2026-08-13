@@ -2,15 +2,16 @@
 
 use Illuminate\Support\Str;
 
-/**
- * Build PostgreSQL connection config without Laravel's DATABASE_URL driver parsing.
- * Render/Neon may use neon:// or DB_CONNECTION=Neon — Laravel only accepts pgsql.
- * Prefer DB_HOST/DB_* when set by render-start.sh (most reliable on Render).
- *
- * @return array<string, mixed>
- */
-function mudabbir_pgsql_connection(): array
-{
+if (! function_exists('mudabbir_pgsql_connection')) {
+    /**
+     * Build PostgreSQL connection config without Laravel's DATABASE_URL driver parsing.
+     * Render/Neon may use neon:// or DB_CONNECTION=Neon — Laravel only accepts pgsql.
+     * Prefer DB_HOST/DB_* when set by render-start.sh (most reliable on Render).
+     *
+     * @return array<string, mixed>
+     */
+    function mudabbir_pgsql_connection(): array
+    {
     $base = [
         'driver' => 'pgsql',
         'charset' => env('DB_CHARSET', 'utf8'),
@@ -76,6 +77,7 @@ function mudabbir_pgsql_connection(): array
         'password' => $parsed['pass'] ?? env('DB_PASSWORD', ''),
         'sslmode' => $query['sslmode'] ?? env('DB_SSLMODE', 'require'),
     ]);
+    }
 }
 
 $dbDefault = env('DB_CONNECTION', 'sqlite');

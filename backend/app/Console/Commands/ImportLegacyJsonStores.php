@@ -8,6 +8,7 @@ use App\Models\ChallengeParticipant;
 use App\Models\Goal;
 use App\Models\GoalContribution;
 use App\Models\GoalMilestone;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
@@ -30,11 +31,21 @@ class ImportLegacyJsonStores extends Command
 
         $this->importGoals((string) ($this->option('goals') ?: storage_path('app/goals.json')));
         $this->importBudgets((string) ($this->option('budgets') ?: storage_path('app/budgets.json')));
-        $this->importChallenges((string) ($this->option('challenges') ?: storage_path('app/challenges.json')));
+
+        try {
+            $this->importChallenges((string) ($this->option('challenges') ?: storage_path('app/challenges.json')));
+        } catch (\Throwable $e) {
+            $this->warn('Challenge import skipped: '.$e->getMessage());
+        }
 
         $this->info('Legacy JSON import finished.');
 
         return self::SUCCESS;
+    }
+
+    private function userExists(int $userId): bool
+    {
+        return $userId > 0 && User::query()->whereKey($userId)->exists();
     }
 
     private function importGoals(string $path): void
@@ -53,8 +64,16 @@ class ImportLegacyJsonStores extends Command
         }
 
         $count = 0;
+        $skipped = 0;
         foreach ($decoded['goals'] as $row) {
             if (! is_array($row)) {
+                continue;
+            }
+
+            $userId = (int) ($row['user_id'] ?? 0);
+            if (! $this->userExists($userId)) {
+                $skipped++;
+
                 continue;
             }
 
@@ -108,7 +127,7 @@ class ImportLegacyJsonStores extends Command
             $count++;
         }
 
-        $this->info("Imported {$count} goal(s).");
+        $this->info("Imported {$count} goal(s)".($skipped > 0 ? ", skipped {$skipped} (missing user)" : '').'.');
     }
 
     private function importBudgets(string $path): void
@@ -127,8 +146,16 @@ class ImportLegacyJsonStores extends Command
         }
 
         $count = 0;
+        $skipped = 0;
         foreach ($decoded['budgets'] as $row) {
             if (! is_array($row)) {
+                continue;
+            }
+
+            $userId = (int) ($row['user_id'] ?? 0);
+            if (! $this->userExists($userId)) {
+                $skipped++;
+
                 continue;
             }
 
@@ -145,7 +172,7 @@ class ImportLegacyJsonStores extends Command
             $count++;
         }
 
-        $this->info("Imported {$count} budget(s).");
+        $this->info("Imported {$count} budget(s)".($skipped > 0 ? ", skipped {$skipped} (missing user)" : '').'.');
     }
 
     private function importChallenges(string $path): void
@@ -164,8 +191,16 @@ class ImportLegacyJsonStores extends Command
         }
 
         $count = 0;
+        $skipped = 0;
         foreach ($decoded['challenges'] as $row) {
             if (! is_array($row)) {
+                continue;
+            }
+
+            $userId = (int) ($row['user_id'] ?? $row['creator_id'] ?? 0);
+            if (! $this->userExists($userId)) {
+                $skipped++;
+
                 continue;
             }
 
@@ -211,6 +246,6 @@ class ImportLegacyJsonStores extends Command
             $count++;
         }
 
-        $this->info("Imported {$count} challenge(s).");
+        $this->info("Imported {$count} challenge(s)".($skipped > 0 ? ", skipped {$skipped} (missing user)" : '').'.');
     }
 }
