@@ -13,6 +13,7 @@
 # ---------------------------------------------------------------------------
 # Use the POOLED connection string (host contains "-pooler") for the app.
 # Never use the direct host for web requests — you will hit "too many connections".
+# Migrations: render-start.sh auto-strips "-pooler" for `php artisan migrate` only (Neon requirement).
 #
 # Dashboard: Neon project -> Connect -> "Pooled connection" -> copy URI.
 #

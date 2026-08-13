@@ -44,8 +44,14 @@ export HEALTH_DB_TIMEOUT_SECONDS="${HEALTH_DB_TIMEOUT_SECONDS:-5}"
 
 cd "${BACKEND}"
 
+MIGRATE_URL="${NEON_DATABASE_URL_DIRECT:-${DATABASE_URL}}"
+if echo "${MIGRATE_URL}" | grep -qi pooler; then
+  MIGRATE_URL="$(echo "${MIGRATE_URL}" | sed 's/-pooler//')"
+  echo "Neon: migrate uses direct connection (pooler stripped from host)."
+fi
+
 echo "=== 1/4 migrate schema on Neon ==="
-php artisan migrate --force
+DATABASE_URL="${MIGRATE_URL}" php artisan migrate --force
 
 echo "=== 2/4 copy SQLite rows to PostgreSQL ==="
 php artisan mudabbir:migrate-sqlite-to-pgsql --sqlite="${SQLITE_SOURCE}"

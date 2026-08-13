@@ -29,7 +29,27 @@ if [ "${DB_CONNECTION}" = "sqlite" ]; then
 fi
 
 php artisan config:clear
-php artisan migrate --force
+
+# Neon PgBouncer (pooled) breaks DDL migrations (e.g. users_email_unique). Use direct URI for migrate only.
+migrate_database_url() {
+  local url="${NEON_DATABASE_URL_DIRECT:-${DATABASE_URL:-}}"
+  if [ -n "${url}" ] && echo "${url}" | grep -qi pooler; then
+    url="$(echo "${url}" | sed 's/-pooler//')"
+    echo "Neon: running migrations on direct connection (pooler stripped from host)."
+  fi
+  printf '%s' "${url}"
+}
+
+if [ "${DB_CONNECTION}" = "pgsql" ]; then
+  migrate_url="$(migrate_database_url)"
+  if [ -n "${migrate_url}" ]; then
+    DATABASE_URL="${migrate_url}" php artisan migrate --force
+  else
+    php artisan migrate --force
+  fi
+else
+  php artisan migrate --force
+fi
 
 # One-time legacy JSON → DB import (idempotent). Uses GitHub backup if local JSON is missing.
 if [ "${MUDABBIR_SKIP_LEGACY_IMPORT:-}" != "1" ] && [ ! -f storage/app/.legacy-import-done ]; then

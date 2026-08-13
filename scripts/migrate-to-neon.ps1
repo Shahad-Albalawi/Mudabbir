@@ -24,10 +24,21 @@ $env:DB_CONNECTION = "pgsql"
 $env:DB_SSLMODE = "require"
 $env:HEALTH_DB_TIMEOUT_SECONDS = "5"
 
+function Get-NeonDirectDatabaseUrl([string]$Url) {
+    if ($Url -match "-pooler") {
+        Write-Host "Neon: migrate uses direct connection (pooler stripped from host)." -ForegroundColor Yellow
+        return ($Url -replace "-pooler", "")
+    }
+    return $Url
+}
+
 Push-Location $Backend
 try {
     Write-Host "=== 1/4 migrate schema on Neon ===" -ForegroundColor Cyan
+    $migrateUrl = Get-NeonDirectDatabaseUrl $DatabaseUrl
+    $env:DATABASE_URL = $migrateUrl
     php artisan migrate --force
+    $env:DATABASE_URL = $DatabaseUrl
 
     Write-Host "=== 2/4 copy SQLite to PostgreSQL ===" -ForegroundColor Cyan
     php artisan mudabbir:migrate-sqlite-to-pgsql --sqlite="$SqliteSource"
