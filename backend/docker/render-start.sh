@@ -11,6 +11,12 @@ export TRUSTED_PROXIES="${TRUSTED_PROXIES:-*}"
 
 if [ -n "${DATABASE_URL:-}" ]; then
   export DB_CONNECTION="${DB_CONNECTION:-pgsql}"
+  case "${DB_CONNECTION,,}" in
+    neon|postgres|postgresql)
+      echo "WARN: DB_CONNECTION=${DB_CONNECTION} — normalizing to pgsql (Neon uses PostgreSQL)."
+      export DB_CONNECTION=pgsql
+      ;;
+  esac
   export DB_SSLMODE="${DB_SSLMODE:-require}"
 else
   export DB_CONNECTION=sqlite
