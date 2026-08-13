@@ -44,7 +44,9 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function (): void {
 
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::patch('/notifications/{id}/read', [NotificationController::class, 'markRead']);
-    Route::post('/notifications/test-push', PushTestController::class);
+    if (app()->environment('local')) {
+        Route::post('/notifications/test-push', PushTestController::class);
+    }
     Route::post('/device-tokens', [DeviceTokenController::class, 'store']);
     Route::delete('/device-tokens', [DeviceTokenController::class, 'destroy']);
 

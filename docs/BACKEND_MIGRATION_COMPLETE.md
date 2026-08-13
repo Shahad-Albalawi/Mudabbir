@@ -1,39 +1,59 @@
 # Backend migration checklist — production 100%
 
-## Code (done after push)
+## Code (done)
 
 - [x] Expenses / goals / budgets / challenges → Eloquent
 - [x] Dual-write JSON safety window (controllers)
 - [x] Legacy JSON import on deploy
 - [x] Neon config + `migrate-to-neon` scripts
-- [x] Daily `pg_dump` GitHub Action
-- [x] Telescope (local) + Sentry (production) + CI tests
+- [x] Daily `pg_dump` GitHub Action (`.github/workflows/neon-db-backup.yml`)
+- [x] `mudabbir:verify-legacy-migration` (count + 10% sample + orphan check)
+- [x] `scripts/backup-json.sh` (JSON off-site backup)
+- [x] Telescope (local) + Sentry package + CI tests
+- [x] `/notifications/test-push` disabled outside `local`
 
-## Render Dashboard (manual — required for full production DB)
+## Render (done)
 
-1. **Neon** — create project + production branch
-2. Copy **pooled** `DATABASE_URL` → Render Environment
-3. Set `DB_CONNECTION=pgsql`
-4. Export Render `database.sqlite` (or use backup) → run `scripts/migrate-to-neon.ps1`
-5. Redeploy — `render-start.sh` auto-selects Postgres when `DATABASE_URL` is set
+- [x] Neon production branch + pooled `DATABASE_URL`
+- [x] `DB_CONNECTION=pgsql`
+- [x] Deploy Live — expect `"driver":"pgsql"` on `/api/health`
 
-## Sentry
+## Manual — optional but recommended
 
-1. Create free project at https://sentry.io
-2. Render → `SENTRY_LARAVEL_DSN` = your DSN
+### Sentry (free)
 
-## GitHub
+1. Create project at https://sentry.io
+2. Render → Environment → `SENTRY_LARAVEL_DSN` = your DSN
+3. Redeploy (no code change needed)
 
-1. Secret `NEON_DATABASE_URL_DIRECT` (direct URI, not pooler) for daily backups
+### GitHub — Neon daily backup
 
-## After 1–2 stable days
+1. Neon Console → Connect → **Direct connection** (no `-pooler`)
+2. GitHub repo → Settings → Secrets → `NEON_DATABASE_URL_DIRECT`
+3. Workflow runs daily: `.github/workflows/neon-db-backup.yml`
 
-- `MUDABBIR_DUAL_WRITE_JSON=false` on Render
+### Verify legacy data (if JSON files exist)
 
-## Verify
+```powershell
+cd backend
+php artisan mudabbir:verify-legacy-migration --all
+```
+
+### JSON backup (before any migration)
+
+```bash
+bash scripts/backup-json.sh
+# Copy mudabbir-json-backup-*.tar.gz off the server
+```
+
+### After 1–2 stable days (from dual-write start)
+
+Render → `MUDABBIR_DUAL_WRITE_JSON=false`
+
+## Verify production
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/check-production-api.ps1
 ```
 
-Expect `"driver":"pgsql"` after Neon is configured (until then `"sqlite"` is OK).
+Expect `"driver":"pgsql"`.
