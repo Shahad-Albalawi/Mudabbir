@@ -22,20 +22,6 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      # Neon runs PG 18; Ubuntu default postgresql-client is PG 16 and pg_dump refuses newer servers.
-      - name: Install PostgreSQL 18 client
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y curl ca-certificates lsb-release gnupg
-          sudo install -d /usr/share/postgresql-common/pgdg
-          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
-            | sudo gpg --dearmor -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.gpg
-          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.gpg] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
-            | sudo tee /etc/apt/sources.list.d/pgdg.list
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client-18
-          pg_dump --version
-
       - name: Validate backup configuration
         id: backup
         env:
@@ -54,20 +40,30 @@ jobs:
           echo "enabled=true" >> "$GITHUB_OUTPUT"
           echo "NEON_DATABASE_URL_DIRECT=${URL}" >> "$GITHUB_ENV"
 
+      # Neon runs PG 18; run pg_dump from official postgres:18 image (matches server version).
       - name: pg_dump full database
         if: steps.backup.outputs.enabled == 'true'
         run: |
           STAMP="$(date -u +%Y-%m-%dT%H%M%SZ)"
-          pg_dump "${NEON_DATABASE_URL_DIRECT}" \
+          DUMP_BASE="mudabbir-neon-${STAMP}"
+          docker run --rm \
+            -v "${{ github.workspace }}:/backup" \
+            -w /backup \
+            postgres:18 \
+            pg_dump "${NEON_DATABASE_URL_DIRECT}" \
             --format=custom \
             --no-owner \
             --no-acl \
-            --file="mudabbir-neon-${STAMP}.dump"
-          pg_dump "${NEON_DATABASE_URL_DIRECT}" \
+            --file="/backup/${DUMP_BASE}.dump"
+          docker run --rm \
+            -v "${{ github.workspace }}:/backup" \
+            -w /backup \
+            postgres:18 \
+            pg_dump "${NEON_DATABASE_URL_DIRECT}" \
             --format=plain \
             --no-owner \
             --no-acl \
-            --file="mudabbir-neon-${STAMP}.sql"
+            --file="/backup/${DUMP_BASE}.sql"
           echo "BACKUP_STAMP=${STAMP}" >> "$GITHUB_ENV"
           ls -lh mudabbir-neon-*
 
@@ -83,6 +79,7 @@ jobs:
 
       - name: Publish GitHub Release
         if: steps.backup.outputs.enabled == 'true'
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
