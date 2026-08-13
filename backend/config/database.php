@@ -5,6 +5,7 @@ use Illuminate\Support\Str;
 /**
  * Build PostgreSQL connection config without Laravel's DATABASE_URL driver parsing.
  * Render/Neon may use neon:// or DB_CONNECTION=Neon — Laravel only accepts pgsql.
+ * Prefer DB_HOST/DB_* when set by render-start.sh (most reliable on Render).
  *
  * @return array<string, mixed>
  */
@@ -22,7 +23,18 @@ function mudabbir_pgsql_connection(): array
         ]) : [],
     ];
 
-    $url = env('DATABASE_URL');
+    $host = env('DB_HOST');
+    if (is_string($host) && $host !== '' && $host !== '127.0.0.1') {
+        return array_merge($base, [
+            'host' => $host,
+            'port' => env('DB_PORT', '5432'),
+            'database' => env('DB_DATABASE', 'neondb'),
+            'username' => env('DB_USERNAME', ''),
+            'password' => env('DB_PASSWORD', ''),
+        ]);
+    }
+
+    $url = env('DATABASE_URL') ?: getenv('DATABASE_URL');
     if (! is_string($url) || trim($url) === '') {
         return array_merge($base, [
             'host' => env('DB_HOST', '127.0.0.1'),
