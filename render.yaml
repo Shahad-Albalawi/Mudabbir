@@ -16,7 +16,7 @@ services:
       - key: APP_URL
         value: https://mudabbir-backend-api.onrender.com
       - key: DB_CONNECTION
-        sync: false
+        value: pgsql
       - key: DB_SSLMODE
         value: require
       - key: HEALTH_DB_TIMEOUT_SECONDS

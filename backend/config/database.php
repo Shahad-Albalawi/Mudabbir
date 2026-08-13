@@ -34,6 +34,9 @@ function mudabbir_pgsql_connection(): array
     }
 
     $url = (string) preg_replace('/^neon:/i', 'postgresql:', trim($url));
+    // channel_binding breaks some PHP PDO builds on Render — ignore it.
+    $url = (string) preg_replace('/([?&])channel_binding=[^&]*&?/', '$1', $url);
+    $url = rtrim((string) preg_replace('/[?&]$/', '', $url), '?&');
     $parsed = parse_url($url);
 
     if ($parsed === false || empty($parsed['host'])) {

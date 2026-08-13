@@ -9,20 +9,25 @@ export LOG_LEVEL="${LOG_LEVEL:-warning}"
 export HEALTH_DB_TIMEOUT_SECONDS="${HEALTH_DB_TIMEOUT_SECONDS:-5}"
 export TRUSTED_PROXIES="${TRUSTED_PROXIES:-*}"
 
+# Normalize Neon/Render DATABASE_URL for Laravel (driver must be pgsql, not Neon/neon).
+normalize_database_url() {
+  local url="${1:-}"
+  [ -z "${url}" ] && return 0
+  url="$(echo "${url}" | sed -E 's/^neon:/postgresql:/I')"
+  url="$(echo "${url}" | sed -E 's/[?&]channel_binding=[^&]*//g')"
+  url="$(echo "${url}" | sed -E 's/\?&/?/; s/\?$//')"
+  printf '%s' "${url}"
+}
+
 if [ -n "${DATABASE_URL:-}" ]; then
-  # Render Neon integration may use neon:// — Laravel needs postgresql://
-  if echo "${DATABASE_URL}" | grep -qiE '^neon:'; then
-    DATABASE_URL="$(echo "${DATABASE_URL}" | sed -E 's/^neon:/postgresql:/I')"
-    export DATABASE_URL
-    echo "WARN: normalized DATABASE_URL scheme neon:// → postgresql://"
-  fi
-  if [ "${DB_CONNECTION:-pgsql}" != "pgsql" ]; then
-    echo "WARN: DB_CONNECTION=${DB_CONNECTION} — forcing pgsql (Neon uses PostgreSQL)."
-  fi
+  DATABASE_URL="$(normalize_database_url "${DATABASE_URL}")"
+  export DATABASE_URL
   export DB_CONNECTION=pgsql
   export DB_SSLMODE="${DB_SSLMODE:-require}"
+  echo "DB: using PostgreSQL (Neon) host=$(echo "${DATABASE_URL}" | sed -E 's|^[^@]+@([^/]+).*|\1|')"
 else
   export DB_CONNECTION=sqlite
+  echo "WARN: DATABASE_URL not set — using SQLite."
 fi
 
 if [ -z "${APP_KEY:-}" ] || [ "$APP_KEY" = "base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" ]; then
@@ -34,31 +39,47 @@ mkdir -p database storage/framework/cache storage/framework/sessions storage/fra
 
 if [ "${DB_CONNECTION}" = "sqlite" ]; then
   touch database/database.sqlite
-  echo "WARN: DATABASE_URL not set — using SQLite. Add Neon pooled URI to switch to PostgreSQL."
 fi
 
 php artisan config:clear
 
-# Neon PgBouncer (pooled) breaks DDL migrations (e.g. users_email_unique). Use direct URI for migrate only.
+# PgBouncer pooler cannot run DDL — migrate via direct host (strip -pooler).
 migrate_database_url() {
   local url="${NEON_DATABASE_URL_DIRECT:-${DATABASE_URL:-}}"
+  url="$(normalize_database_url "${url}")"
   if [ -n "${url}" ] && echo "${url}" | grep -qi pooler; then
     url="$(echo "${url}" | sed 's/-pooler//')"
-    echo "Neon: running migrations on direct connection (pooler stripped from host)."
+    echo "Neon: migrations use direct connection (pooler stripped)."
   fi
   printf '%s' "${url}"
 }
 
-if [ "${DB_CONNECTION}" = "pgsql" ]; then
+run_migrate() {
+  local attempt=1
+  local max=3
+  local migrate_url
   migrate_url="$(migrate_database_url)"
-  if [ -n "${migrate_url}" ]; then
-    DATABASE_URL="${migrate_url}" php artisan migrate --force
-  else
-    php artisan migrate --force
-  fi
-else
-  php artisan migrate --force
-fi
+
+  while [ "${attempt}" -le "${max}" ]; do
+    echo "Running migrations (attempt ${attempt}/${max})..."
+    if [ "${DB_CONNECTION}" = "pgsql" ] && [ -n "${migrate_url}" ]; then
+      if DATABASE_URL="${migrate_url}" php artisan migrate --force; then
+        return 0
+      fi
+    elif php artisan migrate --force; then
+      return 0
+    fi
+    if [ "${attempt}" -lt "${max}" ]; then
+      echo "Migrate failed — waiting 12s (Neon cold start?)..."
+      sleep 12
+    fi
+    attempt=$((attempt + 1))
+  done
+  echo "ERROR: migrations failed after ${max} attempts."
+  return 1
+}
+
+run_migrate
 
 # One-time legacy JSON → DB import (idempotent). Uses GitHub backup if local JSON is missing.
 if [ "${MUDABBIR_SKIP_LEGACY_IMPORT:-}" != "1" ] && [ ! -f storage/app/.legacy-import-done ]; then
@@ -100,9 +121,9 @@ if [ "${MUDABBIR_SKIP_LEGACY_IMPORT:-}" != "1" ] && [ ! -f storage/app/.legacy-i
   fi
 fi
 
-php artisan config:cache
+# Do not config:cache — keeps DATABASE_URL/env working on Render after deploy.
 php artisan route:cache
 
-echo "Mudabbir API starting (APP_ENV=${APP_ENV}, APP_URL=${APP_URL})"
+echo "Mudabbir API starting (APP_ENV=${APP_ENV}, DB_CONNECTION=${DB_CONNECTION})"
 
 exec php artisan serve --host=0.0.0.0 --port="${PORT:-8080}"
