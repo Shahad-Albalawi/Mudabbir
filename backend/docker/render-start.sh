@@ -95,7 +95,7 @@ migrate_database_url() {
   url="$(normalize_database_url "${url}")"
   if [ -n "${url}" ] && echo "${url}" | grep -qi pooler; then
     url="$(echo "${url}" | sed 's/-pooler//')"
-    echo "Neon: migrations use direct connection (pooler stripped)."
+    echo "Neon: migrations use direct connection (pooler stripped)." >&2
   fi
   printf '%s' "${url}"
 }
@@ -118,7 +118,15 @@ run_migrate() {
 
   while [ "${attempt}" -le "${max}" ]; do
     echo "Running migrations (attempt ${attempt}/${max})..."
-    apply_database_url "${migrate_url}"
+    if ! apply_database_url "${migrate_url}"; then
+      echo "ERROR: could not parse migrate DATABASE_URL." >&2
+      return 1
+    fi
+    if echo "${DB_HOST}" | grep -qi pooler; then
+      echo "ERROR: migrate must not use pooler host (${DB_HOST})." >&2
+      return 1
+    fi
+    echo "Migrate DB host=${DB_HOST}" >&2
     if php artisan migrate --force; then
       # Restore pooled URL for web requests (PgBouncer).
       if [ -n "${POOLED_DATABASE_URL}" ]; then

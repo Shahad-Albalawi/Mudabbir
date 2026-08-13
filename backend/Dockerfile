@@ -28,7 +28,7 @@ RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-d
 COPY . .
 
 # Bump to invalidate Docker cache when deploy scripts change.
-ARG DEPLOY_REV=20260813-db-host-export
+ARG DEPLOY_REV=20260813-migrate-direct-fix
 RUN echo "Deploy revision: ${DEPLOY_REV}"
 
 RUN mkdir -p database storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
