@@ -10,13 +10,16 @@ export HEALTH_DB_TIMEOUT_SECONDS="${HEALTH_DB_TIMEOUT_SECONDS:-5}"
 export TRUSTED_PROXIES="${TRUSTED_PROXIES:-*}"
 
 if [ -n "${DATABASE_URL:-}" ]; then
-  export DB_CONNECTION="${DB_CONNECTION:-pgsql}"
-  case "${DB_CONNECTION,,}" in
-    neon|postgres|postgresql)
-      echo "WARN: DB_CONNECTION=${DB_CONNECTION} — normalizing to pgsql (Neon uses PostgreSQL)."
-      export DB_CONNECTION=pgsql
-      ;;
-  esac
+  # Render Neon integration may use neon:// — Laravel needs postgresql://
+  if echo "${DATABASE_URL}" | grep -qiE '^neon:'; then
+    DATABASE_URL="$(echo "${DATABASE_URL}" | sed -E 's/^neon:/postgresql:/I')"
+    export DATABASE_URL
+    echo "WARN: normalized DATABASE_URL scheme neon:// → postgresql://"
+  fi
+  if [ "${DB_CONNECTION:-pgsql}" != "pgsql" ]; then
+    echo "WARN: DB_CONNECTION=${DB_CONNECTION} — forcing pgsql (Neon uses PostgreSQL)."
+  fi
+  export DB_CONNECTION=pgsql
   export DB_SSLMODE="${DB_SSLMODE:-require}"
 else
   export DB_CONNECTION=sqlite

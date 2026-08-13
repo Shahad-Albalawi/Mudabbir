@@ -2,6 +2,13 @@
 
 use Illuminate\Support\Str;
 
+$dbDefault = env('DB_CONNECTION', 'sqlite');
+if (env('DATABASE_URL')) {
+    $dbDefault = 'pgsql';
+} elseif (in_array(strtolower((string) $dbDefault), ['neon', 'postgres', 'postgresql'], true)) {
+    $dbDefault = 'pgsql';
+}
+
 return [
 
     /*
@@ -15,7 +22,7 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'sqlite'),
+    'default' => $dbDefault,
 
     /*
     |--------------------------------------------------------------------------
