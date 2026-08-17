@@ -21,6 +21,11 @@ if (! function_exists('mudabbir_pgsql_connection')) {
         'sslmode' => env('DB_SSLMODE', 'require'),
         'options' => extension_loaded('pdo_pgsql') ? array_filter([
             PDO::ATTR_TIMEOUT => (int) env('DB_CONNECT_TIMEOUT', 5),
+            // Neon PgBouncer pooler: required for reliable prepared statements.
+            PDO::ATTR_EMULATE_PREPARES => filter_var(
+                env('DB_EMULATE_PREPARES', true),
+                FILTER_VALIDATE_BOOL,
+            ),
         ]) : [],
     ];
 

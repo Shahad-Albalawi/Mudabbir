@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libsqlite3-dev \
     libpq-dev \
     libzip-dev \
-    && docker-php-ext-install opcache pdo_sqlite pdo_pgsql zip \
+    && docker-php-ext-install mbstring opcache pdo_sqlite pdo_pgsql zip \
     && rm -rf /var/lib/apt/lists/*
 
 COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
@@ -31,7 +31,7 @@ RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-d
 COPY . .
 
 # Bump to invalidate Docker cache when deploy scripts change.
-ARG DEPLOY_REV=20260813-php-fpm-nginx
+ARG DEPLOY_REV=20260818-pgsql-smoke-fix
 RUN echo "Deploy revision: ${DEPLOY_REV}"
 
 RUN mkdir -p database storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \

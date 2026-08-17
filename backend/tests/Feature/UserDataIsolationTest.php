@@ -95,4 +95,62 @@ class UserDataIsolationTest extends TestCase
         $this->assertGreaterThan(0, $aliceExpenseTotal);
         $this->assertSame(0.0, $bobExpenseTotal);
     }
+
+    public function test_user_cannot_access_another_users_budget(): void
+    {
+        $userA = $this->registerUser('budget-alice@example.com', 'Alice');
+        $userB = $this->registerUser('budget-bob@example.com', 'Bob');
+
+        $created = $this->withApiAuth($userA)->postJson('/api/budgets', [
+            'amount' => 1500,
+            'start_date' => '2025-06-01',
+            'end_date' => '2025-06-30',
+            'account_id' => 1,
+        ])->assertCreated();
+
+        $budgetId = (int) $created->json('data.id');
+
+        $this->withApiAuth($userB)->getJson("/api/budgets/{$budgetId}")->assertStatus(404);
+        $this->withApiAuth($userB)->putJson("/api/budgets/{$budgetId}", [
+            'amount' => 9999,
+        ])->assertStatus(404);
+        $this->withApiAuth($userB)->deleteJson("/api/budgets/{$budgetId}")->assertStatus(404);
+    }
+
+    public function test_user_cannot_access_another_users_challenge(): void
+    {
+        $owner = $this->registerUser('challenge-owner@example.com', 'Owner');
+        $other = $this->registerUser('challenge-other@example.com', 'Other');
+
+        $created = $this->withApiAuth($owner)->postJson('/api/challenges/from-template', [
+            'template_id' => 'no_extra_week',
+        ])->assertCreated();
+
+        $challengeId = (int) $created->json('data.id');
+
+        $this->withApiAuth($other)->getJson("/api/challenges/{$challengeId}")->assertStatus(404);
+        $this->withApiAuth($other)->putJson("/api/challenges/{$challengeId}", [
+            'name' => 'Hacked',
+        ])->assertStatus(404);
+        $this->withApiAuth($other)->deleteJson("/api/challenges/{$challengeId}")->assertStatus(404);
+    }
+
+    public function test_user_cannot_mark_another_users_notification_as_read(): void
+    {
+        $userA = $this->registerUser('notif-alice@example.com', 'Alice');
+        $userB = $this->registerUser('notif-bob@example.com', 'Bob');
+
+        $notification = UserNotification::query()->create([
+            'user_id' => (int) $userA['user']['id'],
+            'type' => 'test',
+            'title' => 'Alice only',
+            'body' => 'Private',
+            'data' => ['scope' => 'alice'],
+        ]);
+
+        $this->withApiAuth($userB)->patchJson("/api/notifications/{$notification->id}/read")
+            ->assertStatus(404);
+
+        $this->assertNull($notification->fresh()->read_at);
+    }
 }
