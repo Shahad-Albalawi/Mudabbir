@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\Budget;
 use App\Services\Concerns\ResolvesSyncConflicts;
+use App\Support\ResolvesModelPrimaryKey;
 use Illuminate\Support\Facades\DB;
 
 class BudgetRepository
@@ -52,14 +53,15 @@ class BudgetRepository
     public function create(array $payload, int $userId): array
     {
         $budget = DB::transaction(function () use ($payload, $userId): Budget {
-            return Budget::query()->create([
-                'id' => $this->nextBudgetId(),
-                'user_id' => $userId,
-                'amount' => (float) $payload['amount'],
-                'start_date' => (string) $payload['start_date'],
-                'end_date' => (string) $payload['end_date'],
-                'account_id' => (int) $payload['account_id'],
-            ]);
+            return Budget::query()->create(
+                ResolvesModelPrimaryKey::forCreate(Budget::class, [
+                    'user_id' => $userId,
+                    'amount' => (float) $payload['amount'],
+                    'start_date' => (string) $payload['start_date'],
+                    'end_date' => (string) $payload['end_date'],
+                    'account_id' => (int) $payload['account_id'],
+                ])
+            );
         });
 
         return $budget->toStoreArray();
@@ -114,10 +116,5 @@ class BudgetRepository
         }
 
         return $filtered;
-    }
-
-    private function nextBudgetId(): int
-    {
-        return ((int) Budget::query()->max('id')) + 1;
     }
 }

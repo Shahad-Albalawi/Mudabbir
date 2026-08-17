@@ -190,6 +190,10 @@ fi
 
 php artisan route:cache
 
-echo "Mudabbir API starting (APP_ENV=${APP_ENV}, DB_CONNECTION=${DB_CONNECTION}, DB_HOST=${DB_HOST:-n/a})"
+PORT="${PORT:-8080}"
+sed "s/__PORT__/${PORT}/" docker/nginx/default.conf.template > /etc/nginx/conf.d/default.conf
 
-exec php artisan serve --host=0.0.0.0 --port="${PORT:-8080}"
+echo "Mudabbir API starting (APP_ENV=${APP_ENV}, DB_CONNECTION=${DB_CONNECTION}, DB_HOST=${DB_HOST:-n/a}, php-fpm+nginx port=${PORT})"
+
+php-fpm -D
+exec nginx -g 'daemon off;'

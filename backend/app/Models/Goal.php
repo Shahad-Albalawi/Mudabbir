@@ -9,10 +9,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Goal extends Model
 {
-    public $incrementing = false;
-
-    protected $keyType = 'int';
-
     protected $fillable = [
         'id', 'user_id', 'name', 'target', 'current_amount', 'type',
         'start_date', 'end_date', 'image_path', 'is_completed', 'completed_at',

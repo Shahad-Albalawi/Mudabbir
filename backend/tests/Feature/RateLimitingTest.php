@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use Mockery;
 use App\Services\AiCoachService;
-use App\Services\OpenAiStreamService;
+use App\Services\AiChatService;
 use Tests\TestCase;
 
 class RateLimitingTest extends TestCase
@@ -58,7 +58,7 @@ class RateLimitingTest extends TestCase
     {
         $auth = $this->registerUser('ai-chat-rate@example.com');
 
-        $this->mock(OpenAiStreamService::class, function (Mockery\MockInterface $mock): void {
+        $this->mock(AiChatService::class, function (Mockery\MockInterface $mock): void {
             $mock->shouldReceive('chat')->andReturn('ok');
         });
 

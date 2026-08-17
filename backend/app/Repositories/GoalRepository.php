@@ -6,6 +6,7 @@ use App\Models\Goal;
 use App\Models\GoalContribution;
 use App\Models\GoalMilestone;
 use App\Services\Concerns\ResolvesSyncConflicts;
+use App\Support\ResolvesModelPrimaryKey;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -48,34 +49,35 @@ class GoalRepository
     public function create(array $payload, int $userId): array
     {
         return DB::transaction(function () use ($payload, $userId): array {
-            $id = $this->nextGoalId();
             $current = (float) ($payload['current_amount'] ?? 0);
             $target = (float) $payload['target'];
             $reached = $current >= $target && $target > 0;
             $now = Carbon::now();
 
-            $goal = Goal::query()->create([
-                'id' => $id,
-                'user_id' => $userId,
-                'name' => (string) $payload['name'],
-                'target' => $target,
-                'current_amount' => min($current, $target),
-                'type' => (string) ($payload['type'] ?? 'Saving'),
-                'start_date' => (string) $payload['start_date'],
-                'end_date' => (string) $payload['end_date'],
-                'image_path' => $payload['image_path'] ?? null,
-                'is_completed' => $reached,
-                'completed_at' => $reached ? $now : null,
-            ]);
+            $goal = Goal::query()->create(
+                ResolvesModelPrimaryKey::forCreate(Goal::class, [
+                    'user_id' => $userId,
+                    'name' => (string) $payload['name'],
+                    'target' => $target,
+                    'current_amount' => min($current, $target),
+                    'type' => (string) ($payload['type'] ?? 'Saving'),
+                    'start_date' => (string) $payload['start_date'],
+                    'end_date' => (string) $payload['end_date'],
+                    'image_path' => $payload['image_path'] ?? null,
+                    'is_completed' => $reached,
+                    'completed_at' => $reached ? $now : null,
+                ])
+            );
 
             if ($current > 0) {
-                GoalContribution::query()->create([
-                    'id' => $this->nextContributionId(),
-                    'goal_id' => $goal->id,
-                    'amount' => min($current, $target),
-                    'contributed_at' => $now,
-                    'note' => null,
-                ]);
+                GoalContribution::query()->create(
+                    ResolvesModelPrimaryKey::forCreate(GoalContribution::class, [
+                        'goal_id' => $goal->id,
+                        'amount' => min($current, $target),
+                        'contributed_at' => $now,
+                        'note' => null,
+                    ])
+                );
             }
 
             return $goal->fresh(['contributions', 'milestones'])->toStoreArray();
@@ -142,13 +144,14 @@ class GoalRepository
                 return $goal->fresh(['contributions', 'milestones'])->toStoreArray();
             }
 
-            GoalContribution::query()->create([
-                'id' => $this->nextContributionId(),
-                'goal_id' => $goal->id,
-                'amount' => $applied,
-                'contributed_at' => Carbon::now(),
-                'note' => $payload['note'] ?? null,
-            ]);
+            GoalContribution::query()->create(
+                ResolvesModelPrimaryKey::forCreate(GoalContribution::class, [
+                    'goal_id' => $goal->id,
+                    'amount' => $applied,
+                    'contributed_at' => Carbon::now(),
+                    'note' => $payload['note'] ?? null,
+                ])
+            );
 
             $newAmount = min((float) $goal->current_amount + $applied, (float) $goal->target);
             $reached = $newAmount >= (float) $goal->target;
@@ -180,14 +183,15 @@ class GoalRepository
         $currentAmount = (float) $goal->current_amount;
         $achieved = $currentAmount >= $targetAmount;
 
-        GoalMilestone::query()->create([
-            'id' => $this->nextMilestoneId(),
-            'goal_id' => $goal->id,
-            'title' => (string) $payload['title'],
-            'target_amount' => $targetAmount,
-            'is_achieved' => $achieved,
-            'achieved_at' => $achieved ? Carbon::now() : null,
-        ]);
+        GoalMilestone::query()->create(
+            ResolvesModelPrimaryKey::forCreate(GoalMilestone::class, [
+                'goal_id' => $goal->id,
+                'title' => (string) $payload['title'],
+                'target_amount' => $targetAmount,
+                'is_achieved' => $achieved,
+                'achieved_at' => $achieved ? Carbon::now() : null,
+            ])
+        );
 
         return $goal->fresh(['contributions', 'milestones'])->toStoreArray();
     }
@@ -229,20 +233,5 @@ class GoalRepository
         }
 
         return $filtered;
-    }
-
-    private function nextGoalId(): int
-    {
-        return ((int) Goal::query()->max('id')) + 1;
-    }
-
-    private function nextContributionId(): int
-    {
-        return ((int) GoalContribution::query()->max('id')) + 1;
-    }
-
-    private function nextMilestoneId(): int
-    {
-        return ((int) GoalMilestone::query()->max('id')) + 1;
     }
 }

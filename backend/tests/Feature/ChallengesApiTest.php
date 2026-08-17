@@ -23,6 +23,18 @@ class ChallengesApiTest extends TestCase
         ]);
     }
 
+    public function test_challenge_responses_include_formatted_amount(): void
+    {
+        $auth = $this->registerUser('challenge-resource@example.com');
+
+        $create = $this->withApiAuth($auth)->postJson('/api/challenges/from-template', [
+            'template_id' => 'no_extra_week',
+        ]);
+
+        $create->assertStatus(201)
+            ->assertJsonStructure(['data' => ['amount_formatted', 'creator', 'participants']]);
+    }
+
     public function test_invite_and_pending_invitations_work(): void
     {
         $owner = $this->registerUser('owner@example.com');

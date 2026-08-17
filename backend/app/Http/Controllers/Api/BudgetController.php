@@ -7,6 +7,8 @@ use App\Http\Controllers\Concerns\DualWritesLegacyJson;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Budget\StoreBudgetRequest;
 use App\Http\Requests\Budget\UpdateBudgetRequest;
+use App\Http\Requests\PaginatedListRequest;
+use App\Http\Resources\BudgetResource;
 use App\Models\Budget;
 use App\Repositories\BudgetRepository;
 use Illuminate\Http\JsonResponse;
@@ -19,17 +21,20 @@ class BudgetController extends Controller
 
     public function __construct(private BudgetRepository $store) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(PaginatedListRequest $request): JsonResponse
     {
         $userId = (int) $request->user()->id;
-        $budgets = Budget::query()
+
+        $paginator = Budget::query()
             ->forUser($userId)
             ->orderByDesc('id')
-            ->get()
-            ->map(fn (Budget $budget): array => $budget->toStoreArray())
-            ->all();
+            ->paginate($request->perPage());
 
-        return $this->success($budgets);
+        $paginator->through(
+            fn (Budget $budget): array => (new BudgetResource($budget))->resolve($request)
+        );
+
+        return $this->paginated($paginator, 'Budgets loaded');
     }
 
     public function show(Request $request, int $id): JsonResponse
@@ -40,7 +45,7 @@ class BudgetController extends Controller
             return $this->notFound('Budget not found');
         }
 
-        return $this->success($budget->toStoreArray());
+        return $this->success((new BudgetResource($budget))->resolve($request));
     }
 
     public function store(StoreBudgetRequest $request): JsonResponse
@@ -49,7 +54,7 @@ class BudgetController extends Controller
         $budget = $this->store->create($request->validated(), $userId);
         $this->mirrorBudgetToLegacyJson($budget);
 
-        return $this->created($budget);
+        return $this->created(BudgetResource::fromStoreArray($budget));
     }
 
     public function update(UpdateBudgetRequest $request, int $id): JsonResponse
@@ -73,13 +78,13 @@ class BudgetController extends Controller
         if (! empty($result['conflict'])) {
             return $this->conflict(
                 'Server has a newer version of this budget.',
-                $result['data']
+                BudgetResource::fromStoreArray($result['data'])
             );
         }
 
         $this->mirrorBudgetToLegacyJson($result['data']);
 
-        return $this->success($result['data']);
+        return $this->success(BudgetResource::fromStoreArray($result['data']));
     }
 
     public function destroy(Request $request, int $id): JsonResponse

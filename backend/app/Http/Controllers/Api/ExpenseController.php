@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Concerns\AuthorizesResourceAccess;
 use App\Http\Controllers\Concerns\DualWritesLegacyJson;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Expense\ListExpensesRequest;
 use App\Http\Requests\Expense\StoreExpenseRequest;
 use App\Http\Requests\Expense\UpdateExpenseRequest;
 use App\Http\Resources\ExpenseResource;
@@ -20,15 +21,9 @@ class ExpenseController extends Controller
 
     public function __construct(private ExpenseRepository $store) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(ListExpensesRequest $request): JsonResponse
     {
         $userId = (int) $request->user()->id;
-
-        $perPage = min(max((int) $request->query('per_page', 15), 1), 100);
-        $sort = (string) $request->query('sort', 'date');
-        if (! in_array($sort, ['amount', 'date'], true)) {
-            $sort = 'date';
-        }
 
         $paginator = Expense::query()
             ->forUser($userId)
@@ -38,8 +33,8 @@ class ExpenseController extends Controller
                 $request->filled('min') ? (float) $request->query('min') : null,
                 $request->filled('max') ? (float) $request->query('max') : null,
             )
-            ->sorted($sort)
-            ->paginate($perPage);
+            ->sorted($request->sort())
+            ->paginate($request->perPage());
 
         $paginator->through(
             fn (Expense $expense): array => (new ExpenseResource($expense))->resolve($request)

@@ -20,6 +20,7 @@ class BudgetsApiTest extends TestCase
             'account_id' => 1,
         ]);
         $create->assertStatus(201)->assertJsonPath('success', true);
+        $create->assertJsonStructure(['data' => ['amount_formatted']]);
         $id = (int) $create->json('data.id');
 
         $show = $this->withApiAuth($auth)->getJson("/api/budgets/{$id}");

@@ -9,10 +9,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Challenge extends Model
 {
-    public $incrementing = false;
-
-    protected $keyType = 'int';
-
     protected $fillable = [
         'id', 'user_id', 'creator_id', 'creator_name', 'creator_email',
         'name', 'amount', 'start_date', 'end_date', 'achieved',

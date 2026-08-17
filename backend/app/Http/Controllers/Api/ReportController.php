@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Report\MonthlyReportRequest;
 use App\Services\ReportService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
 class ReportController extends Controller
@@ -15,11 +15,10 @@ class ReportController extends Controller
 
     public function __construct(private ReportService $reports) {}
 
-    public function monthly(Request $request): JsonResponse
+    public function monthly(MonthlyReportRequest $request): JsonResponse
     {
         $userId = (int) $request->user()->id;
-        $month = $request->query('month');
-        $monthKey = is_string($month) && preg_match('/^\d{4}-\d{2}$/', $month) ? $month : 'current';
+        $monthKey = $request->monthKey();
         $cacheKey = "api:reports:monthly:user:{$userId}:{$monthKey}";
 
         $data = Cache::remember(

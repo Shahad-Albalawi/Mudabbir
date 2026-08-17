@@ -9,6 +9,7 @@ use App\Http\Requests\Goal\AddGoalContributionRequest;
 use App\Http\Requests\Goal\StoreGoalMilestoneRequest;
 use App\Http\Requests\Goal\StoreGoalRequest;
 use App\Http\Requests\Goal\UpdateGoalRequest;
+use App\Http\Requests\PaginatedListRequest;
 use App\Http\Resources\GoalResource;
 use App\Models\Goal;
 use App\Repositories\GoalRepository;
@@ -22,18 +23,21 @@ class GoalController extends Controller
 
     public function __construct(private GoalRepository $store) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(PaginatedListRequest $request): JsonResponse
     {
         $userId = (int) $request->user()->id;
-        $goals = Goal::query()
+
+        $paginator = Goal::query()
             ->forUser($userId)
             ->with(['contributions', 'milestones'])
             ->orderByDesc('id')
-            ->get()
-            ->map(fn (Goal $goal): array => (new GoalResource($goal->toStoreArray()))->resolve($request))
-            ->all();
+            ->paginate($request->perPage());
 
-        return $this->success($goals);
+        $paginator->through(
+            fn (Goal $goal): array => (new GoalResource($goal->toStoreArray()))->resolve($request)
+        );
+
+        return $this->paginated($paginator, 'Goals loaded');
     }
 
     public function show(Request $request, int $id): JsonResponse

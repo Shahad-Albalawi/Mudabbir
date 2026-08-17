@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Exceptions\AiQuotaExceededException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Ai\AiChatRequest;
-use App\Services\OpenAiStreamService;
+use App\Services\AiChatService;
 use App\Services\UserFinancialContextService;
 use Illuminate\Http\JsonResponse;
 use RuntimeException;
@@ -15,7 +15,7 @@ use Throwable;
 class AiChatController extends Controller
 {
     public function __construct(
-        private OpenAiStreamService $openAi,
+        private AiChatService $aiChat,
         private UserFinancialContextService $contextService,
     ) {}
 
@@ -34,10 +34,10 @@ class AiChatController extends Controller
 
         try {
             if ($stream) {
-                return $this->openAi->streamChat($message, $contextBlock, $fullClientPrompt);
+                return $this->aiChat->streamChat($message, $contextBlock, $fullClientPrompt);
             }
 
-            $reply = $this->openAi->chat($message, $contextBlock, $fullClientPrompt);
+            $reply = $this->aiChat->chat($message, $contextBlock, $fullClientPrompt);
 
             return $this->success([
                 'message' => $reply,

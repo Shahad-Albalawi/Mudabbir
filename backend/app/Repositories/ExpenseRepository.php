@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Models\Expense;
 use App\Services\Concerns\ResolvesSyncConflicts;
 use App\Services\DashboardCache;
+use App\Support\ResolvesModelPrimaryKey;
 use Illuminate\Support\Facades\DB;
 
 class ExpenseRepository
@@ -45,23 +46,22 @@ class ExpenseRepository
     public function create(array $payload, int $userId): array
     {
         $expense = DB::transaction(function () use ($payload, $userId): Expense {
-            $id = $this->nextExpenseId();
-
-            return Expense::query()->create([
-                'id' => $id,
-                'user_id' => $userId,
-                'amount' => (float) $payload['amount'],
-                'date' => (string) $payload['date'],
-                'type' => (string) ($payload['type'] ?? 'expense'),
-                'notes' => $payload['notes'] ?? null,
-                'account_id' => (int) $payload['account_id'],
-                'category_id' => (int) $payload['category_id'],
-                'account_name' => (string) ($payload['account_name'] ?? ''),
-                'category_name' => (string) ($payload['category_name'] ?? ''),
-                'is_recurring' => (bool) ($payload['is_recurring'] ?? false),
-                'recurrence_interval' => $payload['recurrence_interval'] ?? null,
-                'synced_at' => now(),
-            ]);
+            return Expense::query()->create(
+                ResolvesModelPrimaryKey::forCreate(Expense::class, [
+                    'user_id' => $userId,
+                    'amount' => (float) $payload['amount'],
+                    'date' => (string) $payload['date'],
+                    'type' => (string) ($payload['type'] ?? 'expense'),
+                    'notes' => $payload['notes'] ?? null,
+                    'account_id' => (int) $payload['account_id'],
+                    'category_id' => (int) $payload['category_id'],
+                    'account_name' => (string) ($payload['account_name'] ?? ''),
+                    'category_name' => (string) ($payload['category_name'] ?? ''),
+                    'is_recurring' => (bool) ($payload['is_recurring'] ?? false),
+                    'recurrence_interval' => $payload['recurrence_interval'] ?? null,
+                    'synced_at' => now(),
+                ])
+            );
         });
 
         DashboardCache::forgetForUser($userId);
@@ -121,9 +121,13 @@ class ExpenseRepository
         return $deleted;
     }
 
-    private function nextExpenseId(): int
+    public function sumExpensesInRange(int $userId, string $start, string $end): float
     {
-        return ((int) Expense::query()->max('id')) + 1;
+        return (float) Expense::query()
+            ->forUser($userId)
+            ->where('type', 'expense')
+            ->byDateRange($start, $end)
+            ->sum('amount');
     }
 
     /**

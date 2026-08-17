@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\Challenge;
 use App\Models\ChallengeParticipant;
+use App\Support\ResolvesModelPrimaryKey;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -44,20 +45,20 @@ class ChallengeRepository
     {
         return DB::transaction(function () use ($payload, $creator): array {
             $creatorId = (int) $creator['id'];
-            $id = $this->nextChallengeId();
 
-            $challenge = Challenge::query()->create([
-                'id' => $id,
-                'user_id' => $creatorId,
-                'creator_id' => $creatorId,
-                'creator_name' => (string) $creator['name'],
-                'creator_email' => (string) $creator['email'],
-                'name' => (string) $payload['name'],
-                'amount' => (float) $payload['amount'],
-                'start_date' => (string) $payload['start_date'],
-                'end_date' => (string) $payload['end_date'],
-                'achieved' => false,
-            ]);
+            $challenge = Challenge::query()->create(
+                ResolvesModelPrimaryKey::forCreate(Challenge::class, [
+                    'user_id' => $creatorId,
+                    'creator_id' => $creatorId,
+                    'creator_name' => (string) $creator['name'],
+                    'creator_email' => (string) $creator['email'],
+                    'name' => (string) $payload['name'],
+                    'amount' => (float) $payload['amount'],
+                    'start_date' => (string) $payload['start_date'],
+                    'end_date' => (string) $payload['end_date'],
+                    'achieved' => false,
+                ])
+            );
 
             ChallengeParticipant::query()->create([
                 'challenge_id' => $challenge->id,
@@ -453,11 +454,6 @@ class ChallengeRepository
     private function isCreator(Challenge $challenge, int $userId): bool
     {
         return (int) $challenge->creator_id === $userId;
-    }
-
-    private function nextChallengeId(): int
-    {
-        return ((int) Challenge::query()->max('id')) + 1;
     }
 
     private function nextProvisionalParticipantId(): int

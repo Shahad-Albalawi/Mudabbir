@@ -59,4 +59,15 @@ class ReportApiTest extends TestCase
 
         $this->assertTrue(Cache::has("api:reports:monthly:user:{$userId}:current"));
     }
+
+    public function test_monthly_report_rejects_invalid_month(): void
+    {
+        $auth = $this->registerUser('report-invalid-month@example.com');
+
+        $this->withApiAuth($auth)->getJson('/api/reports/monthly?month=2025-13')
+            ->assertStatus(422);
+
+        $this->withApiAuth($auth)->getJson('/api/reports/monthly?month=not-valid')
+            ->assertStatus(422);
+    }
 }

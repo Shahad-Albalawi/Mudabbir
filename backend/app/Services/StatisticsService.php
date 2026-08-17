@@ -39,7 +39,9 @@ class StatisticsService
             ];
         }
 
-        foreach ($this->expenseStore->all($userId) as $row) {
+        $expenses = $this->expenseStore->all($userId);
+
+        foreach ($expenses as $row) {
             $date = (string) ($row['date'] ?? '');
             $amount = (float) ($row['amount'] ?? 0);
             $type = (string) ($row['type'] ?? 'expense');
@@ -86,7 +88,6 @@ class StatisticsService
         }
 
         $budgetsProgress = [];
-        $expenses = $this->expenseStore->all($userId);
         foreach ($this->budgetStore->all($userId) as $budget) {
             $limit = (float) ($budget['amount'] ?? 0);
             $start = (string) ($budget['start_date'] ?? '');

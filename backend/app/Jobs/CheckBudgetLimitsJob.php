@@ -23,6 +23,8 @@ class CheckBudgetLimitsJob implements ShouldQueue
         FcmService $fcmService,
     ): void {
         $today = Carbon::today()->toDateString();
+        /** @var array<string, float> $spentCache */
+        $spentCache = [];
 
         foreach ($budgetStore->allUsersBudgets() as $budget) {
             if ($today < (string) ($budget['start_date'] ?? '') || $today > (string) ($budget['end_date'] ?? '')) {
@@ -36,12 +38,15 @@ class CheckBudgetLimitsJob implements ShouldQueue
                 continue;
             }
 
-            $spent = $this->spentInRange(
-                $expenseStore,
-                $userId,
-                (string) $budget['start_date'],
-                (string) $budget['end_date'],
-            );
+            $start = (string) $budget['start_date'];
+            $end = (string) $budget['end_date'];
+            $cacheKey = "{$userId}:{$start}:{$end}";
+
+            if (! array_key_exists($cacheKey, $spentCache)) {
+                $spentCache[$cacheKey] = $expenseStore->sumExpensesInRange($userId, $start, $end);
+            }
+
+            $spent = $spentCache[$cacheKey];
             $ratio = $spent / $limit;
 
             if ($ratio >= 1.0) {
@@ -71,26 +76,6 @@ class CheckBudgetLimitsJob implements ShouldQueue
                 );
             }
         }
-    }
-
-    private function spentInRange(
-        ExpenseRepository $expenseStore,
-        int $userId,
-        string $start,
-        string $end,
-    ): float {
-        $total = 0.0;
-        foreach ($expenseStore->all($userId) as $expense) {
-            if (($expense['type'] ?? 'expense') !== 'expense') {
-                continue;
-            }
-            $date = (string) ($expense['date'] ?? '');
-            if ($date >= $start && $date <= $end) {
-                $total += (float) ($expense['amount'] ?? 0);
-            }
-        }
-
-        return $total;
     }
 
     private function notifyOnce(

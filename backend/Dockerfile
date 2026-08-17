@@ -1,14 +1,17 @@
-FROM php:8.2-cli-bookworm
+FROM php:8.2-fpm-bookworm
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     git \
+    nginx \
     unzip \
     libsqlite3-dev \
     libpq-dev \
     libzip-dev \
-    && docker-php-ext-install pdo_sqlite pdo_pgsql zip \
+    && docker-php-ext-install opcache pdo_sqlite pdo_pgsql zip \
     && rm -rf /var/lib/apt/lists/*
+
+COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
@@ -28,7 +31,7 @@ RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-d
 COPY . .
 
 # Bump to invalidate Docker cache when deploy scripts change.
-ARG DEPLOY_REV=20260813-route-cache-fix
+ARG DEPLOY_REV=20260813-php-fpm-nginx
 RUN echo "Deploy revision: ${DEPLOY_REV}"
 
 RUN mkdir -p database storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
@@ -36,7 +39,8 @@ RUN mkdir -p database storage/framework/cache storage/framework/sessions storage
     && composer dump-autoload --optimize \
     && php artisan package:discover --ansi
 
-RUN chmod +x docker/render-start.sh
+RUN chmod +x docker/render-start.sh \
+    && rm -f /etc/nginx/sites-enabled/default
 
 ENV PORT=8080
 EXPOSE 8080

@@ -11,6 +11,8 @@ use App\Http\Requests\Challenge\RecordChallengeProgressRequest;
 use App\Http\Requests\Challenge\RespondChallengeRequest;
 use App\Http\Requests\Challenge\StoreChallengeRequest;
 use App\Http\Requests\Challenge\UpdateChallengeRequest;
+use App\Http\Requests\PaginatedListRequest;
+use App\Http\Resources\ChallengeResource;
 use App\Models\Challenge;
 use App\Repositories\ChallengeRepository;
 use Illuminate\Http\JsonResponse;
@@ -23,19 +25,21 @@ class ChallengeController extends Controller
 
     public function __construct(private ChallengeRepository $store) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(PaginatedListRequest $request): JsonResponse
     {
         $userId = (int) $request->user()->id;
-        $challenges = Challenge::query()
+
+        $paginator = Challenge::query()
             ->with('participants')
             ->accessibleBy($userId)
             ->orderByDesc('id')
-            ->get()
-            ->map(fn (Challenge $challenge): array => $challenge->toStoreArray())
-            ->values()
-            ->all();
+            ->paginate($request->perPage());
 
-        return $this->success($challenges);
+        $paginator->through(
+            fn (Challenge $challenge): array => (new ChallengeResource($challenge))->resolve($request)
+        );
+
+        return $this->paginated($paginator, 'Challenges loaded');
     }
 
     public function show(Request $request, int $id): JsonResponse
@@ -49,7 +53,7 @@ class ChallengeController extends Controller
             return $this->notFound('Challenge not found');
         }
 
-        return $this->success($challenge->toStoreArray());
+        return $this->success((new ChallengeResource($challenge))->resolve($request));
     }
 
     public function store(StoreChallengeRequest $request): JsonResponse
@@ -60,7 +64,7 @@ class ChallengeController extends Controller
         );
         $this->mirrorChallengeToLegacyJson($challenge);
 
-        return $this->created($challenge);
+        return $this->created(ChallengeResource::fromStoreArray($challenge));
     }
 
     public function update(UpdateChallengeRequest $request, int $id): JsonResponse
@@ -78,7 +82,7 @@ class ChallengeController extends Controller
 
         $this->mirrorChallengeToLegacyJson($challenge);
 
-        return $this->success($challenge);
+        return $this->success(ChallengeResource::fromStoreArray($challenge));
     }
 
     public function destroy(Request $request, int $id): JsonResponse
@@ -113,7 +117,7 @@ class ChallengeController extends Controller
 
         $this->mirrorChallengeToLegacyJson($challenge);
 
-        return $this->success($challenge);
+        return $this->success(ChallengeResource::fromStoreArray($challenge));
     }
 
     public function removeParticipant(Request $request, int $id, int $userId): JsonResponse
@@ -131,7 +135,7 @@ class ChallengeController extends Controller
 
         $this->mirrorChallengeToLegacyJson($challenge);
 
-        return $this->success($challenge);
+        return $this->success(ChallengeResource::fromStoreArray($challenge));
     }
 
     public function toggleStatus(Request $request, int $id): JsonResponse
@@ -149,7 +153,7 @@ class ChallengeController extends Controller
 
         $this->mirrorChallengeToLegacyJson($challenge);
 
-        return $this->success($challenge);
+        return $this->success(ChallengeResource::fromStoreArray($challenge));
     }
 
     public function respond(RespondChallengeRequest $request, int $id): JsonResponse
@@ -167,7 +171,7 @@ class ChallengeController extends Controller
 
         $this->mirrorChallengeToLegacyJson($challenge);
 
-        return $this->success($challenge);
+        return $this->success(ChallengeResource::fromStoreArray($challenge));
     }
 
     public function pendingInvitations(Request $request): JsonResponse
@@ -196,7 +200,7 @@ class ChallengeController extends Controller
 
         $this->mirrorChallengeToLegacyJson($challenge);
 
-        return $this->created($challenge);
+        return $this->created(ChallengeResource::fromStoreArray($challenge));
     }
 
     public function checkIn(Request $request, int $id): JsonResponse
@@ -214,9 +218,12 @@ class ChallengeController extends Controller
 
         $this->mirrorChallengeToLegacyJson($result['challenge']);
 
-        return $this->success($result['challenge'], '', 200, [
-            'meta' => $result['meta'],
-        ]);
+        return $this->success(
+            ChallengeResource::fromStoreArray($result['challenge']),
+            '',
+            200,
+            ['meta' => $result['meta']],
+        );
     }
 
     public function recordProgress(RecordChallengeProgressRequest $request, int $id): JsonResponse
@@ -238,7 +245,7 @@ class ChallengeController extends Controller
 
         $this->mirrorChallengeToLegacyJson($challenge);
 
-        return $this->success($challenge);
+        return $this->success(ChallengeResource::fromStoreArray($challenge));
     }
 
     public function leaderboard(Request $request, int $id): JsonResponse
