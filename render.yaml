@@ -27,6 +27,10 @@ services:
         value: stderr
       - key: LOG_LEVEL
         value: warning
+      - key: CACHE_DRIVER
+        value: array
+      - key: SESSION_DRIVER
+        value: array
       - key: TRUSTED_PROXIES
         value: "*"
       - key: APP_KEY

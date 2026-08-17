@@ -8,6 +8,9 @@ export LOG_CHANNEL="${LOG_CHANNEL:-stderr}"
 export LOG_LEVEL="${LOG_LEVEL:-warning}"
 export HEALTH_DB_TIMEOUT_SECONDS="${HEALTH_DB_TIMEOUT_SECONDS:-5}"
 export TRUSTED_PROXIES="${TRUSTED_PROXIES:-*}"
+# Render/php-fpm: avoid file cache locks on storage/ (rate limiter + app cache).
+export CACHE_DRIVER="${CACHE_DRIVER:-array}"
+export SESSION_DRIVER="${SESSION_DRIVER:-array}"
 
 # Normalize Neon/Render DATABASE_URL for Laravel (driver must be pgsql, not Neon/neon).
 normalize_database_url() {
@@ -103,8 +106,13 @@ ensure_storage_permissions() {
     storage/framework/views \
     storage/logs \
     bootstrap/cache
+  rm -rf storage/framework/cache/data/*
   chown -R www-data:www-data storage bootstrap/cache
   chmod -R ug+rwx storage bootstrap/cache
+}
+
+run_artisan() {
+  su -s /bin/sh www-data -c "cd /var/www/html && php artisan $*"
 }
 
 ensure_storage_permissions
@@ -115,7 +123,7 @@ if [ "${DB_CONNECTION}" = "sqlite" ]; then
   touch database/database.sqlite
 fi
 
-php artisan config:clear
+run_artisan config:clear
 
 # PgBouncer pooler cannot run DDL — migrate via direct host (strip -pooler).
 migrate_database_url() {
@@ -134,7 +142,7 @@ run_migrate() {
   local migrate_url
 
   if [ "${DB_CONNECTION}" != "pgsql" ]; then
-    php artisan migrate --force
+    run_artisan migrate --force
     return 0
   fi
 
@@ -155,7 +163,7 @@ run_migrate() {
       return 1
     fi
     echo "Migrate DB host=${DB_HOST}" >&2
-    if php artisan migrate --force; then
+    if run_artisan migrate --force; then
       # Re-apply direct web connection after migrate (migrate_url may differ from web).
       if [ -n "${POOLED_DATABASE_URL}" ]; then
         apply_database_url "$(direct_database_url "${POOLED_DATABASE_URL}")"
@@ -207,7 +215,7 @@ if [ "${MUDABBIR_SKIP_LEGACY_IMPORT:-}" != "1" ] && [ ! -f storage/app/.legacy-i
 
   if [ "$has_json" = true ]; then
     echo "Running legacy JSON import..."
-    if php artisan mudabbir:import-legacy-json; then
+    if run_artisan mudabbir:import-legacy-json; then
       touch storage/app/.legacy-import-done
     else
       echo "WARN: legacy JSON import failed — marking done to avoid deploy loop."
@@ -216,14 +224,14 @@ if [ "${MUDABBIR_SKIP_LEGACY_IMPORT:-}" != "1" ] && [ ! -f storage/app/.legacy-i
   fi
 fi
 
-php artisan route:cache
+run_artisan route:cache
 
 ensure_storage_permissions
 
 PORT="${PORT:-8080}"
 sed "s/__PORT__/${PORT}/" docker/nginx/default.conf.template > /etc/nginx/conf.d/default.conf
 
-echo "Mudabbir API starting (APP_ENV=${APP_ENV}, DB_CONNECTION=${DB_CONNECTION}, DB_HOST=${DB_HOST:-n/a}, php-fpm+nginx port=${PORT})"
+echo "Mudabbir API starting (APP_ENV=${APP_ENV}, CACHE_DRIVER=${CACHE_DRIVER}, DB_CONNECTION=${DB_CONNECTION}, DB_HOST=${DB_HOST:-n/a}, php-fpm+nginx port=${PORT})"
 
 php-fpm -D
 exec nginx -g 'daemon off;'
