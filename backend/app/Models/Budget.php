@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Budget extends Model
 {
+    public $incrementing = false;
+
+    protected $keyType = 'int';
+
     protected $fillable = [
         'id', 'user_id', 'amount', 'start_date', 'end_date', 'account_id',
     ];

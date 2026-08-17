@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class GoalContribution extends Model
 {
+    public $incrementing = false;
+
+    protected $keyType = 'int';
+
     protected $fillable = [
         'id', 'goal_id', 'amount', 'contributed_at', 'note',
     ];
