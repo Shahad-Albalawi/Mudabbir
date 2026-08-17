@@ -95,7 +95,20 @@ if [ -z "${APP_KEY:-}" ] || [ "$APP_KEY" = "base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAA
   exit 1
 fi
 
-mkdir -p database storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
+ensure_storage_permissions() {
+  mkdir -p \
+    storage/app \
+    storage/framework/cache/data \
+    storage/framework/sessions \
+    storage/framework/views \
+    storage/logs \
+    bootstrap/cache
+  chown -R www-data:www-data storage bootstrap/cache
+  chmod -R ug+rwx storage bootstrap/cache
+}
+
+ensure_storage_permissions
+mkdir -p database
 rm -f bootstrap/cache/config.php
 
 if [ "${DB_CONNECTION}" = "sqlite" ]; then
@@ -204,6 +217,8 @@ if [ "${MUDABBIR_SKIP_LEGACY_IMPORT:-}" != "1" ] && [ ! -f storage/app/.legacy-i
 fi
 
 php artisan route:cache
+
+ensure_storage_permissions
 
 PORT="${PORT:-8080}"
 sed "s/__PORT__/${PORT}/" docker/nginx/default.conf.template > /etc/nginx/conf.d/default.conf
