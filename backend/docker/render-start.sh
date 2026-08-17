@@ -19,6 +19,21 @@ normalize_database_url() {
   printf '%s' "${url}"
 }
 
+# Laravel writes use DB::transaction — Neon PgBouncer transaction pool breaks these unless session mode.
+direct_database_url() {
+  local url="${1:-}"
+  url="$(normalize_database_url "${url}")"
+  if [ "${MUDABBIR_USE_DB_POOLER:-}" = "1" ]; then
+    printf '%s' "${url}"
+    return 0
+  fi
+  if echo "${url}" | grep -qi pooler; then
+    url="$(echo "${url}" | sed 's/-pooler//')"
+    echo "Neon: web uses direct connection (pooler stripped)." >&2
+  fi
+  printf '%s' "${url}"
+}
+
 # Export DB_HOST/DB_* from DATABASE_URL — Laravel env('DATABASE_URL') is unreliable on Render CLI.
 apply_database_url() {
   local url="${1:-}"
@@ -68,7 +83,7 @@ POOLED_DATABASE_URL=""
 
 if [ -n "${DATABASE_URL:-}" ]; then
   POOLED_DATABASE_URL="$(normalize_database_url "${DATABASE_URL}")"
-  apply_database_url "${POOLED_DATABASE_URL}"
+  apply_database_url "$(direct_database_url "${POOLED_DATABASE_URL}")"
 else
   unset DB_HOST DB_PORT DB_DATABASE DB_USERNAME DB_PASSWORD || true
   export DB_CONNECTION=sqlite
@@ -128,9 +143,9 @@ run_migrate() {
     fi
     echo "Migrate DB host=${DB_HOST}" >&2
     if php artisan migrate --force; then
-      # Restore pooled URL for web requests (PgBouncer).
+      # Re-apply direct web connection after migrate (migrate_url may differ from web).
       if [ -n "${POOLED_DATABASE_URL}" ]; then
-        apply_database_url "${POOLED_DATABASE_URL}"
+        apply_database_url "$(direct_database_url "${POOLED_DATABASE_URL}")"
       fi
       return 0
     fi

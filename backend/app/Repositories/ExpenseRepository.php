@@ -45,24 +45,22 @@ class ExpenseRepository
      */
     public function create(array $payload, int $userId): array
     {
-        $expense = DB::transaction(function () use ($payload, $userId): Expense {
-            return Expense::query()->create(
-                ResolvesModelPrimaryKey::forCreate(Expense::class, [
-                    'user_id' => $userId,
-                    'amount' => (float) $payload['amount'],
-                    'date' => (string) $payload['date'],
-                    'type' => (string) ($payload['type'] ?? 'expense'),
-                    'notes' => $payload['notes'] ?? null,
-                    'account_id' => (int) $payload['account_id'],
-                    'category_id' => (int) $payload['category_id'],
-                    'account_name' => (string) ($payload['account_name'] ?? ''),
-                    'category_name' => (string) ($payload['category_name'] ?? ''),
-                    'is_recurring' => (bool) ($payload['is_recurring'] ?? false),
-                    'recurrence_interval' => $payload['recurrence_interval'] ?? null,
-                    'synced_at' => now(),
-                ])
-            );
-        });
+        $expense = Expense::query()->create(
+            ResolvesModelPrimaryKey::forCreate(Expense::class, [
+                'user_id' => $userId,
+                'amount' => (float) $payload['amount'],
+                'date' => (string) $payload['date'],
+                'type' => (string) ($payload['type'] ?? 'expense'),
+                'notes' => $payload['notes'] ?? null,
+                'account_id' => (int) $payload['account_id'],
+                'category_id' => (int) $payload['category_id'],
+                'account_name' => (string) ($payload['account_name'] ?? ''),
+                'category_name' => (string) ($payload['category_name'] ?? ''),
+                'is_recurring' => (bool) ($payload['is_recurring'] ?? false),
+                'recurrence_interval' => $payload['recurrence_interval'] ?? null,
+                'synced_at' => now(),
+            ])
+        );
 
         DashboardCache::forgetForUser($userId);
 

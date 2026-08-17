@@ -49,6 +49,7 @@ Manual run: **Actions → Laravel Scheduler → Run workflow**.
 |----------|------------------|
 | `MUDABBIR_DUAL_WRITE_JSON` | `false` (after 2–3 stable days) |
 | `DB_EMULATE_PREPARES` | `true` (default — Neon pooler) |
+| `MUDABBIR_USE_DB_POOLER` | leave unset or `0` — Laravel needs direct Neon host for writes |
 | `APP_DEBUG` | `false` |
 
 ## 5. Done when
