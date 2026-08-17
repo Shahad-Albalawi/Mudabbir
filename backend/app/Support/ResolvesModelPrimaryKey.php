@@ -8,7 +8,9 @@ use Illuminate\Support\Facades\Schema;
 final class ResolvesModelPrimaryKey
 {
     /**
-     * SQLite tests use manual integer PKs; PostgreSQL uses DB sequences after migration.
+     * Tables use manual integer PKs (legacy JSON ids). SQLite tests and PostgreSQL
+     * production both assign the next id in PHP; the optional sequences migration
+     * is a safety net when inserts omit id and the column default is configured.
      *
      * @param  class-string<Model>  $modelClass
      * @param  array<string, mixed>  $attributes
@@ -20,7 +22,8 @@ final class ResolvesModelPrimaryKey
             return $attributes;
         }
 
-        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+        $driver = Schema::getConnection()->getDriverName();
+        if (in_array($driver, ['sqlite', 'pgsql'], true)) {
             $attributes['id'] = ((int) $modelClass::query()->max('id')) + 1;
         }
 
