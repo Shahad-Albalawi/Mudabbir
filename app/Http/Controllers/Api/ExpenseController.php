@@ -1,0 +1,105 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Concerns\AuthorizesResourceAccess;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Expense\ListExpensesRequest;
+use App\Http\Requests\Expense\StoreExpenseRequest;
+use App\Http\Requests\Expense\UpdateExpenseRequest;
+use App\Http\Resources\ExpenseResource;
+use App\Models\Expense;
+use App\Repositories\ExpenseRepository;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class ExpenseController extends Controller
+{
+    use AuthorizesResourceAccess;
+
+    public function __construct(private ExpenseRepository $store) {}
+
+    public function index(ListExpensesRequest $request): JsonResponse
+    {
+        $userId = (int) $request->user()->id;
+
+        $paginator = Expense::query()
+            ->forUser($userId)
+            ->byDateRange($request->query('from'), $request->query('to'))
+            ->byCategory($request->query('category'))
+            ->byAmount(
+                $request->filled('min') ? (float) $request->query('min') : null,
+                $request->filled('max') ? (float) $request->query('max') : null,
+            )
+            ->sorted($request->sort())
+            ->paginate($request->perPage());
+
+        $paginator->through(
+            fn (Expense $expense): array => (new ExpenseResource($expense))->resolve($request)
+        );
+
+        return $this->paginated($paginator, 'Expenses loaded');
+    }
+
+    public function show(Request $request, int $id): JsonResponse
+    {
+        $expense = Expense::query()->whereKey($id)->first();
+
+        if ($expense === null || ! $this->canAccess($request, 'view', $expense)) {
+            return $this->notFound('Expense not found');
+        }
+
+        return $this->success(new ExpenseResource($expense));
+    }
+
+    public function store(StoreExpenseRequest $request): JsonResponse
+    {
+        $userId = (int) $request->user()->id;
+        $expense = $this->store->create($request->validated(), $userId);
+
+        return $this->created(ExpenseResource::fromStoreArray($expense));
+    }
+
+    public function update(UpdateExpenseRequest $request, int $id): JsonResponse
+    {
+        $userId = (int) $request->user()->id;
+        $expense = Expense::query()->whereKey($id)->first();
+        if ($expense === null || ! $this->canAccess($request, 'update', $expense)) {
+            return $this->notFound('Expense not found');
+        }
+
+        $result = $this->store->update(
+            $id,
+            $request->validated(),
+            $userId,
+            $request->input('updated_at')
+        );
+        if (! $result) {
+            return $this->notFound('Expense not found');
+        }
+
+        if (! empty($result['conflict'])) {
+            return $this->conflict(
+                'Server has a newer version of this expense.',
+                ExpenseResource::fromStoreArray($result['data'])
+            );
+        }
+
+        return $this->success(ExpenseResource::fromStoreArray($result['data']));
+    }
+
+    public function destroy(Request $request, int $id): JsonResponse
+    {
+        $userId = (int) $request->user()->id;
+        $expense = Expense::query()->whereKey($id)->first();
+        if ($expense === null || ! $this->canAccess($request, 'delete', $expense)) {
+            return $this->notFound('Expense not found');
+        }
+
+        if (! $this->store->delete($id, $userId)) {
+            return $this->notFound('Expense not found');
+        }
+
+        return $this->success(null, 'Deleted');
+    }
+}

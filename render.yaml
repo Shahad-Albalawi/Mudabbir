@@ -1,0 +1,40 @@
+# Docker deploy for Render (see repo-root render.yaml)
+services:
+  - type: web
+    name: mudabbir-backend-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_URL
+        value: https://mudabbir-backend-api.onrender.com
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_SSLMODE
+        value: require
+      - key: HEALTH_DB_TIMEOUT_SECONDS
+        value: "5"
+      - key: DATABASE_URL
+        sync: false
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_LEVEL
+        value: warning
+      - key: TRUSTED_PROXIES
+        value: "*"
+      - key: APP_KEY
+        sync: false
+      - key: TELESCOPE_ENABLED
+        value: "false"
+      - key: SENTRY_LARAVEL_DSN
+        sync: false
+      - key: SENTRY_TRACES_SAMPLE_RATE
+        value: "0.0"
+      - key: MUDABBIR_SKIP_LEGACY_IMPORT
+        value: "1"
