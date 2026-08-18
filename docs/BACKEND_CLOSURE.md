@@ -31,6 +31,8 @@ If JSON files are missing on the server, the command skips them (normal after du
 
 ## 3. GitHub scheduler secrets (budget push alerts)
 
+Full guide: **[docs/SCHEDULER_SECRETS.md](./SCHEDULER_SECRETS.md)**
+
 Repo → **Settings → Secrets and variables → Actions** → add:
 
 | Secret | Value |

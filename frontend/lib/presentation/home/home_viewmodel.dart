@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mudabbir/constants/hive_constants.dart';
 import 'package:mudabbir/core/providers/app_providers.dart';
 import 'package:mudabbir/data/local/local_database.dart';
+import 'package:mudabbir/data/remote/analytics_api_service.dart';
 import 'package:mudabbir/domain/repository/home_repository/home_repository.dart';
 import 'package:mudabbir/domain/services/financial_date_utils.dart';
 import 'package:mudabbir/presentation/home/home_screen.dart';
@@ -13,6 +14,7 @@ import 'package:mudabbir/presentation/resources/strings_manager.dart';
 import 'package:mudabbir/presentation/screens/statistics_screen.dart';
 import 'package:mudabbir/presentation/server_challenges/screens/challenges_list_screen.dart';
 import 'package:mudabbir/service/hive_service.dart';
+import 'package:mudabbir/utils/api_session.dart';
 import 'package:mudabbir/utils/local_db_user_id.dart';
 
 class HomeState {
@@ -81,6 +83,7 @@ final homeProvider = StateNotifierProvider<HomeViewModel, HomeState>(
   (ref) => HomeViewModel(
     homeRepository: ref.watch(homeRepositoryProvider),
     hiveService: ref.watch(hiveServiceProvider),
+    analyticsApi: ref.watch(analyticsApiServiceProvider),
   ),
 );
 
@@ -88,7 +91,9 @@ class HomeViewModel extends StateNotifier<HomeState> {
   HomeViewModel({
     required this.homeRepository,
     required HiveService hiveService,
+    required AnalyticsApiService analyticsApi,
   })  : _hiveService = hiveService,
+        _analyticsApi = analyticsApi,
         super(HomeState()) {
     loadFinancialSummary();
   }
@@ -102,6 +107,7 @@ class HomeViewModel extends StateNotifier<HomeState> {
 
   final HomeRepository homeRepository;
   final HiveService _hiveService;
+  final AnalyticsApiService _analyticsApi;
 
   /// Memoized monthly expense totals within a single summary load.
   final Map<String, double> _monthlyExpenseCache = {};
@@ -115,6 +121,63 @@ class HomeViewModel extends StateNotifier<HomeState> {
       );
       final userName = resolveLocalDbUserId(user);
       await LocalDatabase.instance.initForUser(userName);
+
+      if (await hasApiSession()) {
+        try {
+          final dash = await _analyticsApi.getDashboard();
+          final kpis = dash['kpis'];
+          final monthlyIncome = kpis is Map
+              ? (kpis['total_income'] as num?)?.toDouble() ?? 0
+              : 0.0;
+          final monthlyExpense = kpis is Map
+              ? (kpis['total_expenses'] as num?)?.toDouble() ?? 0
+              : 0.0;
+          final netSavings = kpis is Map
+              ? (kpis['net_savings'] as num?)?.toDouble() ??
+                  (monthlyIncome - monthlyExpense)
+              : monthlyIncome - monthlyExpense;
+          final healthScore =
+              (dash['health_score'] as num?)?.toInt() ??
+              HealthScoreCalculator.fromMonthly(
+                monthlyIncome: monthlyIncome,
+                monthlyExpense: monthlyExpense,
+              );
+          final behavior = dash['behavior_analysis'];
+          final predictedNext = behavior is Map
+              ? (behavior['prediction_next_month'] as num?)?.toDouble()
+              : null;
+
+          final now = DateTime.now();
+          final prevAnchor = DateTime(now.year, now.month - 1, 1);
+          final previousMonth = FinancialDateUtils.monthRange(prevAnchor);
+          final previousMonthExpense = await homeRepository.getTotalExpense(
+            startDate: previousMonth.start,
+            endDate: previousMonth.end,
+          );
+
+          state = state.copyWith(
+            totalIncome: monthlyIncome,
+            totalExpense: monthlyExpense,
+            currentBalance: netSavings,
+            monthlyIncome: monthlyIncome,
+            monthlyExpense: monthlyExpense,
+            monthlyBalance: netSavings,
+            financialHealthScore: healthScore,
+            spendingAlerts: _buildSpendingAlerts(
+              monthlyIncome: monthlyIncome,
+              monthlyExpense: monthlyExpense,
+              previousMonthExpense: previousMonthExpense,
+            ),
+            nextMonthBudgetSuggestion: predictedNext ??
+                await _buildNextMonthBudgetSuggestion(now),
+            isLoading: false,
+            clearError: true,
+          );
+          return;
+        } catch (_) {
+          // Fall back to local SQLite when API unavailable.
+        }
+      }
 
       final income = await homeRepository.getTotalIncome();
       final expense = await homeRepository.getTotalExpense();

@@ -194,6 +194,16 @@ class ChallengeCopyHelpers {
   static String fromCreator(String name) => AppStrings.challengeFromCreator(name);
   static String totalAmount(double amount) =>
       AppStrings.challengeTotalAmount(amount.toStringAsFixed(2));
+  static String totalAmountDisplay({
+    required double amount,
+    String? formatted,
+  }) {
+    final trimmed = formatted?.trim();
+    if (trimmed != null && trimmed.isNotEmpty) {
+      return AppStrings.challengeTotalAmount(trimmed);
+    }
+    return totalAmount(amount);
+  }
   static String acceptedBeforeInvite(int n) =>
       AppStrings.challengeAcceptedBeforeInvite(n);
   static String get splitHint => AppStrings.challengeSplitHint;

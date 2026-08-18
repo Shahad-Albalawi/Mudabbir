@@ -2,6 +2,7 @@
 class ExpenseTransaction {
   final int id;
   final double amount;
+  final String? amountFormatted;
   final String date;
   final String type;
   final String? notes;
@@ -16,6 +17,7 @@ class ExpenseTransaction {
   const ExpenseTransaction({
     required this.id,
     required this.amount,
+    this.amountFormatted,
     required this.date,
     required this.type,
     this.notes,
@@ -32,6 +34,7 @@ class ExpenseTransaction {
     return ExpenseTransaction(
       id: (map['id'] as num).toInt(),
       amount: (map['amount'] as num).toDouble(),
+      amountFormatted: map['amount_formatted']?.toString(),
       date: map['date']?.toString() ?? '',
       type: map['type']?.toString() ?? 'expense',
       notes: map['notes']?.toString(),
@@ -65,6 +68,7 @@ class ExpenseTransaction {
     return {
       'id': id,
       'amount': amount,
+      if (amountFormatted != null) 'amount_formatted': amountFormatted,
       'date': date,
       'type': type,
       'notes': notes,
@@ -81,6 +85,7 @@ class ExpenseTransaction {
   ExpenseTransaction copyWith({
     int? id,
     double? amount,
+    String? amountFormatted,
     String? date,
     String? type,
     String? notes,
@@ -95,6 +100,7 @@ class ExpenseTransaction {
     return ExpenseTransaction(
       id: id ?? this.id,
       amount: amount ?? this.amount,
+      amountFormatted: amountFormatted ?? this.amountFormatted,
       date: date ?? this.date,
       type: type ?? this.type,
       notes: notes ?? this.notes,

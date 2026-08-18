@@ -85,6 +85,7 @@ class TransactionTile extends StatelessWidget {
           ),
           RiyalAmount(
             transaction.amount,
+            formattedAmount: transaction.amountFormatted,
             prefix: isIncome ? '+' : '−',
             fontSize: textTheme.titleSmall?.fontSize,
             fontWeight: FontWeight.w700,

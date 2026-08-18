@@ -160,7 +160,10 @@ class _PendingInvitationsScreenState
           const SizedBox(height: 8),
           _infoRow(
             Icons.payments_outlined,
-            ServerChallengeStrings.totalAmount(challenge.amount),
+            ServerChallengeStrings.totalAmountDisplay(
+              amount: challenge.amount,
+              formatted: challenge.amountFormatted,
+            ),
           ),
           const SizedBox(height: 8),
           _infoRow(

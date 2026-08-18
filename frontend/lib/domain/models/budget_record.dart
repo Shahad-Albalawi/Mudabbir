@@ -2,6 +2,7 @@
 class BudgetRecord {
   final int id;
   final double amount;
+  final String? amountFormatted;
   final String startDate;
   final String endDate;
   final int accountId;
@@ -10,6 +11,7 @@ class BudgetRecord {
   const BudgetRecord({
     required this.id,
     required this.amount,
+    this.amountFormatted,
     required this.startDate,
     required this.endDate,
     required this.accountId,
@@ -20,6 +22,7 @@ class BudgetRecord {
     return BudgetRecord(
       id: (map['id'] as num).toInt(),
       amount: (map['amount'] as num).toDouble(),
+      amountFormatted: map['amount_formatted']?.toString(),
       startDate: map['start_date'] as String,
       endDate: map['end_date'] as String,
       accountId: (map['account_id'] as num).toInt(),
@@ -30,6 +33,7 @@ class BudgetRecord {
   Map<String, dynamic> toJson() => {
         'id': id,
         'amount': amount,
+        if (amountFormatted != null) 'amount_formatted': amountFormatted,
         'start_date': startDate,
         'end_date': endDate,
         'account_id': accountId,

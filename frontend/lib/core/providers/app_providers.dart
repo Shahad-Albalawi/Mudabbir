@@ -6,6 +6,7 @@ import 'package:mudabbir/data/local/expense_hive_cache.dart';
 import 'package:mudabbir/data/local/goal_hive_cache.dart';
 import 'package:mudabbir/data/local/local_database.dart';
 import 'package:mudabbir/data/network/dio_client.dart';
+import 'package:mudabbir/data/remote/analytics_api_service.dart';
 import 'package:mudabbir/data/remote/budget_api_service.dart';
 import 'package:mudabbir/data/remote/expense_api_service.dart';
 import 'package:mudabbir/data/remote/goal_api_service.dart';
@@ -112,6 +113,10 @@ final dioClientProvider = Provider<DioClient>((ref) {
       await ref.read(authNotifierProvider).didLogout();
     },
   );
+});
+
+final analyticsApiServiceProvider = Provider<AnalyticsApiService>((ref) {
+  return AnalyticsApiService(ref.watch(dioClientProvider));
 });
 
 final apiServiceProvider = Provider<ApiService>((ref) {

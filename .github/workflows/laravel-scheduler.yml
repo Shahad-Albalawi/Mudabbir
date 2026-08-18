@@ -5,6 +5,8 @@
 #   MUDABBIR_APP_KEY      — same APP_KEY as Render
 # Optional:
 #   MUDABBIR_FCM_SERVER_KEY — for budget push notifications
+#
+# Setup guide: docs/SCHEDULER_SECRETS.md
 
 name: Laravel Scheduler
 
@@ -45,7 +47,7 @@ jobs:
         run: |
           if [ -z "${MUDABBIR_DATABASE_URL}" ] || [ -z "${MUDABBIR_APP_KEY}" ]; then
             echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "Add GitHub secrets MUDABBIR_DATABASE_URL and MUDABBIR_APP_KEY (copy from Render)."
+            echo "Add GitHub secrets MUDABBIR_DATABASE_URL and MUDABBIR_APP_KEY (see docs/SCHEDULER_SECRETS.md)."
             exit 0
           fi
           echo "enabled=true" >> "$GITHUB_OUTPUT"

@@ -74,7 +74,10 @@ class ChallengeInvitationCard extends ConsumerWidget {
               ServerChallengeStrings.fromCreator(challenge.creator.name)),
           const SizedBox(height: 8),
           _infoRow(context, Icons.payments_outlined,
-              ServerChallengeStrings.totalAmount(challenge.amount)),
+              ServerChallengeStrings.totalAmountDisplay(
+                amount: challenge.amount,
+                formatted: challenge.amountFormatted,
+              )),
           const SizedBox(height: 8),
           _infoRow(
             context,

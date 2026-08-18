@@ -82,6 +82,7 @@ class BudgetCard extends StatelessWidget {
                         ),
                         RiyalAmount(
                           limit,
+                          formattedAmount: budget.amountFormatted,
                           fontSize:
                               Theme.of(context).textTheme.bodySmall?.fontSize ??
                                   12,

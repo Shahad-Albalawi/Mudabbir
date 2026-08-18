@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mudabbir/data/local/database_helper.dart';
+import 'package:mudabbir/data/remote/analytics_api_service.dart';
 import 'package:mudabbir/domain/services/financial_aggregator.dart';
 import 'package:mudabbir/core/providers/app_providers.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
+import 'package:mudabbir/utils/api_session.dart';
 
 class StatisticsState {
   final double totalIncome;
@@ -80,20 +82,26 @@ class StatisticsState {
 final statisticsProvider =
     StateNotifierProvider<StatisticsViewModel, StatisticsState>((ref) {
   ref.keepAlive();
-  final db = ref.watch(dbHelperProvider);
-  return StatisticsViewModel(db: db);
+  return StatisticsViewModel(
+    db: ref.watch(dbHelperProvider),
+    analyticsApi: ref.watch(analyticsApiServiceProvider),
+  );
 });
 
 class StatisticsViewModel extends StateNotifier<StatisticsState> {
-  StatisticsViewModel({required DbHelper db})
-      : _dbHelper = db,
+  StatisticsViewModel({
+    required DbHelper db,
+    required AnalyticsApiService analyticsApi,
+  })  : _dbHelper = db,
         _aggregator = FinancialAggregator(db: db),
+        _analyticsApi = analyticsApi,
         super(const StatisticsState()) {
     loadStatistics();
   }
 
   final DbHelper _dbHelper;
   final FinancialAggregator _aggregator;
+  final AnalyticsApiService _analyticsApi;
 
   int? _cachedFingerprint;
   StatisticsState? _cachedSnapshot;
@@ -110,6 +118,32 @@ class StatisticsViewModel extends StateNotifier<StatisticsState> {
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
+      if (await hasApiSession()) {
+        try {
+          final apiData = await _analyticsApi.getStatistics();
+          final mapped = ApiStatisticsMapper.fromApi(apiData);
+          final accs = await _aggregator.balancesPerAccount();
+          final next = state.copyWith(
+            totalIncome: mapped.totalIncome,
+            totalExpense: mapped.totalExpense,
+            currentBalance: mapped.currentBalance,
+            expenseByCategory: mapped.expenseByCategory,
+            incomeByCategory: mapped.incomeByCategory,
+            accountsBalance: accs,
+            goalsProgress: mapped.goalsProgress,
+            budgetsProgress: mapped.budgetsProgress,
+            isLoading: false,
+            clearError: true,
+          );
+          _cachedSnapshot = next;
+          _cachedFingerprint = next.analysisFingerprint;
+          state = next;
+          return;
+        } catch (_) {
+          // Fall back to local SQLite aggregates when offline or API error.
+        }
+      }
+
       final totalsFuture = _aggregator.incomeAndExpenseTotals();
       final expByCatFuture = _categoryTotals('expense');
       final incByCatFuture = _categoryTotals('income');

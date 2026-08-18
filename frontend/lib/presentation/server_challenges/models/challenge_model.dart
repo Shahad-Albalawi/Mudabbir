@@ -13,6 +13,7 @@ class ChallengeModel {
   final String name;
   final String? description;
   final double amount;
+  final String? amountFormatted;
   final DateTime startDate;
   final DateTime endDate;
   final bool achieved;
@@ -27,6 +28,7 @@ class ChallengeModel {
     required this.name,
     this.description,
     required this.amount,
+    this.amountFormatted,
     required this.startDate,
     required this.endDate,
     required this.achieved,
@@ -43,6 +45,7 @@ class ChallengeModel {
       name: json['name'] as String,
       description: json['description'] as String?,
       amount: double.parse(json['amount'].toString()),
+      amountFormatted: json['amount_formatted']?.toString(),
       startDate: DateTime.parse(json['start_date'] as String),
       endDate: DateTime.parse(json['end_date'] as String),
       achieved: json['achieved'] as bool,
@@ -78,6 +81,7 @@ class ChallengeModel {
     String? name,
     String? description,
     double? amount,
+    String? amountFormatted,
     DateTime? startDate,
     DateTime? endDate,
     bool? achieved,
@@ -92,6 +96,7 @@ class ChallengeModel {
       name: name ?? this.name,
       description: description ?? this.description,
       amount: amount ?? this.amount,
+      amountFormatted: amountFormatted ?? this.amountFormatted,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
       achieved: achieved ?? this.achieved,

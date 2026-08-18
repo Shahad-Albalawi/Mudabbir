@@ -10,6 +10,7 @@ class RiyalAmount extends StatelessWidget {
   const RiyalAmount(
     this.value, {
     super.key,
+    this.formattedAmount,
     this.fontSize,
     this.color,
     this.fontWeight = FontWeight.w400,
@@ -24,6 +25,8 @@ class RiyalAmount extends StatelessWidget {
   });
 
   final num value;
+  /// When set (e.g. from API `amount_formatted`), shown instead of client formatting.
+  final String? formattedAmount;
   final double? fontSize;
   final Color? color;
   final FontWeight fontWeight;
@@ -53,6 +56,23 @@ class RiyalAmount extends StatelessWidget {
           fontSize: size,
           fontWeight: fontWeight,
           color: resolvedColor,
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
+      );
+    }
+
+    final apiFormatted = formattedAmount?.trim();
+    if (apiFormatted != null && apiFormatted.isNotEmpty) {
+      return Text(
+        '${prefix ?? ''}$apiFormatted',
+        textAlign: textAlign,
+        maxLines: maxLines,
+        overflow: overflow,
+        style: TextStyle(
+          fontSize: size,
+          fontWeight: fontWeight,
+          color: resolvedColor,
+          height: 1.15,
           fontFeatures: const [FontFeature.tabularFigures()],
         ),
       );
