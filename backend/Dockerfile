@@ -31,7 +31,7 @@ RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-d
 COPY . .
 
 # Bump to invalidate Docker cache when deploy scripts change.
-ARG DEPLOY_REV=20260818-fast-health
+ARG DEPLOY_REV=20260818-no-global-throttle
 RUN echo "Deploy revision: ${DEPLOY_REV}"
 
 RUN mkdir -p database storage/app storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
