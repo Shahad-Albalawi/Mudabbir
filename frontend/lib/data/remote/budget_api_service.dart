@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:mudabbir/domain/models/budget_record.dart';
 import 'package:mudabbir/data/network/api_exception.dart';
 import 'package:mudabbir/data/network/dio_client.dart';
+import 'package:mudabbir/data/network/paginated_list_fetcher.dart';
 
 /// REST client for monthly budgets.
 class BudgetApiService {
@@ -11,18 +12,10 @@ class BudgetApiService {
 
   Future<List<BudgetRecord>> getBudgets() async {
     try {
-      final response = await _dioClient.dio.get('/budgets');
-      if (response.data['success'] == true) {
-        final data = response.data['data'] as List<dynamic>;
-        return data
-            .map(
-              (json) => BudgetRecord.fromMap(
-                Map<String, dynamic>.from(json as Map),
-              ),
-            )
-            .toList();
-      }
-      throw ApiException(message: 'Failed to load budgets');
+      final pages = await fetchAllPaginatedPages(_dioClient.dio, '/budgets');
+      return pages
+          .map((json) => BudgetRecord.fromMap(json))
+          .toList();
     } on DioException catch (e) {
       throw ApiException.fromDioError(e);
     }

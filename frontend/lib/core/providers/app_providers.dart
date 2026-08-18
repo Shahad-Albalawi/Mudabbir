@@ -132,6 +132,7 @@ final authServiceProvider = Provider<AuthService>((ref) {
     secureStore: ref.watch(authTokenSecureStoreProvider),
     authNotifier: ref.watch(authNotifierProvider),
     hiveService: ref.watch(hiveServiceProvider),
+    apiService: ref.watch(apiServiceProvider),
   );
 });
 

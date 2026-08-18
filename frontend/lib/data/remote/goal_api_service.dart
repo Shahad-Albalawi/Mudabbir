@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:mudabbir/domain/models/savings_goal.dart';
 import 'package:mudabbir/data/network/api_exception.dart';
 import 'package:mudabbir/data/network/dio_client.dart';
+import 'package:mudabbir/data/network/paginated_list_fetcher.dart';
 
 /// REST client for savings goals.
 class GoalApiService {
@@ -11,14 +12,8 @@ class GoalApiService {
 
   Future<List<SavingsGoal>> getGoals() async {
     try {
-      final response = await _dioClient.dio.get('/goals');
-      if (response.data['success'] == true) {
-        final data = response.data['data'] as List<dynamic>;
-        return data
-            .map((json) => _goalFromApi(Map<String, dynamic>.from(json as Map)))
-            .toList();
-      }
-      throw ApiException(message: 'Failed to load goals');
+      final pages = await fetchAllPaginatedPages(_dioClient.dio, '/goals');
+      return pages.map(_goalFromApi).toList();
     } on DioException catch (e) {
       throw ApiException.fromDioError(e);
     }

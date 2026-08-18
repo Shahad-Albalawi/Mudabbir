@@ -3,6 +3,7 @@ import 'package:mudabbir/presentation/server_challenges/models/challenge_model.d
 import 'package:mudabbir/utils/dev_log.dart';
 import 'package:mudabbir/data/network/api_exception.dart';
 import 'package:mudabbir/data/network/dio_client.dart';
+import 'package:mudabbir/data/network/paginated_list_fetcher.dart';
 
 class ChallengeService {
   final DioClient _dioClient;
@@ -13,20 +14,9 @@ class ChallengeService {
   Future<List<ChallengeModel>> getChallenges() async {
     devLog('[Challenge API] GET /challenges - starting');
     try {
-      final response = await _dioClient.dio.get('/challenges');
-      devLog(
-        '[Challenge API] GET /challenges - status: ${response.statusCode}',
-      );
-
-      if (response.data['success'] == true) {
-        final List<dynamic> data = response.data['data'] as List<dynamic>;
-        return data.map((json) => ChallengeModel.fromJson(json)).toList();
-      }
-
-      devLog(
-        '[Challenge API] GET /challenges - unexpected response: ${response.data}',
-      );
-      throw ApiException(message: 'Failed to load challenges');
+      final pages = await fetchAllPaginatedPages(_dioClient.dio, '/challenges');
+      devLog('[Challenge API] GET /challenges - loaded ${pages.length} items');
+      return pages.map((json) => ChallengeModel.fromJson(json)).toList();
     } on DioException catch (e) {
       devLog(
         '[Challenge API] GET /challenges - DioException: ${e.type} ${e.message} status: ${e.response?.statusCode}',

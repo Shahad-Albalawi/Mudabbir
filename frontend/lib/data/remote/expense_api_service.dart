@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:mudabbir/domain/models/expense_transaction.dart';
 import 'package:mudabbir/data/network/api_exception.dart';
 import 'package:mudabbir/data/network/dio_client.dart';
+import 'package:mudabbir/data/network/paginated_list_fetcher.dart';
 
 /// REST client for expense transactions.
 class ExpenseApiService {
@@ -11,21 +12,10 @@ class ExpenseApiService {
 
   Future<List<ExpenseTransaction>> getExpenses() async {
     try {
-      final response = await _dioClient.dio.get('/expenses');
-      if (response.data['success'] == true || response.data['status'] == 'success') {
-        final raw = response.data['data'];
-        final List<dynamic> data = raw is List
-            ? raw
-            : (raw is Map && raw['data'] is List)
-                ? raw['data'] as List<dynamic>
-                : <dynamic>[];
-        return data
-            .map((json) => ExpenseTransaction.fromMap(
-                  Map<String, dynamic>.from(json as Map),
-                ))
-            .toList();
-      }
-      throw ApiException(message: 'Failed to load expenses');
+      final pages = await fetchAllPaginatedPages(_dioClient.dio, '/expenses');
+      return pages
+          .map((json) => ExpenseTransaction.fromMap(json))
+          .toList();
     } on DioException catch (e) {
       throw ApiException.fromDioError(e);
     }

@@ -10,6 +10,7 @@ import 'package:mudabbir/service/hive_service.dart';
 import 'package:mudabbir/service/notifications/push_notification_service.dart';
 import 'package:mudabbir/service/routing_service/auth_notifier.dart';
 import 'package:mudabbir/service/security/auth_token_secure_store.dart';
+import 'package:mudabbir/service/api_service.dart';
 
 /// Login, register, and logout — token persisted in [AuthTokenSecureStore].
 class AuthService {
@@ -18,15 +19,18 @@ class AuthService {
     required AuthTokenSecureStore secureStore,
     required AuthNotifier authNotifier,
     required HiveService hiveService,
+    required ApiService apiService,
   })  : _userRepository = userRepository,
         _secureStore = secureStore,
         _authNotifier = authNotifier,
-        _hiveService = hiveService;
+        _hiveService = hiveService,
+        _apiService = apiService;
 
   final UserRepository _userRepository;
   final AuthTokenSecureStore _secureStore;
   final AuthNotifier _authNotifier;
   final HiveService _hiveService;
+  final ApiService _apiService;
 
   Future<UserModel> login(String email, String password) async {
     final result = await _userRepository.login(email.trim(), password);
@@ -71,7 +75,14 @@ class AuthService {
     return _unwrap(result);
   }
 
-  Future<void> logout() => _authNotifier.didLogout();
+  Future<void> logout() async {
+    try {
+      await _apiService.logout();
+    } catch (_) {
+      // Clear local session even if the server token is already invalid.
+    }
+    await _authNotifier.didLogout();
+  }
 
   Future<UserModel> _unwrap(Either<Failure, UserModel> result) async {
     return await result.fold(

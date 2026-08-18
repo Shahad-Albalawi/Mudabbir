@@ -135,4 +135,20 @@ class ApiService {
       'name': user.name,
     });
   }
+
+  /// Revokes the current Sanctum token on the server (best-effort).
+  Future<void> logout() async {
+    final token = await secureStore.readToken();
+    if (token == null || token.isEmpty) {
+      return;
+    }
+
+    try {
+      await dio.post('${ApiConstants.baseUrl}/api/logout');
+    } on DioException catch (e) {
+      if (e.response?.statusCode != 401) {
+        rethrow;
+      }
+    }
+  }
 }
