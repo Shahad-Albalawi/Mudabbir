@@ -16,7 +16,8 @@ use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\StatisticsController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('throttle:api')->get('/health', HealthController::class);
+Route::get('/health', HealthController::class);
+Route::get('/ping', fn () => response()->json(['ok' => true]));
 
 Route::middleware('throttle:auth-register')->group(function (): void {
     Route::post('/register', [AuthController::class, 'register']);

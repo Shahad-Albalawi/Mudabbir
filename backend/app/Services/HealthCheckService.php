@@ -15,7 +15,9 @@ class HealthCheckService
     {
         $database = $this->checkDatabase();
         $storage = $this->checkStorage();
-        $ai = $this->checkAiProvider();
+        $ai = config('mudabbir.health_skip_ai_ping', false)
+            ? ['ok' => true, 'skipped' => true]
+            : $this->checkAiProvider();
 
         $criticalOk = ($database['ok'] ?? false) && ($storage['ok'] ?? false);
         $allOk = $criticalOk && ($ai['ok'] ?? false);

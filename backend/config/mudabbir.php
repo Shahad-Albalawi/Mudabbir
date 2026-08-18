@@ -36,4 +36,9 @@ return [
 
     'health_db_timeout_seconds' => (int) env('HEALTH_DB_TIMEOUT_SECONDS', 5),
 
+    'health_skip_ai_ping' => filter_var(
+        env('MUDABBIR_HEALTH_SKIP_AI_PING', env('APP_ENV') === 'production'),
+        FILTER_VALIDATE_BOOL,
+    ),
+
 ];

@@ -112,7 +112,11 @@ ensure_storage_permissions() {
 }
 
 run_artisan() {
-  su -s /bin/sh www-data -c "cd /var/www/html && php artisan $*"
+  if su -s /bin/sh www-data -c "cd /var/www/html && php artisan $*"; then
+    return 0
+  fi
+  echo "WARN: artisan as www-data failed — retrying as root." >&2
+  php artisan "$@"
 }
 
 ensure_storage_permissions
