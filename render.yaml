@@ -6,7 +6,7 @@ services:
     plan: free
     dockerfilePath: backend/Dockerfile
     dockerContext: backend
-    healthCheckPath: /api/health
+    healthCheckPath: /api/ping
     autoDeploy: true
     envVars:
       - key: APP_ENV
@@ -21,6 +21,8 @@ services:
         value: require
       - key: HEALTH_DB_TIMEOUT_SECONDS
         value: "5"
+      - key: MUDABBIR_HEALTH_SKIP_AI_PING
+        value: "true"
       - key: DATABASE_URL
         sync: false
       - key: LOG_CHANNEL
