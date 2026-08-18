@@ -16,27 +16,55 @@ class StatisticsService
     ) {}
 
     /**
+     * Calendar-month aggregates (dashboard default).
+     *
      * @return array<string, mixed>
      */
     public function forUser(int $userId): array
     {
         $now = Carbon::now();
-        $monthStart = $now->copy()->startOfMonth()->toDateString();
-        $monthEnd = $now->copy()->endOfMonth()->toDateString();
 
-        $monthlyIncome = 0.0;
-        $monthlyExpense = 0.0;
+        return $this->forUserRange(
+            $userId,
+            $now->copy()->startOfMonth()->toDateString(),
+            $now->copy()->endOfMonth()->toDateString(),
+            includeMonthlyTrend: true,
+        );
+    }
+
+    /**
+     * Aggregates for an arbitrary inclusive date range.
+     *
+     * @return array<string, mixed>
+     */
+    public function forUserRange(
+        int $userId,
+        string $from,
+        string $to,
+        bool $includeMonthlyTrend = false,
+    ): array {
+        $rangeStart = $from;
+        $rangeEnd = $to;
+
+        $periodIncome = 0.0;
+        $periodExpense = 0.0;
         $incomeByCategory = [];
         $expenseByCategory = [];
+        $dailyExpense = [];
         $monthlyTrend = [];
+        $transactionCount = 0;
+        $highestExpense = 0.0;
 
-        for ($i = 5; $i >= 0; $i--) {
-            $month = $now->copy()->subMonths($i);
-            $monthlyTrend[$month->format('Y-m')] = [
-                'label' => $month->translatedFormat('M'),
-                'income' => 0.0,
-                'expense' => 0.0,
-            ];
+        if ($includeMonthlyTrend) {
+            $anchor = Carbon::parse($rangeEnd);
+            for ($i = 5; $i >= 0; $i--) {
+                $month = $anchor->copy()->subMonths($i);
+                $monthlyTrend[$month->format('Y-m')] = [
+                    'label' => $month->translatedFormat('M'),
+                    'income' => 0.0,
+                    'expense' => 0.0,
+                ];
+            }
         }
 
         $expenses = $this->expenseStore->all($userId);
@@ -48,7 +76,7 @@ class StatisticsService
             $category = (string) ($row['category_name'] ?? 'أخرى');
             $monthKey = strlen($date) >= 7 ? substr($date, 0, 7) : '';
 
-            if (isset($monthlyTrend[$monthKey])) {
+            if ($includeMonthlyTrend && isset($monthlyTrend[$monthKey])) {
                 if ($type === 'income') {
                     $monthlyTrend[$monthKey]['income'] += $amount;
                 } else {
@@ -56,25 +84,29 @@ class StatisticsService
                 }
             }
 
-            if ($date < $monthStart || $date > $monthEnd) {
+            if ($date < $rangeStart || $date > $rangeEnd) {
                 continue;
             }
 
             if ($type === 'income') {
-                $monthlyIncome += $amount;
+                $periodIncome += $amount;
                 $incomeByCategory[$category] = ($incomeByCategory[$category] ?? 0) + $amount;
             } else {
-                $monthlyExpense += $amount;
+                $periodExpense += $amount;
                 $expenseByCategory[$category] = ($expenseByCategory[$category] ?? 0) + $amount;
+                $dailyExpense[$date] = ($dailyExpense[$date] ?? 0) + $amount;
+                $transactionCount++;
+                $highestExpense = max($highestExpense, $amount);
             }
         }
 
         arsort($expenseByCategory);
         arsort($incomeByCategory);
+        ksort($dailyExpense);
 
-        $balance = round($monthlyIncome - $monthlyExpense, 2);
-        $savingsRate = $monthlyIncome > 0
-            ? round((($monthlyIncome - $monthlyExpense) / $monthlyIncome) * 100, 2)
+        $balance = round($periodIncome - $periodExpense, 2);
+        $savingsRate = $periodIncome > 0
+            ? round((($periodIncome - $periodExpense) / $periodIncome) * 100, 2)
             : 0.0;
 
         $goals = $this->goalStore->all($userId);
@@ -111,18 +143,20 @@ class StatisticsService
                 : 0.0;
         }
 
-        return [
+        $payload = [
             'period' => [
-                'from' => $monthStart,
-                'to' => $monthEnd,
+                'from' => $rangeStart,
+                'to' => $rangeEnd,
             ],
-            'total_income' => round($monthlyIncome, 2),
-            'total_expense' => round($monthlyExpense, 2),
+            'total_income' => round($periodIncome, 2),
+            'total_expense' => round($periodExpense, 2),
             'current_balance' => $balance,
             'savings_rate' => $savingsRate,
             'income_by_category' => $incomeByCategory,
             'expense_by_category' => $expenseByCategory,
-            'monthly_trend' => array_values($monthlyTrend),
+            'daily_expense' => $dailyExpense,
+            'transaction_count' => $transactionCount,
+            'highest_expense' => round($highestExpense, 2),
             'goals_progress' => $goalsProgress,
             'budgets_progress' => $budgetsProgress,
             'active_goals_count' => count(array_filter(
@@ -130,5 +164,11 @@ class StatisticsService
                 fn (array $goal): bool => empty($goal['is_completed']),
             )),
         ];
+
+        if ($includeMonthlyTrend) {
+            $payload['monthly_trend'] = array_values($monthlyTrend);
+        }
+
+        return $payload;
     }
 }

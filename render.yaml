@@ -60,11 +60,7 @@ services:
       - key: MUDABBIR_LEGACY_JSON_BACKUP_URL
         value: https://raw.githubusercontent.com/Shahad-Albalawi/Mudabbir/backup/json-2026-08-12/mudabbir-json-2026-08-12-140250Z.tar.gz
       - key: MUDABBIR_SKIP_LEGACY_IMPORT
-        value: "0"
-      - key: MUDABBIR_DUAL_WRITE_JSON
-        value: "true"
-      - key: MUDABBIR_DUAL_WRITE_JSON_UNTIL
-        value: "2026-08-14"
+        value: "1"
       - key: TELESCOPE_ENABLED
         value: "false"
       - key: SENTRY_LARAVEL_DSN

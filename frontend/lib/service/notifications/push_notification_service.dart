@@ -3,14 +3,12 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:mudabbir/core/providers/provider_reader.dart';
 import 'package:mudabbir/core/providers/app_providers.dart';
+import 'package:mudabbir/firebase/firebase_bootstrap.dart';
 import 'package:mudabbir/service/notifications/local_notification_service.dart';
 import 'package:mudabbir/utils/dev_log.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-/// Push setup: local notifications always; FCM token registration when available.
-///
-/// Full FCM requires Firebase — see `docs/FCM_SETUP.md`.
-/// For manual testing, pass `--dart-define=FCM_TEST_TOKEN=...`.
+/// Push: local notifications always; FCM when Firebase is configured.
 class PushNotificationService {
   PushNotificationService._();
   static final PushNotificationService instance = PushNotificationService._();
@@ -23,30 +21,30 @@ class PushNotificationService {
     await LocalNotificationService.instance.initialize();
     await _requestNotificationPermission();
 
+    if (await FirebaseBootstrap.initialize()) {
+      FirebaseBootstrap.listenForegroundMessages();
+      _cachedToken = await FirebaseBootstrap.fetchMessagingToken();
+      if (_cachedToken != null && _cachedToken!.isNotEmpty) {
+        devLog('[Push] FCM token acquired.');
+        await syncTokenWithBackend();
+        return;
+      }
+    }
+
     _cachedToken = const String.fromEnvironment('FCM_TEST_TOKEN');
     if (_cachedToken != null && _cachedToken!.isNotEmpty) {
       devLog('[Push] Using FCM_TEST_TOKEN from dart-define.');
       await syncTokenWithBackend();
     } else {
-      devLog(
-        '[Push] Local notifications ready. Configure Firebase for live FCM — docs/FCM_SETUP.md',
-      );
+      devLog('[Push] No FCM token — configure Firebase (docs/FCM_SETUP.md).');
     }
-
-    // After `flutterfire configure`, initialize Firebase Messaging here and set
-    // `_cachedToken = await FirebaseMessaging.instance.getToken()`.
   }
 
   Future<void> _requestNotificationPermission() async {
     if (kIsWeb) return;
 
     try {
-      if (Platform.isAndroid) {
-        final status = await Permission.notification.status;
-        if (!status.isGranted) {
-          await Permission.notification.request();
-        }
-      } else if (Platform.isIOS) {
+      if (Platform.isAndroid || Platform.isIOS) {
         final status = await Permission.notification.status;
         if (!status.isGranted) {
           await Permission.notification.request();

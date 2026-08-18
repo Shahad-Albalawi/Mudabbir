@@ -61,6 +61,6 @@ class StatisticsApiTest extends TestCase
         $this->getJson('/api/statistics', $headers)->assertOk();
         $this->getJson('/api/statistics', $headers)->assertOk();
 
-        $this->assertTrue(Cache::has("api:statistics:user:{$userId}"));
+        $this->assertTrue(Cache::has("api:statistics:user:{$userId}:month"));
     }
 }

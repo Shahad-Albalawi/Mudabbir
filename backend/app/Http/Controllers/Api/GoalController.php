@@ -1,9 +1,8 @@
-<?php
+﻿<?php
 
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Concerns\AuthorizesResourceAccess;
-use App\Http\Controllers\Concerns\DualWritesLegacyJson;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Goal\AddGoalContributionRequest;
 use App\Http\Requests\Goal\StoreGoalMilestoneRequest;
@@ -19,7 +18,6 @@ use Illuminate\Http\Request;
 class GoalController extends Controller
 {
     use AuthorizesResourceAccess;
-    use DualWritesLegacyJson;
 
     public function __construct(private GoalRepository $store) {}
 
@@ -58,7 +56,6 @@ class GoalController extends Controller
     {
         $userId = (int) $request->user()->id;
         $goal = $this->store->create($request->validated(), $userId);
-        $this->mirrorGoalToLegacyJson($goal);
 
         return $this->created((new GoalResource($goal))->resolve($request));
     }
@@ -78,7 +75,6 @@ class GoalController extends Controller
             return $this->notFound('Goal not found');
         }
 
-        $this->mirrorGoalToLegacyJson($goal);
 
         return $this->created((new GoalResource($goal))->resolve($request), 'Milestone added');
     }
@@ -96,7 +92,6 @@ class GoalController extends Controller
             return $this->notFound('Goal not found or already completed');
         }
 
-        $this->mirrorGoalToLegacyJson($goal);
 
         return $this->success((new GoalResource($goal))->resolve($request));
     }
@@ -113,7 +108,6 @@ class GoalController extends Controller
             return $this->notFound('Goal not found');
         }
 
-        $this->mirrorGoalDeleteToLegacyJson($id, $userId);
 
         return $this->success(null, 'Deleted');
     }
@@ -143,7 +137,6 @@ class GoalController extends Controller
             );
         }
 
-        $this->mirrorGoalToLegacyJson($result['data']);
 
         return $this->success((new GoalResource($result['data']))->resolve($request));
     }

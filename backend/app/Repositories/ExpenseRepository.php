@@ -6,7 +6,6 @@ use App\Models\Expense;
 use App\Services\Concerns\ResolvesSyncConflicts;
 use App\Services\DashboardCache;
 use App\Support\ResolvesModelPrimaryKey;
-use Illuminate\Support\Facades\DB;
 
 class ExpenseRepository
 {

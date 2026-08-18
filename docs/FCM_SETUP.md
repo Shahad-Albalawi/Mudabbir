@@ -52,13 +52,27 @@ Optional GitHub secret for scheduler pushes: `MUDABBIR_FCM_SERVER_KEY` (same val
 
 ### 5. Enable in app
 
-After `flutterfire configure`, uncomment Firebase init in `lib/main.dart` (see comment block near `PushNotificationService`) and run:
+**Option A — FlutterFire (recommended)**
+
+After `flutterfire configure`, add `google-services.json` and run:
 
 ```bash
 flutter run --dart-define-from-file=config/release.json
 ```
 
-### 6. Verify
+**Option B — dart-define (CI / no committed secrets)**
+
+```bash
+flutter run \
+  --dart-define=FIREBASE_PROJECT_ID=your-project \
+  --dart-define=FIREBASE_ANDROID_API_KEY=... \
+  --dart-define=FIREBASE_ANDROID_APP_ID=... \
+  --dart-define=FIREBASE_MESSAGING_SENDER_ID=...
+```
+
+When `google-services.json` exists in `android/app/`, Gradle applies the Google Services plugin automatically.
+
+### Verify
 
 1. Login on a physical device (emulator FCM is limited)
 2. Check Render logs for device token registration

@@ -1,9 +1,8 @@
-<?php
+﻿<?php
 
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Concerns\AuthorizesResourceAccess;
-use App\Http\Controllers\Concerns\DualWritesLegacyJson;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Challenge\CreateChallengeFromTemplateRequest;
 use App\Http\Requests\Challenge\InviteChallengeRequest;
@@ -21,7 +20,6 @@ use Illuminate\Http\Request;
 class ChallengeController extends Controller
 {
     use AuthorizesResourceAccess;
-    use DualWritesLegacyJson;
 
     public function __construct(private ChallengeRepository $store) {}
 
@@ -62,7 +60,6 @@ class ChallengeController extends Controller
             $request->validated(),
             $this->creatorFromUser($request->user())
         );
-        $this->mirrorChallengeToLegacyJson($challenge);
 
         return $this->created(ChallengeResource::fromStoreArray($challenge));
     }
@@ -80,7 +77,6 @@ class ChallengeController extends Controller
             return $this->notFound('Challenge not found');
         }
 
-        $this->mirrorChallengeToLegacyJson($challenge);
 
         return $this->success(ChallengeResource::fromStoreArray($challenge));
     }
@@ -97,7 +93,6 @@ class ChallengeController extends Controller
             return $this->notFound('Challenge not found');
         }
 
-        $this->mirrorChallengeDeleteToLegacyJson($id, $userId);
 
         return $this->success(null, 'Deleted');
     }
@@ -115,7 +110,6 @@ class ChallengeController extends Controller
             return $this->notFound('Challenge not found');
         }
 
-        $this->mirrorChallengeToLegacyJson($challenge);
 
         return $this->success(ChallengeResource::fromStoreArray($challenge));
     }
@@ -133,7 +127,6 @@ class ChallengeController extends Controller
             return $this->notFound('Challenge not found');
         }
 
-        $this->mirrorChallengeToLegacyJson($challenge);
 
         return $this->success(ChallengeResource::fromStoreArray($challenge));
     }
@@ -151,7 +144,6 @@ class ChallengeController extends Controller
             return $this->notFound('Challenge not found');
         }
 
-        $this->mirrorChallengeToLegacyJson($challenge);
 
         return $this->success(ChallengeResource::fromStoreArray($challenge));
     }
@@ -169,7 +161,6 @@ class ChallengeController extends Controller
             return $this->notFound('Challenge not found');
         }
 
-        $this->mirrorChallengeToLegacyJson($challenge);
 
         return $this->success(ChallengeResource::fromStoreArray($challenge));
     }
@@ -198,7 +189,6 @@ class ChallengeController extends Controller
             return $this->notFound('Template not found');
         }
 
-        $this->mirrorChallengeToLegacyJson($challenge);
 
         return $this->created(ChallengeResource::fromStoreArray($challenge));
     }
@@ -216,7 +206,6 @@ class ChallengeController extends Controller
             return $this->notFound('Challenge or participant not found');
         }
 
-        $this->mirrorChallengeToLegacyJson($result['challenge']);
 
         return $this->success(
             ChallengeResource::fromStoreArray($result['challenge']),
@@ -243,7 +232,6 @@ class ChallengeController extends Controller
             return $this->notFound('Challenge or participant not found');
         }
 
-        $this->mirrorChallengeToLegacyJson($challenge);
 
         return $this->success(ChallengeResource::fromStoreArray($challenge));
     }

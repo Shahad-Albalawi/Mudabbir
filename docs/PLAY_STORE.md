@@ -7,7 +7,7 @@ Guide for publishing the Flutter app to Google Play Console.
 ## Prerequisites
 
 1. **Google Play Developer account** ($25 one-time fee).
-2. **Upload keystore** — copy `frontend/android/key.properties.example` → `frontend/android/key.properties` (gitignored).
+2. **Upload keystore** — run `scripts/generate-android-keystore.ps1`, then `scripts/setup-release-signing.ps1` (or copy `frontend/android/key.properties.example` → `key.properties`).
 3. **Production API** — `frontend/config/release.json` with your Render URL.
 4. **Signed AAB** — run from repo root:
 

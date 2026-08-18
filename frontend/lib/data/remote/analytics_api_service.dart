@@ -12,13 +12,34 @@ class AnalyticsApiService {
     return _fetch('/statistics');
   }
 
+  Future<Map<String, dynamic>> getStatisticsForPeriod({
+    required String period,
+    String? from,
+    String? to,
+  }) async {
+    return _fetch(
+      '/statistics',
+      queryParameters: {
+        if (from != null) 'from': from,
+        if (to != null) 'to': to,
+        if (from == null && to == null) 'period': period,
+      },
+    );
+  }
+
   Future<Map<String, dynamic>> getDashboard() async {
     return _fetch('/dashboard');
   }
 
-  Future<Map<String, dynamic>> _fetch(String path) async {
+  Future<Map<String, dynamic>> _fetch(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
     try {
-      final response = await _dioClient.dio.get<Map<String, dynamic>>(path);
+      final response = await _dioClient.dio.get<Map<String, dynamic>>(
+        path,
+        queryParameters: queryParameters,
+      );
       final body = response.data;
       if (body == null || body['success'] != true) {
         throw ApiException(message: 'Failed to load $path');

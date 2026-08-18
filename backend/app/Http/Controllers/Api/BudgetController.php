@@ -1,9 +1,8 @@
-<?php
+﻿<?php
 
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Concerns\AuthorizesResourceAccess;
-use App\Http\Controllers\Concerns\DualWritesLegacyJson;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Budget\StoreBudgetRequest;
 use App\Http\Requests\Budget\UpdateBudgetRequest;
@@ -17,7 +16,6 @@ use Illuminate\Http\Request;
 class BudgetController extends Controller
 {
     use AuthorizesResourceAccess;
-    use DualWritesLegacyJson;
 
     public function __construct(private BudgetRepository $store) {}
 
@@ -52,7 +50,6 @@ class BudgetController extends Controller
     {
         $userId = (int) $request->user()->id;
         $budget = $this->store->create($request->validated(), $userId);
-        $this->mirrorBudgetToLegacyJson($budget);
 
         return $this->created(BudgetResource::fromStoreArray($budget));
     }
@@ -82,7 +79,6 @@ class BudgetController extends Controller
             );
         }
 
-        $this->mirrorBudgetToLegacyJson($result['data']);
 
         return $this->success(BudgetResource::fromStoreArray($result['data']));
     }
@@ -99,7 +95,6 @@ class BudgetController extends Controller
             return $this->notFound('Budget not found');
         }
 
-        $this->mirrorBudgetDeleteToLegacyJson($id, $userId);
 
         return $this->success(null, 'Deleted');
     }

@@ -84,6 +84,10 @@ dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 }
 
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 // Flutter CLI expects APKs under `<project>/build/app/outputs/flutter-apk/`, while AGP 8+
 // may leave copies only under `android/app/build/...`. Mirror them so `flutter run` works.
 afterEvaluate {

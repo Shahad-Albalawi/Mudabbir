@@ -36,7 +36,5 @@ services:
         sync: false
       - key: SENTRY_TRACES_SAMPLE_RATE
         value: "0.0"
-      - key: MUDABBIR_DUAL_WRITE_JSON
-        value: "true"
-      - key: MUDABBIR_DUAL_WRITE_JSON_UNTIL
-        value: "2026-08-14"
+      - key: MUDABBIR_SKIP_LEGACY_IMPORT
+        value: "1"

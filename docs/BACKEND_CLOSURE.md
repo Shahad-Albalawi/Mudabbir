@@ -49,9 +49,8 @@ Manual run: **Actions → Laravel Scheduler → Run workflow**.
 
 | Variable | Production value |
 |----------|------------------|
-| `MUDABBIR_DUAL_WRITE_JSON` | `false` (after 2–3 stable days) |
+| `MUDABBIR_DUAL_WRITE_JSON` | removed — PostgreSQL is sole store |
 | `DB_EMULATE_PREPARES` | `true` (default — Neon pooler) |
-| `MUDABBIR_USE_DB_POOLER` | leave unset or `0` — Laravel needs direct Neon host for writes |
 | `APP_DEBUG` | `false` |
 
 ## 5. Done when

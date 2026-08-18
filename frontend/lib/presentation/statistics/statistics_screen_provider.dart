@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mudabbir/data/local/database_helper.dart';
+import 'package:mudabbir/data/remote/analytics_api_service.dart';
 import 'package:mudabbir/domain/services/financial_date_utils.dart';
 import 'package:mudabbir/presentation/resources/entity_localizations.dart';
 import 'package:mudabbir/core/providers/app_providers.dart';
 import 'package:mudabbir/presentation/resources/strings_manager.dart';
+import 'package:mudabbir/utils/api_session.dart';
 
 enum StatisticsPeriod { week, month, quarter, year }
 
@@ -129,15 +131,20 @@ class StatisticsScreenData {
 
 final statisticsScreenProvider =
     StateNotifierProvider<StatisticsScreenNotifier, StatisticsScreenData>(
-  (ref) => StatisticsScreenNotifier(ref.watch(dbHelperProvider)),
+  (ref) => StatisticsScreenNotifier(
+    ref.watch(dbHelperProvider),
+    ref.watch(analyticsApiServiceProvider),
+  ),
 );
 
 class StatisticsScreenNotifier extends StateNotifier<StatisticsScreenData> {
-  StatisticsScreenNotifier(this._db) : super(const StatisticsScreenData()) {
+  StatisticsScreenNotifier(this._db, this._analyticsApi)
+      : super(const StatisticsScreenData()) {
     load();
   }
 
   final DbHelper _db;
+  final AnalyticsApiService _analyticsApi;
 
   Future<void> setPeriod(StatisticsPeriod period) async {
     if (period == state.period && !state.isLoading) {
@@ -159,6 +166,30 @@ class StatisticsScreenNotifier extends StateNotifier<StatisticsScreenData> {
       final period = state.period;
       final current = _dateRange(period, DateTime.now());
       final previous = _previousRange(current, period.dayCount);
+
+      if (await hasApiSession()) {
+        try {
+          final currentApi = await _analyticsApi.getStatisticsForPeriod(
+            period: _apiPeriodKey(period),
+            from: current.start,
+            to: current.end,
+          );
+          final previousApi = await _analyticsApi.getStatisticsForPeriod(
+            period: _apiPeriodKey(period),
+            from: previous.start,
+            to: previous.end,
+          );
+          state = _fromApiPayload(
+            period: period,
+            current: current,
+            currentApi: currentApi,
+            previousApi: previousApi,
+          );
+          return;
+        } catch (_) {
+          // Fall back to local SQLite below.
+        }
+      }
 
       final currentMetrics = await _loadMetrics(current.start, current.end);
       final previousMetrics = await _loadMetrics(previous.start, previous.end);
@@ -204,6 +235,83 @@ class StatisticsScreenNotifier extends StateNotifier<StatisticsScreenData> {
         errorMessage: AppStrings.statsScreenLoadFailed,
       );
     }
+  }
+
+  String _apiPeriodKey(StatisticsPeriod period) {
+    return switch (period) {
+      StatisticsPeriod.week => 'week',
+      StatisticsPeriod.month => 'month',
+      StatisticsPeriod.quarter => 'quarter',
+      StatisticsPeriod.year => 'year',
+    };
+  }
+
+  StatisticsScreenData _fromApiPayload({
+    required StatisticsPeriod period,
+    required ({String start, String end}) current,
+    required Map<String, dynamic> currentApi,
+    required Map<String, dynamic> previousApi,
+  }) {
+    final dailyRaw = currentApi['daily_expense'];
+    final daily = <String, double>{};
+    if (dailyRaw is Map) {
+      dailyRaw.forEach((key, value) {
+        daily[key.toString()] = (value as num).toDouble();
+      });
+    }
+
+    final categoriesRaw = currentApi['expense_by_category'];
+    final categories = <String, double>{};
+    if (categoriesRaw is Map) {
+      categoriesRaw.forEach((key, value) {
+        categories[key.toString()] = (value as num).toDouble();
+      });
+    }
+
+    final trendPoints = _bucketTrend(
+      period,
+      current.start,
+      current.end,
+      daily,
+    );
+
+    final totalExpense = (currentApi['total_expense'] as num?)?.toDouble() ?? 0;
+    final prevTotalExpense =
+        (previousApi['total_expense'] as num?)?.toDouble() ?? 0;
+    final highestExpense =
+        (currentApi['highest_expense'] as num?)?.toDouble() ?? 0;
+    final prevHighest =
+        (previousApi['highest_expense'] as num?)?.toDouble() ?? 0;
+    final transactionCount =
+        (currentApi['transaction_count'] as num?)?.toInt() ?? 0;
+    final prevTransactionCount =
+        (previousApi['transaction_count'] as num?)?.toInt() ?? 0;
+
+    final days = period.dayCount.clamp(1, 366);
+    final prevDays = period.dayCount.clamp(1, 366);
+
+    return StatisticsScreenData(
+      isLoading: false,
+      period: period,
+      trendPoints: trendPoints,
+      expenseByCategory: categories,
+      totalExpense: totalExpense,
+      dailyAverage: totalExpense / days,
+      highestExpense: highestExpense,
+      transactionCount: transactionCount,
+      totalExpenseTrend: _trend(totalExpense, prevTotalExpense, lowerIsBetter: true),
+      dailyAverageTrend: _trend(
+        totalExpense / days,
+        prevTotalExpense / prevDays,
+        lowerIsBetter: true,
+      ),
+      highestExpenseTrend: _trend(highestExpense, prevHighest, lowerIsBetter: true),
+      transactionCountTrend: _trend(
+        transactionCount.toDouble(),
+        prevTransactionCount.toDouble(),
+        lowerIsBetter: false,
+      ),
+    );
   }
 
   StatisticsKpiTrend _trend(

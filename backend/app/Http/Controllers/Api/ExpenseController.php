@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Concerns\AuthorizesResourceAccess;
-use App\Http\Controllers\Concerns\DualWritesLegacyJson;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Expense\ListExpensesRequest;
 use App\Http\Requests\Expense\StoreExpenseRequest;
@@ -17,7 +16,6 @@ use Illuminate\Http\Request;
 class ExpenseController extends Controller
 {
     use AuthorizesResourceAccess;
-    use DualWritesLegacyJson;
 
     public function __construct(private ExpenseRepository $store) {}
 
@@ -58,7 +56,6 @@ class ExpenseController extends Controller
     {
         $userId = (int) $request->user()->id;
         $expense = $this->store->create($request->validated(), $userId);
-        $this->mirrorExpenseToLegacyJson($expense);
 
         return $this->created(ExpenseResource::fromStoreArray($expense));
     }
@@ -88,8 +85,6 @@ class ExpenseController extends Controller
             );
         }
 
-        $this->mirrorExpenseToLegacyJson($result['data']);
-
         return $this->success(ExpenseResource::fromStoreArray($result['data']));
     }
 
@@ -104,8 +99,6 @@ class ExpenseController extends Controller
         if (! $this->store->delete($id, $userId)) {
             return $this->notFound('Expense not found');
         }
-
-        $this->mirrorExpenseDeleteToLegacyJson($id, $userId);
 
         return $this->success(null, 'Deleted');
     }

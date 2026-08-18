@@ -1,0 +1,56 @@
+# Verify legacy JSON ↔ PostgreSQL parity (manual / post-migration).
+# Requires GitHub secrets: MUDABBIR_DATABASE_URL, MUDABBIR_APP_KEY
+# Guide: docs/SCHEDULER_SECRETS.md
+
+name: Legacy Migration Verify
+
+on:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo_pgsql, pgsql
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress --no-dev
+
+      - name: Validate secrets
+        id: secrets
+        env:
+          MUDABBIR_DATABASE_URL: ${{ secrets.MUDABBIR_DATABASE_URL }}
+          MUDABBIR_APP_KEY: ${{ secrets.MUDABBIR_APP_KEY }}
+        run: |
+          if [ -z "${MUDABBIR_DATABASE_URL}" ] || [ -z "${MUDABBIR_APP_KEY}" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Add MUDABBIR_DATABASE_URL and MUDABBIR_APP_KEY (see docs/SCHEDULER_SECRETS.md)."
+            exit 0
+          fi
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+
+      - name: Run legacy migration verify
+        if: steps.secrets.outputs.enabled == 'true'
+        env:
+          APP_ENV: production
+          APP_DEBUG: 'false'
+          APP_KEY: ${{ secrets.MUDABBIR_APP_KEY }}
+          DB_CONNECTION: pgsql
+          DATABASE_URL: ${{ secrets.MUDABBIR_DATABASE_URL }}
+          DB_SSLMODE: require
+          LOG_CHANNEL: stderr
+        run: php artisan mudabbir:verify-legacy-migration --all -v
